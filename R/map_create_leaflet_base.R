@@ -8,10 +8,10 @@
 #' @family mapping
 #' @export
 #' @examplesIf interactive()
-#' map <- mysterycall_map_leaflet()
-mysterycall_map_leaflet <- function() {
+#' map <- mysterymaps_map_leaflet()
+mysterymaps_map_leaflet <- function() {
   if (!requireNamespace("leaflet", quietly = TRUE)) {
-    stop("Package 'leaflet' is required for mysterycall_map_leaflet()", call. = FALSE)
+    stop("Package 'leaflet' is required for mysterymaps_map_leaflet()", call. = FALSE)
   }
   # Create a new Leaflet map object
   map <- leaflet::leaflet() %>%

@@ -17,11 +17,11 @@
 #' @family mapping
 #' @export
 #' @examplesIf interactive()
-#' mysterycall_map_base()
-#' mysterycall_map_base("<strong>Custom title</strong>")
-mysterycall_map_base <- function(title = NULL, lat = 39.8282, lng = -98.5795, zoom = 4) {
+#' mysterymaps_map_base()
+#' mysterymaps_map_base("<strong>Custom title</strong>")
+mysterymaps_map_base <- function(title = NULL, lat = 39.8282, lng = -98.5795, zoom = 4) {
   if (!requireNamespace("leaflet", quietly = TRUE)) {
-    stop("Package 'leaflet' is required for mysterycall_map_base()", call. = FALSE)
+    stop("Package 'leaflet' is required for mysterymaps_map_base()", call. = FALSE)
   }
   map <- leaflet::leaflet(options = leaflet::leafletOptions(zoomControl = TRUE)) %>%
     leaflet::addProviderTiles("CartoDB.Voyager", group = "CartoDB Voyager") %>%
@@ -83,16 +83,16 @@ mysterycall_map_base <- function(title = NULL, lat = 39.8282, lng = -98.5795, zo
 #' )
 #'
 #' # Create and save the dot map
-#' mysterycall_map_physicians(physician_data)
+#' mysterymaps_map_physicians(physician_data)
 #'
 #' @family mapping
 #' @export
-mysterycall_map_physicians <- function(physician_data, jitter_range = 0.05, color_palette = "magma", popup_var = "name", output_dir = NULL) {
+mysterymaps_map_physicians <- function(physician_data, jitter_range = 0.05, color_palette = "magma", popup_var = "name", output_dir = NULL) {
   if (!requireNamespace("leaflet", quietly = TRUE)) {
-    stop("Package 'leaflet' is required for mysterycall_map_physicians()", call. = FALSE)
+    stop("Package 'leaflet' is required for mysterymaps_map_physicians()", call. = FALSE)
   }
   if (!requireNamespace("webshot", quietly = TRUE)) {
-    stop("Package 'webshot' is required for mysterycall_map_physicians()", call. = FALSE)
+    stop("Package 'webshot' is required for mysterymaps_map_physicians()", call. = FALSE)
   }
   if (!requireNamespace("viridis", quietly = TRUE)) {
     stop("Package 'viridis' is required for this function", call. = FALSE)
@@ -112,11 +112,11 @@ mysterycall_map_physicians <- function(physician_data, jitter_range = 0.05, colo
   )
 
   cat("Setting up the base map...\n")
-  base_map <- mysterycall_map_base("Physician Dot Map")
+  base_map <- mysterymaps_map_base("Physician Dot Map")
   cat("Map setup complete.\n")
 
   cat("Generating the ACOG district boundaries...\n")
-  acog_districts <- mysterycall_map_acog_districts()
+  acog_districts <- mysterymaps_map_acog_districts()
   cat("ACOG district boundaries generated.\n")
 
   num_acog_districts <- dplyr::n_distinct(acog_districts$ACOG_District)

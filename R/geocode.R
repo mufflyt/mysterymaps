@@ -61,18 +61,18 @@
 #'   `check_apis = TRUE` before a long workflow to catch key problems early.
 #'
 #' @seealso [mysterycall_preflight_check()] to validate API keys before a long
-#'   workflow; [mysterycall_create_isochrones()] to compute drive-time polygons
+#'   workflow; [mysterymaps_create_isochrones()] to compute drive-time polygons
 #'   from geocoded coordinates.
 #' @family geospatial helpers
 #' @export
 #' @examplesIf interactive()
-#' result <- mysterycall_geocode("addresses.csv", "my_api_key")
+#' result <- mysterymaps_geocode("addresses.csv", "my_api_key")
 #' @importFrom readr read_csv write_csv
 #' @importFrom dplyr left_join distinct mutate
 #' @importFrom tibble tibble
 #' @importFrom stats complete.cases
 #'
-mysterycall_geocode <- function(file_path, google_maps_api_key,
+mysterymaps_geocode <- function(file_path, google_maps_api_key,
                                      output_file_path = NULL,
                                      failed_output_path = NULL,
                                      notify = TRUE,
@@ -106,7 +106,7 @@ mysterycall_geocode <- function(file_path, google_maps_api_key,
   }
 
   if (!requireNamespace("ggmap", quietly = TRUE)) {
-    stop("Package 'ggmap' is required for mysterycall_geocode()", call. = FALSE)
+    stop("Package 'ggmap' is required for mysterymaps_geocode()", call. = FALSE)
   }
   ggmap::register_google(key = google_maps_api_key)
 

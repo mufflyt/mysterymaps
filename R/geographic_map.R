@@ -1,6 +1,6 @@
 #' State-Level Choropleth Map of Acceptance Rates
 #'
-#' @name mysterycall_geographic_map
+#' @name mysterymaps_geographic_map
 NULL
 
 #' Create a state-level choropleth map of acceptance rates
@@ -50,7 +50,7 @@ NULL
 #'   Print or assign the return value to display the map.
 #'
 #' @family reporting
-#' @seealso [mysterycall_map_acceptance_rate()] for a simpler one-call
+#' @seealso [mysterymaps_map_acceptance_rate()] for a simpler one-call
 #'   choropleth; [mysterycall_forest_plot()] for model-level visualization.
 #' @export
 #'
@@ -65,7 +65,7 @@ NULL
 #'   offered = rbinom(n, 1, 0.60),
 #'   stringsAsFactors = FALSE
 #' )
-#' p <- mysterycall_geographic_map(
+#' p <- mysterymaps_geographic_map(
 #'   df,
 #'   title    = "Appointment Acceptance Rate by State",
 #'   subtitle = "Mystery-caller study, n = 300 calls"
@@ -78,7 +78,7 @@ NULL
 #'   rate  = c(0.55, 0.72, 0.48, 0.63, 0.81),
 #'   stringsAsFactors = FALSE
 #' )
-#' mysterycall_geographic_map(
+#' mysterymaps_geographic_map(
 #'   rate_df,
 #'   outcome_col = "rate",
 #'   palette     = "plasma",
@@ -86,7 +86,7 @@ NULL
 #'   fill_label  = "Acceptance\nrate"
 #' )
 #' }
-mysterycall_geographic_map <- function(data,
+mysterymaps_geographic_map <- function(data,
                                         state_col             = "state",
                                         outcome_col           = "offered",
                                         fill_label            = "Acceptance rate",

@@ -22,18 +22,18 @@
 #'   `area_method` to the same directory, and (3) emits messages with the
 #'   50th and 75th percentile overlap statistics. If `notify = TRUE` and
 #'   `beepr` is installed, plays a completion sound.
-#' @seealso [mysterycall_isochrones_for_df()] to generate the `isochrones_joined`
-#'   input; [mysterycall_create_isochrones()] for single-point isochrone creation.
+#' @seealso [mysterymaps_isochrones_for_df()] to generate the `isochrones_joined`
+#'   input; [mysterymaps_create_isochrones()] for single-point isochrone creation.
 #'
 #' @examplesIf interactive()
-#' mysterycall_calculate_overlap(block_groups, isochrones_joined, 30L, "data/shp/")
+#' mysterymaps_calculate_overlap(block_groups, isochrones_joined, 30L, "data/shp/")
 #' @importFrom dplyr mutate select left_join coalesce
 #' @importFrom checkmate assert_class assert_number assert_string assert_function
 #' @importFrom dplyr .data
 #' @importFrom stats quantile na.omit
 #' @family geospatial helpers
 #' @export
-mysterycall_calculate_overlap <- function(block_groups,
+mysterymaps_calculate_overlap <- function(block_groups,
                                                     isochrones_joined,
                                                     drive_time_minutes,
                                                     output_dir,
@@ -77,7 +77,7 @@ mysterycall_calculate_overlap <- function(block_groups,
       block_groups = c("POLYGON", "MULTIPOLYGON"),
       isochrones_joined = c("POLYGON", "MULTIPOLYGON")
     ),
-    context = "mysterycall_calculate_overlap()"
+    context = "mysterymaps_calculate_overlap()"
   )
   block_groups <- validated$block_groups
   isochrones_joined <- validated$isochrones_joined
@@ -148,7 +148,7 @@ mysterycall_calculate_overlap <- function(block_groups,
         block_groups = c("POLYGON", "MULTIPOLYGON"),
         isochrones_joined = c("POLYGON", "MULTIPOLYGON")
       ),
-      context = "mysterycall_calculate_overlap(): post-crosswalk"
+      context = "mysterymaps_calculate_overlap(): post-crosswalk"
     )
     block_groups <- validated_crosswalk$block_groups
     isochrones_joined <- validated_crosswalk$isochrones_joined
@@ -293,5 +293,5 @@ mysterycall_calculate_overlap <- function(block_groups,
 #
 # # Loop through unique drive times and calculate intersection for each
 # for (drive_time in unique_drive_times) {
-#   mysterycall_calculate_overlap(block_groups, isochrones_joined, drive_time, output_dir)
+#   mysterymaps_calculate_overlap(block_groups, isochrones_joined, drive_time, output_dir)
 # }

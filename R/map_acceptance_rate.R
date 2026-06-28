@@ -1,6 +1,6 @@
 #' Choropleth map of appointment acceptance rates by US state
 #'
-#' @name mysterycall_map_acceptance_rate
+#' @name mysterymaps_map_acceptance_rate
 NULL
 
 #' Build State Abbreviation to Name Lookup
@@ -51,7 +51,7 @@ NULL
 #'   [mysterycall_save_plot()].
 #'
 #' @seealso [mysterycall_save_plot()] to write the result to disk;
-#'   [mysterycall_hrr_maps()] for HRR-level choropleth maps.
+#'   [mysterymaps_hrr_maps()] for HRR-level choropleth maps.
 #' @family mapping
 #' @export
 #'
@@ -61,8 +61,8 @@ NULL
 #'   state = c("Colorado", "California", "Texas", "New York", "Florida"),
 #'   rate  = c(0.55, 0.72, 0.48, 0.63, 0.81)
 #' )
-#' mysterycall_map_acceptance_rate(df, region_col = "state", rate_col = "rate")
-mysterycall_map_acceptance_rate <- function(data,
+#' mysterymaps_map_acceptance_rate(df, region_col = "state", rate_col = "rate")
+mysterymaps_map_acceptance_rate <- function(data,
                                              region_col,
                                              rate_col,
                                              region_type  = c("state", "hrr"),
@@ -77,7 +77,7 @@ mysterycall_map_acceptance_rate <- function(data,
                                              dpi          = 300L) {
 
   if (!requireNamespace("ggplot2", quietly = TRUE)) {
-    stop("Package 'ggplot2' is required for mysterycall_map_acceptance_rate(). Install with: install.packages('ggplot2')", call. = FALSE)
+    stop("Package 'ggplot2' is required for mysterymaps_map_acceptance_rate(). Install with: install.packages('ggplot2')", call. = FALSE)
   }
   region_type <- match.arg(region_type)
 

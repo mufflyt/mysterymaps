@@ -15,13 +15,13 @@
 #'     \item{`geometry`}{sfc_MULTIPOLYGON in EPSG:4326 (WGS84).}
 #'   }
 #'   Additional columns from the raw shapefile may be present.
-#' @seealso [ensure_hrr_shapefile()], [mysterycall_hrr_maps()], [mysterycall_map_base()]
+#' @seealso [ensure_hrr_shapefile()], [mysterymaps_hrr_maps()], [mysterymaps_map_base()]
 #' @family geospatial helpers
 #' @importFrom dplyr filter
 #' @export
 #' @examplesIf interactive()
-#' mysterycall_hrr()
-mysterycall_hrr <- function(remove_HI_AK = TRUE) {
+#' mysterymaps_hrr()
+mysterymaps_hrr <- function(remove_HI_AK = TRUE) {
   if (!requireNamespace("sf", quietly = TRUE)) {
     stop("Package 'sf' is required", call. = FALSE)
   }
@@ -31,12 +31,12 @@ mysterycall_hrr <- function(remove_HI_AK = TRUE) {
   # Load the hospital referral region shapefile
   message("Getting the hospital referral region shapefile...")
   hrr_path <- ensure_hrr_shapefile()
-  mysterycall_hrr <- sf::read_sf(hrr_path)
-  mysterycall_hrr <- sf::st_transform(mysterycall_hrr, 4326)
+  mysterymaps_hrr <- sf::read_sf(hrr_path)
+  mysterymaps_hrr <- sf::st_transform(mysterymaps_hrr, 4326)
 
   # Optionally remove Hawaii and Alaska (all HRRs, not just the largest cities)
   if (remove_HI_AK) {
-    mysterycall_hrr <- mysterycall_hrr %>%
+    mysterymaps_hrr <- mysterymaps_hrr %>%
       dplyr::filter(!stringr::str_detect(.data$hrrcity, "^(AK|HI)"))
   }
 
@@ -45,7 +45,7 @@ mysterycall_hrr <- function(remove_HI_AK = TRUE) {
   message("This function creates an sf file of hospital referral regions.")
   message("For more information: https://data.dartmouthatlas.org/supplemental/")
 
-  return(mysterycall_hrr)
+  return(mysterymaps_hrr)
 }
 
 #' Generate honeycomb hex maps for Hospital Referral Regions
@@ -73,16 +73,16 @@ mysterycall_hrr <- function(remove_HI_AK = TRUE) {
 #'   Side effects: writes two files to `output_dir` -
 #'   `<trait_map>_<honey_map>_honey.tiff` and
 #'   `<trait_map>_<honey_map>_honey.png`.
-#' @seealso [mysterycall_hrr()] to obtain the HRR `sf` object;
-#'   [mysterycall_map_base()], [mysterycall_map_block_group()]
+#' @seealso [mysterymaps_hrr()] to obtain the HRR `sf` object;
+#'   [mysterymaps_map_base()], [mysterymaps_map_block_group()]
 #' @family mapping
 #' @importFrom dplyr mutate group_by summarize filter n
 #' @importFrom stringr str_detect
 #' @importFrom scales pretty_breaks label_number squish
 #' @export
 #' @examplesIf interactive()
-#' mysterycall_hrr_maps(physician_sf)
-mysterycall_hrr_maps <- function(
+#' mysterymaps_hrr_maps(physician_sf)
+mysterymaps_hrr_maps <- function(
     physician_sf,
     trait_map = "all",
     honey_map = "all",
@@ -95,14 +95,14 @@ mysterycall_hrr_maps <- function(
     stop("Package 'sf' is required", call. = FALSE)
   }
   if (!requireNamespace("scales", quietly = TRUE)) {
-    stop("Package 'scales' is required for mysterycall_hrr_maps()", call. = FALSE)
+    stop("Package 'scales' is required for mysterymaps_hrr_maps()", call. = FALSE)
   }
 
   if (!requireNamespace("ggspatial", quietly = TRUE)) {
-    stop("Package 'ggspatial' is required for mysterycall_hrr_maps()", call. = FALSE)
+    stop("Package 'ggspatial' is required for mysterymaps_hrr_maps()", call. = FALSE)
   }
   if (!requireNamespace("rnaturalearth", quietly = TRUE)) {
-    stop("Package 'rnaturalearth' is required for mysterycall_hrr_maps()", call. = FALSE)
+    stop("Package 'rnaturalearth' is required for mysterymaps_hrr_maps()", call. = FALSE)
   }
   if (!requireNamespace("gridExtra", quietly = TRUE)) {
     stop("Package 'gridExtra' is required for this function", call. = FALSE)
@@ -111,7 +111,7 @@ mysterycall_hrr_maps <- function(
     stop("Package 'grid' is required for this function", call. = FALSE)
   }
   if (!requireNamespace("ggplot2", quietly = TRUE)) {
-    stop("Package 'ggplot2' is required for mysterycall_hrr_maps(). Install with: install.packages('ggplot2')", call. = FALSE)
+    stop("Package 'ggplot2' is required for mysterymaps_hrr_maps(). Install with: install.packages('ggplot2')", call. = FALSE)
   }
   sf::sf_use_s2(FALSE)
 
@@ -121,7 +121,7 @@ mysterycall_hrr_maps <- function(
   usa <- sf::st_transform(usa, 4326)
 
   # Generate the HRR map (retain AK, HI, and PR for insets)
-  hrr_map <- mysterycall_hrr(remove_HI_AK = FALSE)
+  hrr_map <- mysterymaps_hrr(remove_HI_AK = FALSE)
 
   # Intersect honeycomb grid with physician data to get physician counts
   message("Intersecting honeycomb grid with physician data...")

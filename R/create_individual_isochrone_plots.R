@@ -23,17 +23,17 @@
 #' drive_times <- unique(isochrones$drive_time)
 #'
 #' # Create individual isochrone maps and shapefiles
-#' mysterycall_plot_isochrones(isochrones, drive_times)
+#' mysterymaps_plot_isochrones(isochrones, drive_times)
 #'
 #' @family mapping
 #' @export
-mysterycall_plot_isochrones <- function(isochrones, drive_times, output_dir = NULL) {
+mysterymaps_plot_isochrones <- function(isochrones, drive_times, output_dir = NULL) {
   if (!requireNamespace("sf", quietly = TRUE)) {
     stop("Package 'sf' is required", call. = FALSE)
   }
 
   if (!requireNamespace("leaflet", quietly = TRUE)) {
-    stop("Package 'leaflet' is required for mysterycall_plot_isochrones()", call. = FALSE)
+    stop("Package 'leaflet' is required for mysterymaps_plot_isochrones()", call. = FALSE)
   }
   if (!requireNamespace("htmlwidgets", quietly = TRUE)) {
     stop("Package 'htmlwidgets' is required for this function", call. = FALSE)
@@ -49,7 +49,7 @@ mysterycall_plot_isochrones <- function(isochrones, drive_times, output_dir = NU
   dir.create(map_dir, recursive = TRUE, showWarnings = FALSE)
   dir.create(shp_dir, recursive = TRUE, showWarnings = FALSE)
 
-  message("Usage: load data with readRDS(), get drive times via unique(isochrones$drive_time), then call mysterycall_plot_isochrones(isochrones, drive_times).")
+  message("Usage: load data with readRDS(), get drive times via unique(isochrones$drive_time), then call mysterymaps_plot_isochrones(isochrones, drive_times).")
 
   message("Creating individual isochrone plots and shapefiles...")
 
@@ -80,7 +80,7 @@ mysterycall_plot_isochrones <- function(isochrones, drive_times, output_dir = NU
     index <- match(time, drive_times)
 
     # Create a base map
-    my_map <- mysterycall_map_base("")
+    my_map <- mysterymaps_map_base("")
 
     message(paste("Creating a Leaflet map of isochrones for", time, "minutes..."))
 

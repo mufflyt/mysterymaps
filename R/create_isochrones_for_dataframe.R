@@ -1,7 +1,7 @@
 #' Get isochrones for each point in a dataframe
 #'
 #' This function retrieves isochrones for each point in a given dataframe by looping
-#' over the rows and calling the mysterycall_create_isochrones function for each point.
+#' over the rows and calling the mysterymaps_create_isochrones function for each point.
 #'
 #' @param input_file A path to the input file containing points for which isochrones are to be retrieved.
 #' @param breaks A numeric vector specifying the breaks for categorizing drive times (default is c(1800, 3600, 7200, 10800)).
@@ -16,16 +16,16 @@
 #'   and geometry. Returns an empty `data.frame()` if no valid isochrones were
 #'   generated. Intermediate results are checkpointed as `.rds` and `.gpkg`
 #'   files in `output_dir` at `save_interval` seconds.
-#' @seealso [mysterycall_create_isochrones()] for single-point isochrone
-#'   creation; [mysterycall_calculate_overlap()] for the downstream
+#' @seealso [mysterymaps_create_isochrones()] for single-point isochrone
+#'   creation; [mysterymaps_calculate_overlap()] for the downstream
 #'   block-group intersection step.
 #' @importFrom readr write_rds
 #' @importFrom janitor clean_names
 #' @family mapping
 #' @export
 #' @examplesIf interactive()
-#' isochrones_data <- mysterycall_isochrones_for_df("points.csv")
-mysterycall_isochrones_for_df <- function(
+#' isochrones_data <- mysterymaps_isochrones_for_df("points.csv")
+mysterymaps_isochrones_for_df <- function(
     input_file,
     breaks = c(1800, 3600, 7200, 10800),
     api_key = Sys.getenv("HERE_API_KEY"),
@@ -35,14 +35,14 @@ mysterycall_isochrones_for_df <- function(
     stop("Package 'sf' is required", call. = FALSE)
   }
   if (!requireNamespace("janitor", quietly = TRUE)) {
-    stop("Package 'janitor' is required for mysterycall_isochrones_for_df().", call. = FALSE)
+    stop("Package 'janitor' is required for mysterymaps_isochrones_for_df().", call. = FALSE)
   }
 
   if (!requireNamespace("hereR", quietly = TRUE)) {
-    stop("Package 'hereR' is required for mysterycall_isochrones_for_df()", call. = FALSE)
+    stop("Package 'hereR' is required for mysterymaps_isochrones_for_df()", call. = FALSE)
   }
   if (!requireNamespace("easyr", quietly = TRUE)) {
-    stop("Package 'easyr' is required for mysterycall_isochrones_for_df()", call. = FALSE)
+    stop("Package 'easyr' is required for mysterymaps_isochrones_for_df()", call. = FALSE)
   }
   if (is.na(api_key) || !nzchar(api_key)) stop("routing API key is required via argument or HERE_API_KEY env var.", call. = FALSE)
 
@@ -161,7 +161,7 @@ mysterycall_isochrones_for_df <- function(
 
     # Get isochrones for that point
     Sys.sleep(0.4)
-    point_isochrones <- mysterycall_create_isochrones(location = point_temp, range = breaks)
+    point_isochrones <- mysterymaps_create_isochrones(location = point_temp, range = breaks)
     if (is.list(point_isochrones) && length(point_isochrones) && !is.null(point_isochrones$error)) {
       next
     }
@@ -218,4 +218,4 @@ mysterycall_isochrones_for_df <- function(
 }
 
 # Usage example:
-#isochrones_data <- mysterycall_isochrones_for_df(input_file, breaks = c(1800, 3600, 7200, 10800))
+#isochrones_data <- mysterymaps_isochrones_for_df(input_file, breaks = c(1800, 3600, 7200, 10800))

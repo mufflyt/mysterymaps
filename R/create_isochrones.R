@@ -3,7 +3,7 @@
 #' Computes drive-time isolines (isochrones) for a given point using the HERE
 #' routing API via the `hereR` package.  Results are memoized in memory for the
 #' duration of the R session so repeated calls with the same inputs are free.
-#' Use [mysterycall_clear_isochrone_cache()] to release memory after a batch.
+#' Use [mysterymaps_clear_isochrone_cache()] to release memory after a batch.
 #'
 #' @param location An `sf` point object representing the origin location.
 #' @param range Numeric vector of drive-time thresholds in **seconds**
@@ -20,20 +20,20 @@
 #'   containing the error message. Detect failures with
 #'   `if (!is.null(result$error)) { ... }`.
 #'
-#' @seealso [mysterycall_clear_isochrone_cache()] to free session memory after
-#'   batch processing; [mysterycall_geocode()] to produce the input coordinates.
+#' @seealso [mysterymaps_clear_isochrone_cache()] to free session memory after
+#'   batch processing; [mysterymaps_geocode()] to produce the input coordinates.
 #' @examplesIf interactive()
 #' location <- sf::st_sfc(sf::st_point(c(-73.987, 40.757)), crs = 4326)
-#' isolines <- mysterycall_create_isochrones(
+#' isolines <- mysterymaps_create_isochrones(
 #'   location = location,
 #'   range    = c(1800, 3600)
 #' )
-#' mysterycall_clear_isochrone_cache()
+#' mysterymaps_clear_isochrone_cache()
 #'
 #' @family mapping
 #' @export
 #' @importFrom dplyr mutate row_number
-mysterycall_create_isochrones <- function(location,
+mysterymaps_create_isochrones <- function(location,
                               range,
                               posix_time = as.POSIXct("2023-10-20 08:00:00",
                                                       format = "%Y-%m-%d %H:%M:%S"),
@@ -43,13 +43,13 @@ mysterycall_create_isochrones <- function(location,
   }
 
   if (!requireNamespace("hereR", quietly = TRUE)) {
-    stop("Package 'hereR' is required for mysterycall_create_isochrones()", call. = FALSE)
+    stop("Package 'hereR' is required for mysterymaps_create_isochrones()", call. = FALSE)
   }
   if (!requireNamespace("sf", quietly = TRUE)) {
-    stop("Package 'sf' is required for mysterycall_create_isochrones()", call. = FALSE)
+    stop("Package 'sf' is required for mysterymaps_create_isochrones()", call. = FALSE)
   }
   if (!requireNamespace("lwgeom", quietly = TRUE)) {
-    stop("Package 'lwgeom' is required for mysterycall_create_isochrones()", call. = FALSE)
+    stop("Package 'lwgeom' is required for mysterymaps_create_isochrones()", call. = FALSE)
   }
 
   if (is.null(.isochrone_memo)) {
@@ -104,7 +104,7 @@ mysterycall_create_isochrones <- function(location,
 
     return(isolines_list)
   }, error = function(e) {
-    message("Error in mysterycall_create_isochrones: ", e$message)
+    message("Error in mysterymaps_create_isochrones: ", e$message)
     return(list(error = e$message))
   })
 
@@ -112,8 +112,8 @@ mysterycall_create_isochrones <- function(location,
 }
 
 # Internal memoized worker - stored in the package namespace so
-# mysterycall_clear_isochrone_cache() can call memoise::forget() on it.
-# If memoise is not installed, .isochrone_memo is NULL and mysterycall_create_isochrones()
+# mysterymaps_clear_isochrone_cache() can call memoise::forget() on it.
+# If memoise is not installed, .isochrone_memo is NULL and mysterymaps_create_isochrones()
 # falls back to calling .isochrone_worker() directly.
 .isochrone_memo <- if (requireNamespace("memoise", quietly = TRUE)) {
   memoise::memoise(.isochrone_worker)
@@ -123,18 +123,18 @@ mysterycall_create_isochrones <- function(location,
 
 #' Clear the isochrone memoization cache
 #'
-#' [mysterycall_create_isochrones()] caches every result in memory for the
+#' [mysterymaps_create_isochrones()] caches every result in memory for the
 #' duration of the R session.  Call this after processing a large batch to
 #' release that memory.  Has no effect if the `memoise` package is not
 #' installed (memoization is skipped in that case).
 #'
 #' @return Invisibly `NULL`.
-#' @seealso [mysterycall_create_isochrones()] which builds the memoized cache.
+#' @seealso [mysterymaps_create_isochrones()] which builds the memoized cache.
 #' @family mapping
 #' @examples
-#' mysterycall_clear_isochrone_cache()
+#' mysterymaps_clear_isochrone_cache()
 #' @export
-mysterycall_clear_isochrone_cache <- function() {
+mysterymaps_clear_isochrone_cache <- function() {
   if (!is.null(.isochrone_memo) && requireNamespace("memoise", quietly = TRUE)) {
     memoise::forget(.isochrone_memo)
   }

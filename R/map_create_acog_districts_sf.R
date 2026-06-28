@@ -23,14 +23,14 @@
 #' @family mapping
 #' @export
 #' @examplesIf interactive()
-#' mysterycall_map_acog_districts()
-#' mysterycall_map_acog_districts("inst/extdata/acog_districts.csv")
-mysterycall_map_acog_districts <- function(acog_districts_file = NULL) {
+#' mysterymaps_map_acog_districts()
+#' mysterymaps_map_acog_districts("inst/extdata/acog_districts.csv")
+mysterymaps_map_acog_districts <- function(acog_districts_file = NULL) {
   if (!requireNamespace("sf", quietly = TRUE)) {
     stop("Package 'sf' is required", call. = FALSE)
   }
   if (!requireNamespace("readr", quietly = TRUE)) {
-    stop("Package 'readr' is required for mysterycall_map_acog_districts().", call. = FALSE)
+    stop("Package 'readr' is required for mysterymaps_map_acog_districts().", call. = FALSE)
   }
 
   if (is.null(acog_districts_file)) {
@@ -62,7 +62,7 @@ mysterycall_map_acog_districts <- function(acog_districts_file = NULL) {
   )
 
   if (!requireNamespace("rnaturalearth", quietly = TRUE)) {
-    stop("Package 'rnaturalearth' is required for mysterycall_map_acog_districts()", call. = FALSE)
+    stop("Package 'rnaturalearth' is required for mysterymaps_map_acog_districts()", call. = FALSE)
   }
   states_sf <- rnaturalearth::ne_states(country = "united states of america", returnclass = "sf")
   states_sf <- dplyr::transmute(
