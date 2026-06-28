@@ -68,6 +68,7 @@ mysterymaps_map_base <- function(title = NULL, lat = 39.8282, lng = -98.5795, zo
 #' @return Invisibly returns the Leaflet map object.
 #'
 #' @importFrom dplyr mutate
+#' @importFrom stats runif as.formula
 #'
 #' @examplesIf interactive()
 #' # Load required libraries

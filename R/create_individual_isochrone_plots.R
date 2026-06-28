@@ -40,7 +40,7 @@ mysterymaps_plot_isochrones <- function(isochrones, drive_times, output_dir = NU
   }
 
   if (is.null(output_dir)) {
-    output_dir <- mysterycall_tempdir("isochrone_plots", create = TRUE)
+    output_dir <- file.path(tempdir(), "isochrone_plots"); dir.create(output_dir, recursive = TRUE, showWarnings = FALSE)
   } else {
     dir.create(output_dir, recursive = TRUE, showWarnings = FALSE)
   }

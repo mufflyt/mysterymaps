@@ -17,5 +17,6 @@ utils::globalVariables(c(
   "postal",         # map_create_acog_districts_sf.R
   "rate_pct",       # map_acceptance_rate.R
   "state.name",     # geographic_map.R
-  "state.abb"       # geographic_map.R
+  "state.abb",      # geographic_map.R
+  "drive_time"      # create_individual_isochrone_plots.R
 ))
