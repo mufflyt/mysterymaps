@@ -21,6 +21,7 @@
 #'   block-group intersection step.
 #' @importFrom readr write_rds
 #' @importFrom janitor clean_names
+#' @importFrom methods is
 #' @family mapping
 #' @export
 #' @examplesIf interactive()
@@ -116,7 +117,7 @@ mysterymaps_isochrones_for_df <- function(
   }
 
   if (is.null(output_dir)) {
-    output_dir <- mysterycall_tempdir("isochrones", create = TRUE)
+    output_dir <- file.path(tempdir(), "isochrones"); dir.create(output_dir, recursive = TRUE, showWarnings = FALSE)
   } else if (!dir.exists(output_dir)) {
     dir.create(output_dir, recursive = TRUE, showWarnings = FALSE)
   }

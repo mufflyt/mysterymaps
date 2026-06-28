@@ -235,7 +235,7 @@ mysterymaps_hrr_maps <- function(
 
   # Ensure output directory exists
   if (is.null(output_dir)) {
-    output_dir <- mysterycall_tempdir("hrr_maps", create = TRUE)
+    output_dir <- file.path(tempdir(), "hrr_maps"); dir.create(output_dir, recursive = TRUE, showWarnings = FALSE)
   } else if (!dir.exists(output_dir)) {
     dir.create(output_dir, recursive = TRUE, showWarnings = FALSE)
   }
