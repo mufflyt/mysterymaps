@@ -18,6 +18,7 @@
 #' @seealso [ensure_hrr_shapefile()], [mysterymaps_hrr_maps()], [mysterymaps_map_base()]
 #' @family geospatial helpers
 #' @importFrom dplyr filter
+#' @importFrom magrittr %>%
 #' @export
 #' @examplesIf interactive()
 #' mysterymaps_hrr()
@@ -77,6 +78,7 @@ mysterymaps_hrr <- function(remove_HI_AK = TRUE) {
 #'   [mysterymaps_map_base()], [mysterymaps_map_block_group()]
 #' @family mapping
 #' @importFrom dplyr mutate group_by summarize filter n
+#' @importFrom magrittr %>%
 #' @importFrom stringr str_detect
 #' @importFrom scales pretty_breaks label_number squish
 #' @export

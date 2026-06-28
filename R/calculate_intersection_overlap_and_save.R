@@ -31,6 +31,8 @@
 #' @importFrom checkmate assert_class assert_number assert_string assert_function
 #' @importFrom dplyr .data
 #' @importFrom stats quantile na.omit
+#' @importFrom utils capture.output
+#' @importFrom magrittr %>%
 #' @family geospatial helpers
 #' @export
 mysterymaps_calculate_overlap <- function(block_groups,

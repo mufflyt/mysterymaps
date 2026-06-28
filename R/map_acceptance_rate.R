@@ -53,6 +53,7 @@ NULL
 #' @seealso [mysterycall_save_plot()] to write the result to disk;
 #'   [mysterymaps_hrr_maps()] for HRR-level choropleth maps.
 #' @family mapping
+#' @importFrom mysterycall mysterycall_save_plot
 #' @export
 #'
 #' @examplesIf requireNamespace("maps", quietly = TRUE)

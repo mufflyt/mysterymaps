@@ -101,7 +101,8 @@ mysterymaps_map_physicians <- function(physician_data, jitter_range = 0.05, colo
     stop("Package 'htmlwidgets' is required for this function", call. = FALSE)
   }
   if (is.null(output_dir)) {
-    output_dir <- mysterycall_tempdir("physician_maps", create = TRUE)
+    output_dir <- file.path(tempdir(), "physician_maps")
+    dir.create(output_dir, recursive = TRUE, showWarnings = FALSE)
   } else {
     dir.create(output_dir, recursive = TRUE, showWarnings = FALSE)
   }

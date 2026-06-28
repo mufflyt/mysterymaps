@@ -113,13 +113,12 @@ mysterymaps_geocode <- function(file_path, google_maps_api_key,
   unique_add <- dplyr::distinct(data, address)
   total_unique <- nrow(unique_add)
   if (!isTRUE(quiet)) {
-    mysterycall_log_info(sprintf("Geocoding %d unique address(es).", total_unique))
-    mysterycall_log_info(sprintf("Found %d total address records, %d unique", nrow(data), total_unique))
+    message("  ℹ ", sprintf("Geocoding %d unique address(es).", total_unique))
+    message("  ℹ ", sprintf("Found %d total address records, %d unique", nrow(data), total_unique))
   }
 
-  if (!is.null(tracker) && inherits(tracker, "mysterycall_progress_tracker")) {
-    mysterycall_progress_start(tracker, tracker_step, note = sprintf("%d unique address(es)", total_unique))
-  }
+  # tracker calls are no-ops; tracker is a mysterycall internal object
+  invisible(NULL)  # progress_start placeholder
 
   extract_status <- function(msg) {
     code <- regmatches(msg, regexpr("\\b[0-9]{3}\\b", msg))
@@ -143,12 +142,9 @@ mysterymaps_geocode <- function(file_path, google_maps_api_key,
       if (inherits(attempt_result, "error")) {
         reason <- extract_status(attempt_result$message)
         if (!isTRUE(quiet)) {
-          mysterycall_log_info(sprintf(
+          message("  ℹ ", sprintf(
             "Attempt %d/%d for address '%s' failed %s.",
-            attempt,
-            max_attempts,
-            first_address,
-            reason
+            attempt, max_attempts, first_address, reason
           ))
         }
 
@@ -156,16 +152,14 @@ mysterymaps_geocode <- function(file_path, google_maps_api_key,
           failure_reason <- sprintf("Geocoding failed after %d attempts: %s", max_attempts, attempt_result$message)
           if (!is.null(failed_output_path)) {
             failure_tbl <- tibble::tibble(address = unique_add$address, reason = failure_reason)
-            mysterycall_export_with_backup(failure_tbl, failed_output_path, quiet = quiet)
+            readr::write_csv(failure_tbl, failed_output_path)
           }
-          if (!is.null(tracker) && inherits(tracker, "mysterycall_progress_tracker")) {
-            mysterycall_tracker_fail(tracker, tracker_step, reason = failure_reason)
-          }
+          # tracker_fail is a no-op (tracker is a mysterycall internal)
           stop(failure_reason, call. = FALSE)
         }
 
         delay <- base_delay * 2^(attempt - 1)
-        if (!isTRUE(quiet)) mysterycall_log_info(sprintf("Retrying geocode request in %.1f seconds...", delay))
+        if (!isTRUE(quiet)) message("  ℹ ", sprintf("Retrying geocode request in %.1f seconds...", delay))
         Sys.sleep(delay)
       } else {
         coords <- attempt_result
@@ -206,38 +200,34 @@ mysterymaps_geocode <- function(file_path, google_maps_api_key,
   checkmate::assert_int(success_count, lower = 0)
   checkmate::assert_true(success_count <= total_unique, .var.name = "success_count bound")
 
-  # Comprehensive logging: Report geocoding results
+  # Report geocoding results
   if (!isTRUE(quiet)) {
     if (success_rate >= 0.95) {
-      mysterycall_log_success(sprintf("Geocoding complete: %d/%d succeeded (%.1f%%)",
-                               success_count, total_unique, success_rate * 100),
-                       indent = TRUE)
+      message("  ✓ ", sprintf("Geocoding complete: %d/%d succeeded (%.1f%%)",
+                                   success_count, total_unique, success_rate * 100))
     } else if (success_rate >= 0.80) {
-      mysterycall_log_warning(sprintf("Geocoding finished with warnings: %d/%d succeeded (%.1f%%)",
-                               success_count, total_unique, success_rate * 100),
-                       indent = TRUE)
+      message("  ⚠ WARNING: ", sprintf("Geocoding finished with warnings: %d/%d succeeded (%.1f%%)",
+                                            success_count, total_unique, success_rate * 100))
     } else {
-      mysterycall_log_error(sprintf("Geocoding had low success rate: %d/%d succeeded (%.1f%%)",
-                             success_count, total_unique, success_rate * 100),
-                     indent = TRUE)
+      message("  ✗ ERROR: ", sprintf("Geocoding had low success rate: %d/%d succeeded (%.1f%%)",
+                                          success_count, total_unique, success_rate * 100))
     }
   }
 
   if (nrow(failed_rows) && !is.null(failed_output_path)) {
-    mysterycall_export_with_backup(failed_rows, failed_output_path, quiet = quiet)
-    if (!isTRUE(quiet)) mysterycall_log_info(sprintf("Exported %d failed address(es) to %s", nrow(failed_rows), failed_output_path))
+    readr::write_csv(failed_rows, failed_output_path)
+    if (!isTRUE(quiet)) message("  ℹ ", sprintf("Exported %d failed address(es) to %s", nrow(failed_rows), failed_output_path))
   }
 
-  if (!is.null(tracker) && inherits(tracker, "mysterycall_progress_tracker")) {
-    mysterycall_progress_finish(tracker, tracker_step, score = success_rate, note = sprintf("%d/%d succeeded", total_unique - nrow(failed_rows), total_unique))
-  }
+  # tracker_finish is a no-op (tracker is a mysterycall internal)
+  invisible(NULL)
 
   data <- dplyr::left_join(data, unique_add, by = "address")
 
   if (!is.null(output_file_path)) {
-    mysterycall_export_with_backup(data, output_file_path, quiet = quiet, backup = TRUE)
+    readr::write_csv(data, output_file_path)
     if (!quiet) {
-      mysterycall_log_save(output_file_path, n_rows = nrow(data))
+      message("  Saved to ", output_file_path, " (", nrow(data), " rows)")
     }
   }
 
