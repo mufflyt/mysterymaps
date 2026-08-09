@@ -15,8 +15,8 @@
 #'
 #' @section Which layers are searched:
 #' `group = NULL` reads the marker groups already added to the map. leaflet
-#' stores the group name positionally in the widget call list — argument 5 for
-#' `addCircleMarkers` — which is undocumented, so the extraction is validated
+#' stores the group name positionally in the widget call list -- argument 5 for
+#' `addCircleMarkers` -- which is undocumented, so the extraction is validated
 #' and the control is skipped with a warning rather than attached to nothing.
 #' Pass `group` explicitly to be certain, and to restrict the search.
 #'
@@ -137,15 +137,15 @@ mysterymaps_notes_panel <- function(map, title, sections, vintages,
 #' County access map: choropleth, drive-time coverage, provider dots
 #'
 #' The template behind the urogynecology and midwifery access maps. Composes the
-#' pieces this package already provides — a zero-aware Jenks scale, dissolved
-#' coverage surfaces, base-group legends, zoom-gated point labels — and adds the
+#' pieces this package already provides -- a zero-aware Jenks scale, dissolved
+#' coverage surfaces, base-group legends, zoom-gated point labels -- and adds the
 #' furniture every such map needs: a name search and a notes panel with source
 #' vintages.
 #'
 #' @section Why a single canvas renderer:
 #' `preferCanvas = TRUE` is set on the map and NO custom pane is used for the
 #' points. Giving markers their own high-zIndex pane creates a second canvas
-#' element covering the whole map, and that element swallows every click —
+#' element covering the whole map, and that element swallows every click --
 #' including clicks on empty ground where no marker is drawn. On the midwifery
 #' map this silently disabled all 3,109 county popups: they existed in the HTML
 #' and never opened. Sharing one renderer lets leaflet hit-test markers and
@@ -194,7 +194,7 @@ mysterymaps_notes_panel <- function(map, title, sections, vintages,
 #'   coverage = list("Within 30 minutes" = u30, "Within 60 minutes" = u60),
 #'   points = mw, point_label_col = "full_name", point_popup_col = "popup",
 #'   legend_title = "Midwives per<br/>1,000 births",
-#'   notes = list(title = "Access to midwives, 2026 — notes",
+#'   notes = list(title = "Access to midwives, 2026 - notes",
 #'                sections = list("County shading" = "is providers per 1,000 births."),
 #'                vintages = data.frame(source = "AMCB roster", vintage = "2026"),
 #'                as_of = "2026"))
@@ -216,7 +216,7 @@ mysterymaps_county_access_map <- function(counties, value_col,
                                           jenks_k = 6L,
                                           point_fill = "#c2185b",
                                           point_alpha = 0.55,
-                                          search = "Search name…",
+                                          search = "Search name\u2026",
                                           notes = NULL,
                                           bounds = c(24.5, -125, 49.4, -66.9)) {
   stopifnot(inherits(counties, "sf"))
