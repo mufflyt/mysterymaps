@@ -43,6 +43,9 @@ Suggests:
     hereR,
     htmltools,
     htmlwidgets,
+    jsonlite,
+    knitr,
+    rmarkdown,
     leaflet,
     lwgeom,
     maps,
@@ -56,3 +59,4 @@ Suggests:
     webshot
 Config/testthat/edition: 3
 RoxygenNote: 7.3.3
+VignetteBuilder: knitr
