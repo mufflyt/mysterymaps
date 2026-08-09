@@ -107,3 +107,25 @@ test_that("empty, NA and blank input yield NA", {
   expect_true(is.na(mysterymaps_format_credentials("")))
   expect_equal(mysterymaps_format_credentials(character(0)), character(0))
 })
+
+test_that("REGRESSION: space-separated credentials are split", {
+  # "RN CNM", "ARNP CNM", "APRN CNM" and "LM CPM" are pairs written without a
+  # comma. Splitting only on punctuation left them as single unrecognised
+  # tokens, so 1,748 providers with a real credential displayed none.
+  expect_equal(mysterymaps_format_credentials("RN CNM"), "CNM")
+  expect_equal(mysterymaps_format_credentials("ARNP CNM"), "ARNP, CNM")
+  expect_equal(mysterymaps_format_credentials("LM CPM"), "LM, CPM")
+})
+
+test_that("credentials written in words are recognised", {
+  # Splitting "LICENSED MIDWIFE" on whitespace yields two meaningless tokens,
+  # so the substitution runs on the whole string first.
+  expect_equal(mysterymaps_format_credentials("LICENSED MIDWIFE"), "LM")
+  expect_equal(mysterymaps_format_credentials("CERTIFIED NURSE MIDWIFE"), "CNM")
+  expect_equal(mysterymaps_format_credentials("Certified Nurse-Midwife"), "CNM")
+})
+
+test_that("hyphenated credentials still survive whitespace splitting", {
+  expect_equal(mysterymaps_format_credentials("APRN-CNM"), "APRN-CNM")
+  expect_equal(mysterymaps_format_credentials("CNM, WHNP-BC"), "CNM, WHNP-BC")
+})

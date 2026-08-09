@@ -136,7 +136,8 @@ mysterymaps_place_title_case <- function(x) {
 # exclusion list silently admits whatever new noise appears next.
 .MM_CRED_KEEP <- c(
   # Midwifery
-  "CNM", "CM", "CPM", "LM", "LDM", "CNMW",
+  "CNM", "CM", "CPM", "LM", "LDM", "CNMW", "DEM", "CDM", "NMW",
+  "APN", "NP",
   # Advanced-practice nursing credentials, including the hyphenated forms that
   # are written as one credential. APRN-CNM is listed WHOLE so the
   # whole-token-first rule preserves it as the provider wrote it, rather than
@@ -147,6 +148,19 @@ mysterymaps_place_title_case <- function(x) {
   # Physician
   "MD", "DO"
 )
+
+# Credentials written out in words rather than initials. Applied to the WHOLE
+# string before splitting, because splitting "LICENSED MIDWIFE" on whitespace
+# yields two tokens that are each meaningless.
+.MM_CRED_SYNONYM <- c(
+  "LICENSED MIDWIFE"           = "LM",
+  "CERTIFIED NURSE MIDWIFE"    = "CNM",
+  "CERTIFIED NURSE-MIDWIFE"    = "CNM",
+  "NURSE MIDWIFE"              = "CNM",
+  "NURSE-MIDWIFE"              = "CNM",
+  "CERTIFIED PROFESSIONAL MIDWIFE" = "CPM",
+  "DIRECT ENTRY MIDWIFE"       = "DEM",
+  "DIRECT-ENTRY MIDWIFE"       = "DEM")
 
 # Punctuation and spacing variants seen in the data: C.N.M. (575 rows),
 # L.M. (128), APRN-CNM (89), C.N.M (72).
@@ -201,8 +215,17 @@ mysterymaps_format_credentials <- function(x, keep = .MM_CRED_KEEP, max_n = 3L) 
 
   vapply(as.character(x), function(s) {
     if (is.na(s) || !nzchar(trimws(s))) return(NA_character_)
-    # Split on comma, slash or ampersand. NOT on "-": that would break WHNP-BC.
-    toks <- unlist(strsplit(s, "[,/&]+"))
+    su <- toupper(trimws(s))
+    # Spelled-out forms first, on the whole string.
+    for (nm in names(.MM_CRED_SYNONYM)) {
+      su <- gsub(nm, .MM_CRED_SYNONYM[[nm]], su, fixed = TRUE)
+    }
+    # Split on comma, slash, ampersand OR WHITESPACE. Whitespace matters:
+    # "RN CNM", "ARNP CNM", "APRN CNM" and "LM CPM" are space-separated pairs
+    # and were failing the keep-list as single unrecognised tokens, so 1,748
+    # providers with a real credential showed none. NOT split on "-", which
+    # would break WHNP-BC.
+    toks <- unlist(strsplit(su, "[,/&[:space:]]+"))
     # A hyphen means two different things: WHNP-BC is one credential, APRN-CNM
     # is two packed together. Resolve by trying the WHOLE token first -- if it
     # is recognised, keep it intact -- and only splitting when it is not, which
