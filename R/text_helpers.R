@@ -130,3 +130,88 @@ mysterymaps_place_title_case <- function(x) {
 
   vapply(out, title_one, character(1), USE.NAMES = FALSE)
 }
+
+# Credentials worth showing after a provider's name. Deliberately a keep-list,
+# not a drop-list: NPPES credential text is free-form and unbounded, so an
+# exclusion list silently admits whatever new noise appears next.
+.MM_CRED_KEEP <- c(
+  # Midwifery
+  "CNM", "CM", "CPM", "LM", "LDM", "CNMW",
+  # Nurse-practitioner board certifications commonly held alongside
+  "WHNP-BC", "WHNP", "FNP-BC", "FNP", "PMHNP-BC", "AGNP",
+  # Physician
+  "MD", "DO"
+)
+
+# Punctuation and spacing variants seen in the data: C.N.M. (575 rows),
+# L.M. (128), APRN-CNM (89), C.N.M (72).
+.mm_cred_canon <- function(tok) {
+  t <- toupper(trimws(tok))
+  t <- gsub("[.]", "", t)              # C.N.M. -> CNM
+  t <- gsub("\\s+", "", t)             # "WHNP - BC" -> WHNP-BC
+  t <- sub("^BC$", "", t)              # stray "BC" from a split
+  t
+}
+
+#' Format provider credentials for display after a name
+#'
+#' Turns free-form NPPES credential text into a short, canonical suffix:
+#' `"C.N.M."` and `"RN, CNM"` both become `"CNM"`, and `"CNM, WHNP-BC"` is kept
+#' whole.
+#'
+#' @details
+#' NPPES credential text is entered by the provider and is not controlled
+#' vocabulary. Across 18,760 midwives it appears as `CNM`, `C.N.M.`, `C.N.M`,
+#' `RN, CNM`, `APRN-CNM`, `CNM, WHNP-BC`, `MSN, CNM` and dozens more. Rendering
+#' it verbatim in a popup shows the data-entry variation rather than the
+#' credential.
+#'
+#' Selection is a KEEP-list, not a drop-list. The text is unbounded, so an
+#' exclusion list quietly admits whatever new string appears next; an inclusion
+#' list fails closed. Degrees and licences that are not credentials in the
+#' honorific sense (`RN`, `APRN`, `ARNP`, `MSN`, `DNP`, `PhD`) are therefore not
+#' shown by default — pass `keep` to change that.
+#'
+#' Order follows the source string, so a provider who lists `CNM, WHNP-BC` keeps
+#' that order rather than having one imposed.
+#'
+#' @param x [character]: raw credential text, e.g. `"RN, CNM"`.
+#' @param keep [character]: credentials to display. Defaults to midwifery,
+#'   women's-health nurse-practitioner and physician credentials.
+#' @param max_n [integer(1)]: most credentials to show; extras are dropped
+#'   rather than allowed to overrun a popup line.
+#' @return [character] the same length as `x`; `NA` where nothing survives.
+#'
+#' @examples
+#' mysterymaps_format_credentials("C.N.M.")        # "CNM"
+#' mysterymaps_format_credentials("RN, CNM")       # "CNM"
+#' mysterymaps_format_credentials("CNM, WHNP-BC")  # "CNM, WHNP-BC"
+#' mysterymaps_format_credentials("RN")            # NA
+#'
+#' @family text
+#' @export
+mysterymaps_format_credentials <- function(x, keep = .MM_CRED_KEEP, max_n = 3L) {
+  if (!length(x)) return(character(0))
+  keep_u <- toupper(keep)
+
+  vapply(as.character(x), function(s) {
+    if (is.na(s) || !nzchar(trimws(s))) return(NA_character_)
+    # Split on comma, slash or ampersand. NOT on "-": that would break WHNP-BC.
+    toks <- unlist(strsplit(s, "[,/&]+"))
+    # A hyphen means two different things: WHNP-BC is one credential, APRN-CNM
+    # is two packed together. Resolve by trying the WHOLE token first -- if it
+    # is recognised, keep it intact -- and only splitting when it is not, which
+    # salvages the CNM from APRN-CNM without breaking WHNP-BC.
+    toks <- unlist(lapply(toks, function(t) {
+      if (.mm_cred_canon(t) %in% keep_u) return(t)
+      parts <- unlist(strsplit(trimws(t), "-"))
+      if (length(parts) > 1 && any(.mm_cred_canon(parts) %in% keep_u)) parts else t
+    }))
+    can <- .mm_cred_canon(toks)
+    can <- can[nzchar(can)]
+    can <- can[can %in% keep_u]
+    can <- can[!duplicated(can)]
+    if (!length(can)) return(NA_character_)
+    paste(utils::head(can, max_n), collapse = ", ")
+  }, character(1), USE.NAMES = FALSE)
+}

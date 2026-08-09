@@ -61,3 +61,47 @@ test_that("empty and NA input pass through", {
   expect_equal(mysterymaps_place_title_case(character(0)), character(0))
   expect_true(is.na(mysterymaps_place_title_case(NA_character_)))
 })
+
+test_that("credential variants collapse to a canonical form", {
+  # The four spellings of one credential seen across 18,760 midwives.
+  expect_equal(mysterymaps_format_credentials("CNM"), "CNM")
+  expect_equal(mysterymaps_format_credentials("C.N.M."), "CNM")
+  expect_equal(mysterymaps_format_credentials("C.N.M"), "CNM")
+  expect_equal(mysterymaps_format_credentials("RN, CNM"), "CNM")
+})
+
+test_that("a hyphen is resolved by trying the whole token first", {
+  # WHNP-BC is ONE credential; APRN-CNM is two packed together. Splitting
+  # unconditionally breaks the first; never splitting loses the second.
+  expect_equal(mysterymaps_format_credentials("WHNP-BC"), "WHNP-BC")
+  expect_equal(mysterymaps_format_credentials("APRN-CNM"), "CNM")
+  expect_equal(mysterymaps_format_credentials("CNM, WHNP-BC"), "CNM, WHNP-BC")
+})
+
+test_that("selection is a keep-list, so unknown text fails closed", {
+  # NPPES credential text is free-form; a drop-list would admit whatever new
+  # string appears next.
+  expect_true(is.na(mysterymaps_format_credentials("RN")))
+  expect_true(is.na(mysterymaps_format_credentials("MIDWIFE")))
+  expect_true(is.na(mysterymaps_format_credentials("SOMETHING NEW")))
+  expect_equal(mysterymaps_format_credentials("MSN, CNM"), "CNM")
+  expect_equal(mysterymaps_format_credentials("DNP, CNM"), "CNM")
+})
+
+test_that("source order is preserved and duplicates collapse", {
+  expect_equal(mysterymaps_format_credentials("LM, CPM"), "LM, CPM")
+  expect_equal(mysterymaps_format_credentials("CPM, LM"), "CPM, LM")
+  expect_equal(mysterymaps_format_credentials("CNM, C.N.M."), "CNM")
+})
+
+test_that("max_n bounds the popup line, and keep is overridable", {
+  expect_equal(mysterymaps_format_credentials("CNM, WHNP-BC, MD", max_n = 2L),
+               "CNM, WHNP-BC")
+  expect_equal(mysterymaps_format_credentials("RN", keep = c("RN")), "RN")
+})
+
+test_that("empty, NA and blank input yield NA", {
+  expect_true(is.na(mysterymaps_format_credentials(NA_character_)))
+  expect_true(is.na(mysterymaps_format_credentials("")))
+  expect_equal(mysterymaps_format_credentials(character(0)), character(0))
+})
