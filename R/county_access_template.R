@@ -181,6 +181,13 @@ mysterymaps_notes_panel <- function(map, title, sections, vintages,
 #' @param point_label_col,point_popup_col [character(1)]: columns on `points`.
 #' @param legend_title [character(1)]: choropleth legend heading.
 #' @param jenks_k [integer(1)]: positive-class count for the scale.
+#' @param jenks_digits [integer(1)]: decimals in the legend breaks. Use 0 when
+#'   the quantity is a count of people: "0.2-2.6 midwives per 1,000 births"
+#'   invites a reader to picture a fifth of a person.
+#' @param legend_labels [character|NULL]: replace the computed break labels
+#'   outright. Wording such as "none" for the zero class, or "under 5" where
+#'   rounding would otherwise render the first positive class as "0-5" and make
+#'   it look like the zero class, is a caller decision.
 #' @param point_fill,point_alpha point styling. The default alpha is 0.55
 #'   because thousands of opaque dots read as a solid mass over metros and hide
 #'   the choropleth beneath them.
@@ -218,6 +225,8 @@ mysterymaps_county_access_map <- function(counties, value_col,
                                           mesh = TRUE,
                                           legend_title = "Rate",
                                           jenks_k = 6L,
+                                          jenks_digits = 1L,
+                                          legend_labels = NULL,
                                           point_fill = "#c2185b",
                                           point_alpha = 0.55,
                                           search = "Search name\u2026",
@@ -231,7 +240,17 @@ mysterymaps_county_access_map <- function(counties, value_col,
            call. = FALSE)
   }
 
-  sc <- mysterymaps_jenks_zero_scale(counties[[value_col]], k = jenks_k, digits = 1)
+  sc <- mysterymaps_jenks_zero_scale(counties[[value_col]], k = jenks_k,
+                                     digits = jenks_digits)
+  if (!is.null(legend_labels)) {
+    if (length(legend_labels) != length(sc$leg_labs)) {
+      stop(sprintf(paste0("mysterymaps_county_access_map: legend_labels has %d entries ",
+                          "but the scale produced %d classes. A mismatch would ",
+                          "silently mislabel colours."),
+                   length(legend_labels), length(sc$leg_labs)), call. = FALSE)
+    }
+    sc$leg_labs <- legend_labels
+  }
   rate_group <- legend_title
 
   m <- leaflet::leaflet(options = leaflet::leafletOptions(
