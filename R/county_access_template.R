@@ -151,6 +151,12 @@ mysterymaps_notes_panel <- function(map, title, sections, vintages,
 #'   [mysterymaps_add_coverage_surfaces()]. Real maps carry a "beyond" band whose
 #'   legend title differs from the "within" bands ("Coverage gap" rather than
 #'   "Drive-time coverage"), so these are exposed rather than fixed.
+#' @param overlay_group [character(1)|NULL]: name of the point overlay in the
+#'   layers control. Defaults to "Provider locations". Passing `NULL` when the
+#'   caller adds its own point layer afterwards used to emit an overlay literally
+#'   labelled "null" in the control.
+#' @param coverage_popups [logical(1)]: attach a popup to each coverage band
+#'   naming the band, its area and how many origins were dissolved into it.
 #' @param mesh [logical(1)]: draw an unfilled county outline that stays visible
 #'   under every base group. It carries no `group` deliberately: three
 #'   group-bound copies triple the county geometry in the output file.
@@ -189,6 +195,8 @@ mysterymaps_county_access_map <- function(counties, value_col,
                                           coverage_colors = NULL,
                                           coverage_labels = NULL,
                                           coverage_titles = NULL,
+                                          overlay_group = "Provider locations",
+                                          coverage_popups = TRUE,
                                           mesh = TRUE,
                                           legend_title = "Rate",
                                           jenks_k = 6L,
@@ -242,11 +250,32 @@ mysterymaps_county_access_map <- function(counties, value_col,
     if (!is.null(coverage_labels)) args$legend_labels <- coverage_labels
     if (!is.null(coverage_titles)) args$legend_titles <- coverage_titles
     m <- do.call(mysterymaps_add_coverage_surfaces, args)
+
+    if (isTRUE(coverage_popups)) {
+      # A dissolved band is otherwise an unclickable wash of colour. It knows
+      # its own area and how many origins went into it, which is exactly what a
+      # reader wants when asking "what am I looking at".
+      for (nm in names(coverage)) {
+        sfc <- coverage[[nm]]
+        area <- tryCatch(sum(as.numeric(sf::st_area(sfc))) / 1e6, error = function(e) NA_real_)
+        n_or <- if (is.list(sfc) && !is.null(sfc$n_origins_dissolved))
+                  sfc$n_origins_dissolved else attr(sfc, "n_origins_dissolved")
+        txt <- sprintf("<b>%s</b><br/>%s km&sup2;%s", nm,
+                       format(round(area), big.mark = ","),
+                       if (!is.null(n_or) && !is.na(n_or))
+                         sprintf("<br/>dissolved from %s provider isochrones",
+                                 format(n_or, big.mark = ",")) else "")
+        m <- leaflet::addPolygons(m, data = sf::st_geometry(sfc), fill = FALSE,
+                                  stroke = FALSE, popup = txt, group = nm)
+      }
+    }
   }
 
   m <- leaflet::addLayersControl(
     m, baseGroups = c(rate_group, names(coverage)),
-    overlayGroups = if (!is.null(points) && nrow(points)) "Provider locations" else NULL,
+    # NEVER pass NULL here: leaflet renders it as an overlay literally labelled
+    # "null" in the control.
+    overlayGroups = overlay_group,
     options = leaflet::layersControlOptions(collapsed = FALSE))
 
   if (!is.null(points) && nrow(points)) {
@@ -260,8 +289,8 @@ mysterymaps_county_access_map <- function(counties, value_col,
                                            offset = c(6, 0), textsize = "11px",
                                            opacity = 0.95),
       # No custom pane: see the note on canvas renderers above.
-      group = "Provider locations")
-    m <- mysterymaps_zoom_gated_labels(m, group = "Provider locations",
+      group = overlay_group)
+    m <- mysterymaps_zoom_gated_labels(m, group = overlay_group,
                                        min_zoom = 9, max_labels = 400)
     if (!is.null(search)) m <- mysterymaps_name_search(m, placeholder = search)
   }
