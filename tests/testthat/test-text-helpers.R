@@ -74,7 +74,9 @@ test_that("a hyphen is resolved by trying the whole token first", {
   # WHNP-BC is ONE credential; APRN-CNM is two packed together. Splitting
   # unconditionally breaks the first; never splitting loses the second.
   expect_equal(mysterymaps_format_credentials("WHNP-BC"), "WHNP-BC")
-  expect_equal(mysterymaps_format_credentials("APRN-CNM"), "CNM")
+  # APRN-CNM is a credential in its own right and is shown as written.
+  expect_equal(mysterymaps_format_credentials("APRN-CNM"), "APRN-CNM")
+  expect_equal(mysterymaps_format_credentials("APRN, CNM"), "APRN, CNM")
   expect_equal(mysterymaps_format_credentials("CNM, WHNP-BC"), "CNM, WHNP-BC")
 })
 

@@ -137,6 +137,11 @@ mysterymaps_place_title_case <- function(x) {
 .MM_CRED_KEEP <- c(
   # Midwifery
   "CNM", "CM", "CPM", "LM", "LDM", "CNMW",
+  # Advanced-practice nursing credentials, including the hyphenated forms that
+  # are written as one credential. APRN-CNM is listed WHOLE so the
+  # whole-token-first rule preserves it as the provider wrote it, rather than
+  # splitting it into "APRN, CNM".
+  "APRN-CNM", "ARNP-CNM", "APRN", "ARNP",
   # Nurse-practitioner board certifications commonly held alongside
   "WHNP-BC", "WHNP", "FNP-BC", "FNP", "PMHNP-BC", "AGNP",
   # Physician
