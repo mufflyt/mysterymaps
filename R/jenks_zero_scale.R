@@ -45,11 +45,11 @@ mysterymaps_jenks_zero_scale <- function(n, k = 6, zero_col = "#e0e0e0",
     if (!is.null(digits)) {                       # continuous (e.g. rate) labels
       lo <- formatC(brks[i],     format = "f", digits = digits)
       hi <- formatC(brks[i + 1L], format = "f", digits = digits)
-      return(paste0(lo, "–", hi))
+      return(paste0(lo, "\u2013", hi))
     }
     v <- pos[idxp == i]                           # integer (count) labels
-    if (!length(v)) return(sprintf("%d–%d", ceiling(brks[i]), floor(brks[i + 1L])))
-    if (min(v) == max(v)) as.character(min(v)) else sprintf("%d–%d", min(v), max(v))
+    if (!length(v)) return(sprintf("%d\u2013%d", ceiling(brks[i]), floor(brks[i + 1L])))
+    if (min(v) == max(v)) as.character(min(v)) else sprintf("%d\u2013%d", min(v), max(v))
   }, character(1))
   color <- function(x) {
     out <- cols[findInterval(x, brks, rightmost.closed = TRUE, all.inside = TRUE)]
