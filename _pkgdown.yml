@@ -1,0 +1,58 @@
+url: https://mufflyt.github.io/mysterymaps
+
+template:
+  bootstrap: 5
+  bootswatch: flatly
+  light-switch: true
+
+reference:
+  - title: Map templates
+    desc: Whole maps, assembled.
+    contents:
+      - mysterymaps_county_access_map
+      - mysterymaps_map_base
+      - mysterymaps_map_leaflet
+      - mysterymaps_notes_panel
+
+  - title: Layers and controls
+    desc: Pieces for maps that are not the template.
+    contents:
+      - mysterymaps_add_coverage_surfaces
+      - mysterymaps_register_base_legend
+      - mysterymaps_base_legend_switcher
+      - mysterymaps_zoom_gated_labels
+      - mysterymaps_name_search
+      - mysterymaps_map_physicians
+
+  - title: Scales and labels
+    desc: Colour classes and the text that goes beside them.
+    contents:
+      - mysterymaps_jenks_zero_scale
+      - mysterymaps_pluralize
+      - mysterymaps_format_credentials
+      - mysterymaps_place_title_case
+
+  - title: Static maps
+    desc: ggplot2 output.
+    contents:
+      - mysterymaps_geographic_map
+      - mysterymaps_map_acceptance_rate
+      - mysterymaps_hrr_maps
+      - mysterymaps_hrr
+      - mysterymaps_map_acog_districts
+      - mysterymaps_map_block_group
+      - mysterymaps_plot_isochrones
+
+  - title: Isochrones, geocoding and overlap
+    contents:
+      - mysterymaps_create_isochrones
+      - mysterymaps_isochrones_for_df
+      - mysterymaps_calculate_overlap
+      - mysterymaps_gate_provider_coverage
+      - mysterymaps_clear_isochrone_cache
+      - mysterymaps_geocode
+
+articles:
+  - title: Getting started
+    contents:
+      - canonical-functions

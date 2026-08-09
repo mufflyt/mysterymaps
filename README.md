@@ -1,5 +1,11 @@
 # mysterymaps
 
+<!-- badges: start -->
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Lifecycle: experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://lifecycle.r-lib.org/articles/stages.html#experimental)
+[![R >= 4.1](https://img.shields.io/badge/R-%3E%3D%204.1-blue.svg)](https://cran.r-project.org/)
+<!-- badges: end -->
+
 Geographic mapping tools for healthcare access and mystery-caller studies:
 county choropleths, drive-time coverage surfaces, provider dot maps, and the
 label and legend furniture those need.
@@ -203,6 +209,22 @@ Rscript data-raw/make_readme_figures.R
 Both use the North Carolina counties shipped inside `sf`, with synthetic seeded
 counts — no API key, no network, no private data. The counts exercise the
 scales; they say nothing about North Carolina.
+
+## Citation
+
+```r
+citation("mysterymaps")
+```
+
+`CITATION.cff` and `CITATION.bib` carry the same entry for GitHub and reference
+managers. ORCID [0000-0002-2044-1693](https://orcid.org/0000-0002-2044-1693).
+
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md). The first rule is to search the
+cross-repo function index before writing a helper: this ecosystem has been bitten
+repeatedly by the same function existing twice, with load order deciding which
+one ran.
 
 ## Related
 

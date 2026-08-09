@@ -1,15 +1,20 @@
 Package: mysterymaps
-Title: Geographic Mapping Tools for Mystery-Caller Healthcare Studies
-Version: 0.1.0
+Title: Geographic Mapping Tools for Healthcare Access Studies
+Version: 0.2.0
 Authors@R:
     person("Tyler", "Muffly", email = "tyler.muffly@dhha.org", role = c("aut", "cre"),
            comment = c(ORCID = "0000-0002-2044-1693"))
-Description: Companion mapping package for the 'mysterycall' mystery-caller study
-    framework. Provides geographic visualisation tools including isochrone (drive-time)
-    polygon generation via the HERE Routing API, choropleth maps of acceptance rates by
-    US state, Hospital Referral Region (HRR) spatial overlays, ACOG district boundaries,
-    leaflet base maps, physician dot maps, and census block-group overlap calculations.
-    Intended for use alongside 'mysterycall' when geographic access analyses are needed.
+Description: Builds the maps healthcare access and mystery-caller studies keep
+    needing: county choropleths of provider supply, dissolved drive-time coverage
+    surfaces layered as mutually exclusive alternatives, provider dot maps that
+    stay clickable, and the legend, label and notes furniture those require. A
+    single template assembles the common case; the pieces are exported for maps
+    that are not the common case. Also covers isochrone generation via the HERE
+    Routing API, block-group overlap, Hospital Referral Region and ACOG district
+    overlays, and state choropleths. Defaults encode decisions that are easy to
+    get wrong: zero is its own colour class rather than the bottom of a gradient,
+    legends follow the active base layer, and saved widgets stay self-contained.
+    Companion to the 'mysterycall' mystery-caller study framework.
 Encoding: UTF-8
 Language: en-US
 Roxygen: list(markdown = TRUE)
@@ -59,7 +64,9 @@ Suggests:
     sf,
     testthat (>= 3.0.0),
     viridis,
-    webshot
+    webshot,
+    webshot2
 Config/testthat/edition: 3
+Config/Needs/website: pkgdown
 RoxygenNote: 7.3.3
 VignetteBuilder: knitr

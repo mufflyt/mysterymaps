@@ -1,1 +1,10 @@
 ^data-raw$
+^codemeta\.json$
+^_pkgdown\.yml$
+^docs$
+^CONTRIBUTING\.md$
+^CODE_OF_CONDUCT\.md$
+^CITATION\.cff$
+^CITATION\.bib$
+^\.github$
+^LICENSE\.md$

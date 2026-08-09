@@ -1,0 +1,52 @@
+{
+  "@context": "https://doi.org/10.5063/schema/codemeta-2.0",
+  "@type": "SoftwareSourceCode",
+  "identifier": "mysterymaps",
+  "name": "mysterymaps: Geographic Mapping Tools for Healthcare Access Studies",
+  "description": "Builds the maps healthcare access and mystery-caller studies keep needing: county choropleths of provider supply, dissolved drive-time coverage surfaces layered as mutually exclusive alternatives, provider dot maps that stay clickable, and the legend, label and notes furniture those require. A single template assembles the common case; the pieces are exported for maps that are not. Also covers isochrone generation via the HERE Routing API, block-group overlap, Hospital Referral Region and ACOG district overlays, and state choropleths. Defaults encode cartographic decisions that are easy to get wrong: zero is its own colour class rather than the bottom of a gradient, legends follow the active base layer, and saved widgets stay self-contained.",
+  "license": "https://spdx.org/licenses/MIT",
+  "version": "0.2.0",
+  "dateModified": "2026-08-09",
+  "codeRepository": "https://github.com/mufflyt/mysterymaps",
+  "issueTracker": "https://github.com/mufflyt/mysterymaps/issues",
+  "programmingLanguage": {
+    "@type": "ComputerLanguage",
+    "name": "R",
+    "url": "https://r-project.org"
+  },
+  "runtimePlatform": "R (>= 4.1.0)",
+  "author": [
+    {
+      "@type": "Person",
+      "givenName": "Tyler",
+      "familyName": "Muffly",
+      "@id": "https://orcid.org/0000-0002-2044-1693",
+      "email": "tyler.muffly@dhha.org",
+      "affiliation": {
+        "@type": "Organization",
+        "name": "Department of Obstetrics and Gynecology, Denver Health"
+      }
+    }
+  ],
+  "maintainer": [
+    {
+      "@type": "Person",
+      "givenName": "Tyler",
+      "familyName": "Muffly",
+      "@id": "https://orcid.org/0000-0002-2044-1693",
+      "email": "tyler.muffly@dhha.org"
+    }
+  ],
+  "keywords": [
+    "healthcare accessibility",
+    "drive-time isochrones",
+    "choropleth",
+    "leaflet",
+    "R"
+  ],
+  "relatedLink": [
+    "https://github.com/mufflyt/mufflyaccess",
+    "https://github.com/mufflyt/twostep",
+    "https://github.com/mufflyt/isochrones"
+  ]
+}
