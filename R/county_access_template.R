@@ -1,53 +1,67 @@
+`%||%` <- function(a, b) if (is.null(a) || length(a) == 0) b else a
+
 #' Add a name-search box over a point layer
 #'
 #' Wraps \href{https://github.com/stefanocudini/leaflet-search}{Leaflet.Control.Search}
 #' so a reader can find one provider among thousands instead of hunting dots.
 #'
 #' @details
-#' The plugin is loaded from a content delivery network (CDN) rather than
-#' vendored: an access map is already 15-20 MB of geometry, and a fourth copy of
-#' somebody else's library inside it helps nobody. The consequence is explicit —
-#' the map opens offline, but the search box only works with network access.
+#' The plugin ships with `leaflet.extras` as a local HTML dependency, so a
+#' self-contained widget stays self-contained. An earlier version loaded it from
+#' a CDN to save a few hundred kilobytes in a 15-20 MB file; the cost was that
+#' the search box was inert for anyone opening the saved map offline, and a
+#' control that silently does nothing is worse than an absent one. The size
+#' argument was real but small, and it was buying the wrong thing.
 #'
-#' Markers are discovered at run time by scanning for circle markers that carry
-#' a tooltip, which is what a name label attaches to. That avoids requiring the
-#' caller to thread a layer id through, and it degrades quietly: if no such
-#' markers exist the control is simply not added.
+#' @section Which layers are searched:
+#' `group = NULL` reads the marker groups already added to the map. leaflet
+#' stores the group name positionally in the widget call list — argument 5 for
+#' `addCircleMarkers` — which is undocumented, so the extraction is validated
+#' and the control is skipped with a warning rather than attached to nothing.
+#' Pass `group` explicitly to be certain, and to restrict the search.
+#'
+#' Markers must carry a `label`; that is the text searched.
 #'
 #' @param map a leaflet map.
+#' @param group [character] or NULL: marker groups to search. NULL detects them.
 #' @param placeholder [character(1)]: text shown in the empty box.
 #' @param zoom [integer(1)]: zoom level to fly to on a hit.
 #' @param position [character(1)]: leaflet control position.
 #' @return the map, with the control attached.
 #' @family county-access-template
 #' @export
-mysterymaps_name_search <- function(map, placeholder = "Search name…",
+mysterymaps_name_search <- function(map, group = NULL,
+                                    placeholder = "Search name\u2026",
                                     zoom = 11L, position = "topleft") {
-  js <- sprintf('
-function(el, x) {
-  var map = this;
-  function addCss(h){ var l=document.createElement("link"); l.rel="stylesheet"; l.href=h; document.head.appendChild(l); }
-  function addJs(s, cb){ var t=document.createElement("script"); t.src=s; t.onload=cb; document.head.appendChild(t); }
-  addCss("https://unpkg.com/leaflet-search@3.0.9/dist/leaflet-search.min.css");
-  addJs("https://unpkg.com/leaflet-search@3.0.9/dist/leaflet-search.min.js", function(){
-    var pts = L.layerGroup();
-    map.eachLayer(function(l){
-      if (l instanceof L.CircleMarker && l.getTooltip && l.getTooltip()) {
-        l.feature = l.feature || {};
-        l.feature.properties = { name: l.getTooltip().getContent() };
-        pts.addLayer(l);
-      }
-    });
-    if (!pts.getLayers().length) return;
-    map.addControl(new L.Control.Search({
-      layer: pts, propertyName: "name",
-      initial: false, zoom: %d, marker: false,
-      textPlaceholder: "%s", position: "%s",
-      moveToLocation: function(latlng, title, m2){ m2.setView(latlng, %d); }
-    }));
-  });
-}', as.integer(zoom), placeholder, position, as.integer(zoom))
-  htmlwidgets::onRender(map, js)
+  if (!requireNamespace("leaflet.extras", quietly = TRUE)) {
+    warning("leaflet.extras is not installed; no search control added.",
+            call. = FALSE)
+    return(map)
+  }
+
+  if (is.null(group)) {
+    marker_methods <- c("addCircleMarkers", "addMarkers", "addAwesomeMarkers")
+    calls <- map$x$calls %||% list()
+    group <- unlist(lapply(calls, function(cl) {
+      if (!isTRUE(cl$method %in% marker_methods)) return(NULL)
+      # leaflet::invokeMethod passes (lat, lng, radius, layerId, group, ...).
+      g <- tryCatch(cl$args[[5]], error = function(e) NULL)
+      if (is.character(g) && length(g) == 1L && nzchar(g)) g else NULL
+    }))
+    group <- unique(group)
+    if (!length(group)) {
+      warning("mysterymaps_name_search: no marker groups found; ",
+              "pass `group` explicitly. No control added.", call. = FALSE)
+      return(map)
+    }
+  }
+
+  leaflet.extras::addSearchFeatures(
+    map, targetGroups = group,
+    options = leaflet.extras::searchFeaturesOptions(
+      zoom = as.integer(zoom), openPopup = TRUE, firstTipSubmit = TRUE,
+      autoCollapse = FALSE, hideMarkerOnCollapse = TRUE,
+      position = position, textPlaceholder = placeholder))
 }
 
 #' Build a collapsible notes panel with a data-vintage list

@@ -49,6 +49,7 @@ Suggests:
     knitr,
     rmarkdown,
     leaflet,
+    leaflet.extras,
     lwgeom,
     maps,
     memoise,
