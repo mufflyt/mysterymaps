@@ -169,6 +169,9 @@ mysterymaps_notes_panel <- function(map, title, sections, vintages,
 #'   layers control. Defaults to "Provider locations". Passing `NULL` when the
 #'   caller adds its own point layer afterwards used to emit an overlay literally
 #'   labelled "null" in the control.
+#' @param coverage_area_units `"km"` (default) or `"mi"`. Square miles for a US
+#'   audience; the popup and the unit label change together so they cannot
+#'   disagree.
 #' @param coverage_popups [logical(1)]: attach a popup to each coverage band
 #'   naming the band, its area and how many origins were dissolved into it.
 #' @param mesh [logical(1)]: draw an unfilled county outline that stays visible
@@ -210,6 +213,7 @@ mysterymaps_county_access_map <- function(counties, value_col,
                                           coverage_labels = NULL,
                                           coverage_titles = NULL,
                                           overlay_group = "Provider locations",
+                                          coverage_area_units = c("km", "mi"),
                                           coverage_popups = TRUE,
                                           mesh = TRUE,
                                           legend_title = "Rate",
@@ -219,6 +223,7 @@ mysterymaps_county_access_map <- function(counties, value_col,
                                           search = "Search name\u2026",
                                           notes = NULL,
                                           bounds = c(24.5, -125, 49.4, -66.9)) {
+  coverage_area_units <- match.arg(coverage_area_units)
   stopifnot(inherits(counties, "sf"))
   for (nm in c(value_col, label_col, popup_col)) {
     if (!nm %in% names(counties))
@@ -268,13 +273,17 @@ mysterymaps_county_access_map <- function(counties, value_col,
       # surface polygon rather than a duplicate copy of its geometry.
       args$popups <- vapply(names(coverage), function(nm) {
         sfc  <- coverage[[nm]]
-        area <- tryCatch(sum(as.numeric(sf::st_area(sf::st_geometry(sfc)))) / 1e6,
-                         error = function(e) NA_real_)
+        area_m2 <- tryCatch(sum(as.numeric(sf::st_area(sf::st_geometry(sfc)))),
+                            error = function(e) NA_real_)
+        area <- if (identical(coverage_area_units, "mi")) area_m2 / 2.589988e6
+                else area_m2 / 1e6
+        unit <- if (identical(coverage_area_units, "mi")) "sq mi" else "km&sup2;"
         n_or <- if (is.list(sfc) && !is.null(sfc$n_origins_dissolved))
                   sfc$n_origins_dissolved else attr(sfc, "n_origins_dissolved")
-        sprintf("<div style='font:13px/1.6 system-ui,sans-serif'><b>%s</b><br/>%s km&sup2;%s</div>",
+        sprintf("<div style='font:13px/1.6 system-ui,sans-serif'><b>%s</b><br/>%s %s%s</div>",
                 nm,
                 if (is.na(area)) "area unavailable" else format(round(area), big.mark = ","),
+                unit,
                 if (!is.null(n_or) && !is.na(n_or))
                   sprintf("<br/>dissolved from %s provider isochrones",
                           format(n_or, big.mark = ",")) else "")
