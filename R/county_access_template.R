@@ -147,6 +147,13 @@ mysterymaps_notes_panel <- function(map, title, sections, vintages,
 #' @param label_col,popup_col [character(1)]: columns holding hover and click HTML.
 #' @param coverage [named list of sf]: dissolved drive-time bands, e.g.
 #'   `list("Within 30 minutes" = iso30, "Within 60 minutes" = iso60)`.
+#' @param coverage_colors,coverage_labels,coverage_titles passed through to
+#'   [mysterymaps_add_coverage_surfaces()]. Real maps carry a "beyond" band whose
+#'   legend title differs from the "within" bands ("Coverage gap" rather than
+#'   "Drive-time coverage"), so these are exposed rather than fixed.
+#' @param mesh [logical(1)]: draw an unfilled county outline that stays visible
+#'   under every base group. It carries no `group` deliberately: three
+#'   group-bound copies triple the county geometry in the output file.
 #' @param points [sf|NULL]: provider locations.
 #' @param point_label_col,point_popup_col [character(1)]: columns on `points`.
 #' @param legend_title [character(1)]: choropleth legend heading.
@@ -179,6 +186,10 @@ mysterymaps_county_access_map <- function(counties, value_col,
                                           coverage = list(), points = NULL,
                                           point_label_col = NULL,
                                           point_popup_col = NULL,
+                                          coverage_colors = NULL,
+                                          coverage_labels = NULL,
+                                          coverage_titles = NULL,
+                                          mesh = TRUE,
                                           legend_title = "Rate",
                                           jenks_k = 6L,
                                           point_fill = "#c2185b",
@@ -211,9 +222,32 @@ mysterymaps_county_access_map <- function(counties, value_col,
                                                    fillOpacity = 0.95),
       group = rate_group)
 
-  if (length(coverage)) {
-    m <- mysterymaps_add_coverage_surfaces(m, coverage)
+  if (isTRUE(mesh)) {
+    # No `group`: leaflet then keeps it visible under every base group. Three
+    # group-bound copies tripled the county geometry in the HTML.
+    m <- leaflet::addPolygons(m, data = sf::st_geometry(counties), fill = FALSE,
+                              color = "#c0c0c0", weight = 0.3)
   }
+  m <- leaflet::addProviderTiles(m, "CartoDB.PositronOnlyLabels", group = "base")
+
+  m <- leaflet::addLegend(m, position = "bottomright", colors = sc$leg_cols,
+                          labels = sc$leg_labs, title = legend_title,
+                          opacity = 0.9,
+                          className = "info legend mm-lg mm-lg-rate")
+  m <- mysterymaps_register_base_legend(m, rate_group, key = "rate")
+
+  if (length(coverage)) {
+    args <- list(map = m, surfaces = coverage)
+    if (!is.null(coverage_colors)) args$colors        <- coverage_colors
+    if (!is.null(coverage_labels)) args$legend_labels <- coverage_labels
+    if (!is.null(coverage_titles)) args$legend_titles <- coverage_titles
+    m <- do.call(mysterymaps_add_coverage_surfaces, args)
+  }
+
+  m <- leaflet::addLayersControl(
+    m, baseGroups = c(rate_group, names(coverage)),
+    overlayGroups = if (!is.null(points) && nrow(points)) "Provider locations" else NULL,
+    options = leaflet::layersControlOptions(collapsed = FALSE))
 
   if (!is.null(points) && nrow(points)) {
     m <- leaflet::addCircleMarkers(
@@ -232,8 +266,6 @@ mysterymaps_county_access_map <- function(counties, value_col,
     if (!is.null(search)) m <- mysterymaps_name_search(m, placeholder = search)
   }
 
-  m <- leaflet::addLegend(m, position = "bottomright", colors = sc$leg_cols,
-                          labels = sc$leg_labs, title = legend_title, opacity = 1)
   m <- mysterymaps_base_legend_switcher(m, default = rate_group)
 
   if (!is.null(notes)) m <- do.call(mysterymaps_notes_panel, c(list(map = m), notes))
