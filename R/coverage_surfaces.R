@@ -52,7 +52,8 @@
 mysterymaps_add_coverage_surfaces <- function(map, surfaces, colors,
                                      legend_labels = names(surfaces),
                                      legend_titles = "Coverage",
-                                     fill_opacity = 0.55, weight = 0.6) {
+                                     fill_opacity = 0.55, weight = 0.6,
+                                     popups = NULL) {
   stopifnot(is.list(surfaces), length(surfaces) > 0, !is.null(names(surfaces)))
   n <- length(surfaces)
   colors        <- rep_len(colors, n)
@@ -61,10 +62,15 @@ mysterymaps_add_coverage_surfaces <- function(map, surfaces, colors,
   keys <- paste0("s", seq_len(n))
 
   for (i in seq_len(n)) {
+    # The popup rides on the SURFACE polygon itself. Adding a second,
+    # invisible polygon to carry it doubles the geometry in the output file --
+    # on the midwifery map that was 19.9 MB to 29.6 MB -- and an unfilled,
+    # unstroked polygon has nothing to click anyway.
     map <- leaflet::addPolygons(
       map, data = surfaces[[i]], group = names(surfaces)[i],
       fillColor = colors[i], color = colors[i],
-      weight = weight, fillOpacity = fill_opacity)
+      weight = weight, fillOpacity = fill_opacity,
+      popup = if (!is.null(popups)) popups[[i]] else NULL)
     map <- leaflet::addLegend(
       map, position = "bottomright", colors = colors[i],
       labels = legend_labels[i], title = legend_titles[i], opacity = 0.9,

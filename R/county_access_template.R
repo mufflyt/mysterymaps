@@ -249,26 +249,24 @@ mysterymaps_county_access_map <- function(counties, value_col,
     if (!is.null(coverage_colors)) args$colors        <- coverage_colors
     if (!is.null(coverage_labels)) args$legend_labels <- coverage_labels
     if (!is.null(coverage_titles)) args$legend_titles <- coverage_titles
-    m <- do.call(mysterymaps_add_coverage_surfaces, args)
-
     if (isTRUE(coverage_popups)) {
-      # A dissolved band is otherwise an unclickable wash of colour. It knows
-      # its own area and how many origins went into it, which is exactly what a
-      # reader wants when asking "what am I looking at".
-      for (nm in names(coverage)) {
-        sfc <- coverage[[nm]]
-        area <- tryCatch(sum(as.numeric(sf::st_area(sfc))) / 1e6, error = function(e) NA_real_)
+      # Built here and handed to add_coverage_surfaces so the popup rides on the
+      # surface polygon rather than a duplicate copy of its geometry.
+      args$popups <- vapply(names(coverage), function(nm) {
+        sfc  <- coverage[[nm]]
+        area <- tryCatch(sum(as.numeric(sf::st_area(sf::st_geometry(sfc)))) / 1e6,
+                         error = function(e) NA_real_)
         n_or <- if (is.list(sfc) && !is.null(sfc$n_origins_dissolved))
                   sfc$n_origins_dissolved else attr(sfc, "n_origins_dissolved")
-        txt <- sprintf("<b>%s</b><br/>%s km&sup2;%s", nm,
-                       format(round(area), big.mark = ","),
-                       if (!is.null(n_or) && !is.na(n_or))
-                         sprintf("<br/>dissolved from %s provider isochrones",
-                                 format(n_or, big.mark = ",")) else "")
-        m <- leaflet::addPolygons(m, data = sf::st_geometry(sfc), fill = FALSE,
-                                  stroke = FALSE, popup = txt, group = nm)
-      }
+        sprintf("<div style='font:13px/1.6 system-ui,sans-serif'><b>%s</b><br/>%s km&sup2;%s</div>",
+                nm,
+                if (is.na(area)) "area unavailable" else format(round(area), big.mark = ","),
+                if (!is.null(n_or) && !is.na(n_or))
+                  sprintf("<br/>dissolved from %s provider isochrones",
+                          format(n_or, big.mark = ",")) else "")
+      }, character(1))
     }
+    m <- do.call(mysterymaps_add_coverage_surfaces, args)
   }
 
   m <- leaflet::addLayersControl(
