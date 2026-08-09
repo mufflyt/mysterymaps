@@ -33,6 +33,7 @@ the \emph{labels} keeps the distribution visible at every zoom.
 Other coverage-surfaces: 
 \code{\link{mysterymaps_add_coverage_surfaces}()},
 \code{\link{mysterymaps_base_legend_switcher}()},
+\code{\link{mysterymaps_jenks_zero_scale}()},
 \code{\link{mysterymaps_register_base_legend}()}
 }
 \concept{coverage-surfaces}

@@ -31,7 +31,7 @@ mysterymaps_hrr()
 \dontshow{\}) # examplesIf}
 }
 \seealso{
-\code{\link[=ensure_hrr_shapefile]{ensure_hrr_shapefile()}}, \code{\link[=mysterymaps_hrr_maps]{mysterymaps_hrr_maps()}}, \code{\link[=mysterymaps_map_base]{mysterymaps_map_base()}}
+\code{\link[mysterycall:ensure_hrr_shapefile]{mysterycall::ensure_hrr_shapefile()}}, \code{\link[=mysterymaps_hrr_maps]{mysterymaps_hrr_maps()}}, \code{\link[=mysterymaps_map_base]{mysterymaps_map_base()}}
 
 Other geospatial helpers: 
 \code{\link{mysterymaps_calculate_overlap}()},

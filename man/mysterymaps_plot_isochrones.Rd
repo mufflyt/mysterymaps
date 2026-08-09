@@ -49,9 +49,6 @@ Other mapping:
 \code{\link{mysterymaps_map_base}()},
 \code{\link{mysterymaps_map_block_group}()},
 \code{\link{mysterymaps_map_leaflet}()},
-\code{\link{mysterymaps_map_physicians}()},
-\code{\link{mysterycall_plot_density}()},
-\code{\link{mysterycall_plot_line}()},
-\code{\link{mysterycall_plot_scatter}()}
+\code{\link{mysterymaps_map_physicians}()}
 }
 \concept{mapping}

@@ -31,6 +31,7 @@ the legends hidden rather than erroring.
 \seealso{
 Other coverage-surfaces: 
 \code{\link{mysterymaps_add_coverage_surfaces}()},
+\code{\link{mysterymaps_jenks_zero_scale}()},
 \code{\link{mysterymaps_register_base_legend}()},
 \code{\link{mysterymaps_zoom_gated_labels}()}
 }
