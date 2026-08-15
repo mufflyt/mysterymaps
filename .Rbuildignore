@@ -8,3 +8,5 @@
 ^CITATION\.bib$
 ^\.github$
 ^LICENSE\.md$
+^\.claude$
+^CLAUDE\.md$

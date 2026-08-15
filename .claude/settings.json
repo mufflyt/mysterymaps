@@ -1,0 +1,5 @@
+{
+  "env": {
+    "PATH": "/Library/TeX/texbin:${PATH}"
+  }
+}
