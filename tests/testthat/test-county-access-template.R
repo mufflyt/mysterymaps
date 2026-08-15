@@ -64,6 +64,36 @@ test_that("the notes panel renders vintages, linking those that have a URL", {
   expect_match(html, 'href="https://example.org"', fixed = TRUE)
 })
 
+test_that("a No data entry reaches the rendered legend when counties are NA", {
+  skip_if_not_installed("leaflet")
+  # The Colorado fixture carries two measured zeroes and two unmeasured
+  # counties on purpose. Both must survive every stage between the data frame
+  # and the legend -- the distinction is worthless if it is lost in assembly.
+  co <- co_counties()
+  co$tip <- paste0("<b>", co$name, "</b>")
+  co$profile <- co$name
+  m <- suppressWarnings(
+    mysterymaps_county_access_map(co, "rate", "tip", "profile",
+                                  notes = NULL, search = NULL))
+  leg <- Filter(function(c) c$method == "addLegend", m$x$calls)
+  expect_length(leg, 1L)
+  expect_true("No data" %in% unlist(leg[[1]]$args))
+  expect_true("#e0e0e0" %in% unlist(leg[[1]]$args))
+})
+
+test_that("legend_labels must match the legend it is replacing", {
+  skip_if_not_installed("leaflet")
+  # An NA county adds a legend entry, so a hand-written label vector sized for
+  # complete data is now wrong. It must say so rather than shift every label.
+  co <- co_counties()
+  co$tip <- co$profile <- co$name
+  expect_error(
+    suppressWarnings(
+      mysterymaps_county_access_map(co, "rate", "tip", "profile", search = NULL,
+                                    legend_labels = c("none", "low", "high"))),
+    "legend_labels has 3 entries")
+})
+
 test_that("notes refuse to render without a vintage table", {
   # A map whose sources span 2013 to 2026 and says only "2026" asserts a
   # currency it does not have.

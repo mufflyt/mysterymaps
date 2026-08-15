@@ -8,6 +8,8 @@ mysterymaps_jenks_zero_scale(
   n,
   k = 6,
   zero_col = "#e0e0e0",
+  na_col = "#ffffff",
+  na_label = "No data",
   palette = viridisLite::viridis,
   digits = NULL
 )
@@ -17,7 +19,14 @@ mysterymaps_jenks_zero_scale(
 
 \item{k}{Target number of classes for the positive values. Default 6.}
 
-\item{zero_col}{Colour for zero and \code{NA}. Default light grey.}
+\item{zero_col}{Colour for zero. Default light grey.}
+
+\item{na_col}{Colour for \code{NA} and \code{NaN}, which mean unmeasured rather than
+none. Default white. Pass \code{zero_col} to restore the pre-0.2.1 behaviour of
+shading unmeasured geographies as if they were zero.}
+
+\item{na_label}{Legend entry for \code{na_col}. The entry is added only when the
+data actually contains \code{NA}, so legends do not gain an empty category.}
 
 \item{palette}{Palette function taking \code{k}. Default \code{viridisLite::viridis}.}
 

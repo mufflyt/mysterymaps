@@ -15,7 +15,12 @@
 #'
 #' @param n Numeric vector of values (counts or rates).
 #' @param k Target number of classes for the positive values. Default 6.
-#' @param zero_col Colour for zero and `NA`. Default light grey.
+#' @param zero_col Colour for zero. Default light grey.
+#' @param na_col Colour for `NA` and `NaN`, which mean unmeasured rather than
+#'   none. Default white. Pass `zero_col` to restore the pre-0.2.1 behaviour of
+#'   shading unmeasured geographies as if they were zero.
+#' @param na_label Legend entry for `na_col`. The entry is added only when the
+#'   data actually contains `NA`, so legends do not gain an empty category.
 #' @param palette Palette function taking `k`. Default `viridisLite::viridis`.
 #' @param digits Decimal places for continuous labels; `NULL` gives integer
 #'   count labels.
@@ -30,8 +35,19 @@
 #' @family coverage-surfaces
 #' @export
 mysterymaps_jenks_zero_scale <- function(n, k = 6, zero_col = "#e0e0e0",
+                                na_col = "#ffffff", na_label = "No data",
                                 palette = viridisLite::viridis, digits = NULL) {
   if (!is.numeric(n)) stop("`n` is not numeric; got ", class(n)[1], call. = FALSE)
+
+  # A county measured at zero and a county never measured are categorically
+  # different, and shading them alike is the error this scale exists to
+  # prevent at the other end. The legend gains the entry only when some value
+  # is actually missing, so a complete map keeps a two-part legend.
+  has_na <- anyNA(n)
+  with_na <- function(cols, labs) {
+    if (!has_na) return(list(leg_cols = cols, leg_labs = labs))
+    list(leg_cols = c(cols, na_col), leg_labs = c(labs, na_label))
+  }
 
   # Drop NA before comparing: n[n > 0] keeps an NA element for every NA in n,
   # which classInt then warns about and omits. Filtering here is the same
@@ -53,20 +69,25 @@ mysterymaps_jenks_zero_scale <- function(n, k = 6, zero_col = "#e0e0e0",
   }
 
   if (length(upos) == 0)
-    return(list(color = function(x) rep(zero_col, length(x)),
-                leg_cols = zero_col, leg_labs = zlab))
+    return(c(list(color = function(x) {
+               out <- rep(zero_col, length(x))
+               out[is.na(x)] <- na_col
+               out
+             }),
+             with_na(zero_col, zlab)))
 
   # classInt aborts on a single unique value rather than returning one class.
   # One county with a nonzero rate is an ordinary rural result, not an error.
   if (length(upos) == 1L) {
     col1 <- palette(1)
-    return(list(
+    return(c(list(
       color = function(x) {
         out <- rep(col1, length(x))
-        out[is.na(x) | x <= 0] <- zero_col
+        out[!is.na(x) & x <= 0] <- zero_col
+        out[is.na(x)] <- na_col
         out
-      },
-      leg_cols = c(zero_col, col1), leg_labs = c(zlab, fmt(upos))))
+      }),
+      with_na(c(zero_col, col1), c(zlab, fmt(upos)))))
   }
 
   k    <- min(k, length(upos))
@@ -95,8 +116,12 @@ mysterymaps_jenks_zero_scale <- function(n, k = 6, zero_col = "#e0e0e0",
   }, character(1))
   color <- function(x) {
     out <- cols[findInterval(x, brks, rightmost.closed = TRUE, all.inside = TRUE)]
-    out[is.na(x) | x <= 0] <- zero_col
+    # Order matters: zero first, then NA over the top. findInterval() returns
+    # NA for an NA input, so both would otherwise fall through to the same
+    # branch -- which is exactly how they came to share a colour.
+    out[!is.na(x) & x <= 0] <- zero_col
+    out[is.na(x)] <- na_col
     out
   }
-  list(color = color, leg_cols = c(zero_col, cols), leg_labs = c(zlab, labs))
+  c(list(color = color), with_na(c(zero_col, cols), c(zlab, labs)))
 }

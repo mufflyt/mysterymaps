@@ -97,13 +97,22 @@ test_that("duplicated values do not change the classification", {
 
 # ---- adversarial: degenerate inputs ----------------------------------------
 
-test_that("all-zero, all-NA and empty input collapse to a single zero class", {
-  for (x in list(c(0, 0, 0), c(NA_real_, NA_real_), numeric(0))) {
+test_that("all-zero and empty input collapse to a single zero class", {
+  for (x in list(c(0, 0, 0), numeric(0))) {
     s <- mysterymaps_jenks_zero_scale(x)
     expect_identical(s$leg_cols, "#e0e0e0")
     expect_identical(s$leg_labs, "0")
     expect_identical(s$color(c(0, 1)), c("#e0e0e0", "#e0e0e0"))
   }
+})
+
+test_that("all-NA input is a map of unknowns, not a map of zeroes", {
+  # The distinction has to survive the degenerate path too: a study area with
+  # no measurements anywhere must not render as one where nobody practises.
+  s <- mysterymaps_jenks_zero_scale(c(NA_real_, NA_real_))
+  expect_identical(s$leg_cols, c("#e0e0e0", "#ffffff"))
+  expect_identical(s$leg_labs, c("0", "No data"))
+  expect_identical(s$color(c(NA, 0)), c("#ffffff", "#e0e0e0"))
 })
 
 test_that("a single distinct positive value yields one usable class", {
@@ -128,9 +137,12 @@ test_that("colour output length always matches input length", {
 
 # ---- adversarial: values that should never reach a map ---------------------
 
-test_that("NaN is treated as unknown, not as a number", {
-  s <- suppressWarnings(mysterymaps_jenks_zero_scale(c(0, 1.5, 3, 8), k = 3))
-  expect_identical(s$color(NaN), "#e0e0e0")
+test_that("NaN is treated as unknown, not as zero", {
+  # NaN reaches a rate through 0/0 -- no providers over no population. That is
+  # an unmeasurable geography, not a measured zero.
+  s <- suppressWarnings(mysterymaps_jenks_zero_scale(c(0, 1.5, 3, 8, NA), k = 3))
+  expect_identical(s$color(NaN), "#ffffff")
+  expect_identical(s$color(NaN), s$color(NA_real_))
 })
 
 test_that("DOCUMENTED GAP: negative input is silently shaded as zero", {
@@ -149,12 +161,43 @@ test_that("DOCUMENTED GAP: Inf is shaded as the top class", {
   expect_identical(s$color(Inf), utils::tail(s$leg_cols, 1))
 })
 
-test_that("DOCUMENTED GAP: zero and NA are the same colour on the map", {
-  # A county measured at zero and a county never measured are categorically
-  # different, and the package's own design notes say so -- but both render as
-  # zero_col, so the map cannot distinguish them. Changing this is a design
-  # decision with map-wide consequences, so it is pinned rather than fixed.
-  s <- suppressWarnings(mysterymaps_jenks_zero_scale(c(0, 1.5, 3, 8), k = 3))
+test_that("zero and NA are different colours", {
+  # The distinction this scale exists to protect, at the other end: a county
+  # measured at zero has no providers; a county never measured is unknown.
+  s <- suppressWarnings(mysterymaps_jenks_zero_scale(c(0, 1.5, 3, 8, NA), k = 3))
+  expect_false(identical(s$color(0), s$color(NA_real_)))
+  expect_identical(s$color(0), "#e0e0e0")
+  expect_identical(s$color(NA_real_), "#ffffff")
+  # And neither is a palette colour: unknown is not a quantity.
+  expect_false(s$color(NA_real_) %in% s$leg_cols[-c(1, length(s$leg_cols))])
+})
+
+test_that("the No data entry appears only when data is actually missing", {
+  # A complete map should not carry a legend category nothing falls into.
+  complete <- suppressWarnings(mysterymaps_jenks_zero_scale(c(0, 1.5, 3, 8), k = 3))
+  expect_false("No data" %in% complete$leg_labs)
+  expect_false("#ffffff" %in% complete$leg_cols)
+
+  partial <- suppressWarnings(
+    mysterymaps_jenks_zero_scale(c(0, 1.5, 3, 8, NA), k = 3))
+  expect_identical(utils::tail(partial$leg_labs, 1), "No data")
+  expect_identical(utils::tail(partial$leg_cols, 1), "#ffffff")
+  expect_equal(length(partial$leg_cols), length(partial$leg_labs))
+})
+
+test_that("NA stays distinct on every code path, not just the common one", {
+  # The degenerate paths return early and each had its own colour logic.
+  all_zero <- mysterymaps_jenks_zero_scale(c(0, 0, NA))
+  expect_false(identical(all_zero$color(0), all_zero$color(NA_real_)))
+
+  one_value <- suppressWarnings(mysterymaps_jenks_zero_scale(c(0, 7, 7, NA)))
+  expect_false(identical(one_value$color(0), one_value$color(NA_real_)))
+  expect_false(identical(one_value$color(7), one_value$color(NA_real_)))
+})
+
+test_that("na_col can be set back to zero_col for continuity with old maps", {
+  s <- suppressWarnings(mysterymaps_jenks_zero_scale(
+    c(0, 1.5, 3, 8, NA), k = 3, na_col = "#e0e0e0"))
   expect_identical(s$color(0), s$color(NA_real_))
 })
 

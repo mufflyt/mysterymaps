@@ -22,11 +22,30 @@ data:
 `NA` is also dropped before classification rather than being passed through and
 omitted by `classInt`, which removes a spurious warning per map.
 
+## Breaking: zero and `NA` are no longer the same colour
+
+A county measured at zero has no providers; a county never measured is
+unknown. Both used to render in `zero_col`, so the map could not tell them
+apart — the same conflation this scale exists to prevent at the other end of
+the ramp.
+
+`NA` and `NaN` now take a new `na_col`, default white, with a `No data` legend
+entry added **only when the data actually contains `NA`**, so complete maps
+keep a two-part legend. `NaN` counts as unknown: it reaches a rate through a
+zero denominator, which is unmeasurable rather than zero.
+
+Two consequences for existing code:
+
+* Published maps that contain `NA` geographies will change appearance. Pass
+  `na_col = zero_col` to `mysterymaps_jenks_zero_scale()` to restore the old
+  rendering.
+* A hand-written `legend_labels` vector sized for the old legend is now one
+  entry short whenever the data holds `NA`.
+  `mysterymaps_county_access_map()` already errors with both counts rather
+  than shifting every label.
+
 ## Known gaps, pinned by tests but not changed
 
-* Zero and `NA` render in the same colour, so a county measured at zero and a
-  county never measured are indistinguishable on the map. Changing this affects
-  every published map and is a design decision, not a bug fix.
 * A negative value is absorbed into the zero class and `Inf` is shaded as the
   top class. Both mean an upstream calculation went wrong, and neither
   currently surfaces.
