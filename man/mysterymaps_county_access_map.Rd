@@ -16,9 +16,14 @@ mysterymaps_county_access_map(
   coverage_colors = NULL,
   coverage_labels = NULL,
   coverage_titles = NULL,
+  overlay_group = "Provider locations",
+  coverage_area_units = c("km", "mi"),
+  coverage_popups = TRUE,
   mesh = TRUE,
   legend_title = "Rate",
   jenks_k = 6L,
+  jenks_digits = 1L,
+  legend_labels = NULL,
   point_fill = "#c2185b",
   point_alpha = 0.55,
   search = "Search name…",
@@ -45,6 +50,18 @@ mysterymaps_county_access_map(
 legend title differs from the "within" bands ("Coverage gap" rather than
 "Drive-time coverage"), so these are exposed rather than fixed.}
 
+\item{overlay_group}{\link{character(1)|NULL}: name of the point overlay in the
+layers control. Defaults to "Provider locations". Passing \code{NULL} when the
+caller adds its own point layer afterwards used to emit an overlay literally
+labelled "null" in the control.}
+
+\item{coverage_area_units}{\code{"km"} (default) or \code{"mi"}. Square miles for a US
+audience; the popup and the unit label change together so they cannot
+disagree.}
+
+\item{coverage_popups}{\link{logical(1)}: attach a popup to each coverage band
+naming the band, its area and how many origins were dissolved into it.}
+
 \item{mesh}{\link{logical(1)}: draw an unfilled county outline that stays visible
 under every base group. It carries no \code{group} deliberately: three
 group-bound copies triple the county geometry in the output file.}
@@ -52,6 +69,15 @@ group-bound copies triple the county geometry in the output file.}
 \item{legend_title}{\link{character(1)}: choropleth legend heading.}
 
 \item{jenks_k}{\link{integer(1)}: positive-class count for the scale.}
+
+\item{jenks_digits}{\link{integer(1)}: decimals in the legend breaks. Use 0 when
+the quantity is a count of people: "0.2-2.6 midwives per 1,000 births"
+invites a reader to picture a fifth of a person.}
+
+\item{legend_labels}{\link{character|NULL}: replace the computed break labels
+outright. Wording such as "none" for the zero class, or "under 5" where
+rounding would otherwise render the first positive class as "0-5" and make
+it look like the zero class, is a caller decision.}
 
 \item{point_fill, point_alpha}{point styling. The default alpha is 0.55
 because thousands of opaque dots read as a solid mass over metros and hide
@@ -68,8 +94,8 @@ a leaflet map.
 }
 \description{
 The template behind the urogynecology and midwifery access maps. Composes the
-pieces this package already provides — a zero-aware Jenks scale, dissolved
-coverage surfaces, base-group legends, zoom-gated point labels — and adds the
+pieces this package already provides -- a zero-aware Jenks scale, dissolved
+coverage surfaces, base-group legends, zoom-gated point labels -- and adds the
 furniture every such map needs: a name search and a notes panel with source
 vintages.
 }
@@ -77,7 +103,7 @@ vintages.
 
 \code{preferCanvas = TRUE} is set on the map and NO custom pane is used for the
 points. Giving markers their own high-zIndex pane creates a second canvas
-element covering the whole map, and that element swallows every click —
+element covering the whole map, and that element swallows every click --
 including clicks on empty ground where no marker is drawn. On the midwifery
 map this silently disabled all 3,109 county popups: they existed in the HTML
 and never opened. Sharing one renderer lets leaflet hit-test markers and
@@ -99,7 +125,7 @@ mysterymaps_county_access_map(
   coverage = list("Within 30 minutes" = u30, "Within 60 minutes" = u60),
   points = mw, point_label_col = "full_name", point_popup_col = "popup",
   legend_title = "Midwives per<br/>1,000 births",
-  notes = list(title = "Access to midwives, 2026 — notes",
+  notes = list(title = "Access to midwives, 2026 - notes",
                sections = list("County shading" = "is providers per 1,000 births."),
                vintages = data.frame(source = "AMCB roster", vintage = "2026"),
                as_of = "2026"))
@@ -107,6 +133,8 @@ mysterymaps_county_access_map(
 }
 \seealso{
 Other county-access-template: 
+\code{\link{mysterymaps_gate_provider_coverage}()},
+\code{\link{mysterymaps_guard_water_masks}()},
 \code{\link{mysterymaps_name_search}()},
 \code{\link{mysterymaps_notes_panel}()}
 }

@@ -11,7 +11,8 @@ mysterymaps_add_coverage_surfaces(
   legend_labels = names(surfaces),
   legend_titles = "Coverage",
   fill_opacity = 0.55,
-  weight = 0.6
+  weight = 0.6,
+  popups = NULL
 )
 }
 \arguments{
