@@ -9,7 +9,10 @@ mk <- function() {
 
 test_that("all-inside passes quietly", {
   d <- mk()
-  res <- mysterymaps_gate_provider_coverage(d$pts[1:2, ], d$surface)
+  # "Quietly" is half the claim, so assert it rather than leaving it in the
+  # test name: a gate that warned on a clean surface would still have passed.
+  expect_no_warning(
+    res <- suppressMessages(mysterymaps_gate_provider_coverage(d$pts[1:2, ], d$surface)))
   expect_equal(res$n_outside, 0L)
 })
 

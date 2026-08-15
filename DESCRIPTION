@@ -62,7 +62,7 @@ Suggests:
     readxl,
     rnaturalearth,
     sf,
-    testthat (>= 3.0.0),
+    testthat (>= 3.1.5),
     viridis,
     webshot,
     webshot2

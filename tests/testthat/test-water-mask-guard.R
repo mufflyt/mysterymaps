@@ -9,7 +9,10 @@ test_that("a mask the size of its state is rejected", {
   aw <- c(MO = 1)                  # tiny mapped water
   expect_warning(out <- mysterymaps_guard_water_masks(m, aw), "state outlines")
   expect_length(out, 0L)
-  expect_true(!is.null(attr(out, "inverted")))
+  # The attribute reports which state was dropped and how far off it was; a
+  # bare non-NULL check would pass on an empty or mislabelled vector.
+  expect_named(attr(out, "inverted"), "MO")
+  expect_gt(attr(out, "inverted")[["MO"]], 5)
 })
 
 test_that("REGRESSION: a Great Lakes state is NOT rejected", {
@@ -19,8 +22,12 @@ test_that("REGRESSION: a Great Lakes state is NOT rejected", {
   g <- sq(2)
   a <- as.numeric(sf::st_area(g)) / 1e6
   m <- list(MI = g)
-  expect_silent(suppressMessages(out <- mysterymaps_guard_water_masks(m, c(MI = a))))
+  # expect_silent() cannot see through suppressMessages(): the messages are
+  # gone before the expectation runs, so it only ever tested for warnings.
+  # The claim worth making is the explicit one -- Michigan is not flagged.
+  expect_no_warning(suppressMessages(out <- mysterymaps_guard_water_masks(m, c(MI = a))))
   expect_length(out, 1L)
+  expect_null(attr(out, "inverted"))
 })
 
 test_that("plausible masks pass untouched", {
@@ -47,6 +54,6 @@ test_that("the threshold is a parameter, and 5x is the default", {
   expect_equal(formals(mysterymaps_guard_water_masks)$max_ratio, 5)
   g <- sq(2); a <- as.numeric(sf::st_area(g)) / 1e6
   expect_warning(mysterymaps_guard_water_masks(list(A = g), c(A = a / 10), max_ratio = 5))
-  expect_silent(suppressMessages(
+  expect_no_warning(suppressMessages(
     mysterymaps_guard_water_masks(list(A = g), c(A = a / 10), max_ratio = 20)))
 })
