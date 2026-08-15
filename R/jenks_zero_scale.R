@@ -31,13 +31,54 @@
 #' @export
 mysterymaps_jenks_zero_scale <- function(n, k = 6, zero_col = "#e0e0e0",
                                 palette = viridisLite::viridis, digits = NULL) {
-  pos  <- n[n > 0]
+  if (!is.numeric(n)) stop("`n` is not numeric; got ", class(n)[1], call. = FALSE)
+
+  # Drop NA before comparing: n[n > 0] keeps an NA element for every NA in n,
+  # which classInt then warns about and omits. Filtering here is the same
+  # classification with one fewer spurious warning per map.
+  pos  <- n[!is.na(n) & n > 0]
+  pos  <- pos[is.finite(pos)]
   upos <- sort(unique(pos))
+
+  zlab <- if (is.null(digits)) "0" else formatC(0, format = "f", digits = digits)
+
+  # A label for one value, honouring `digits` when set. Without `digits` the
+  # labels are meant to be integer counts, but sprintf("%d") aborts on a
+  # fractional double -- so passing rates without `digits` used to error out
+  # of the whole map rather than mislabel one class.
+  fmt <- function(v) {
+    if (!is.null(digits)) return(formatC(v, format = "f", digits = digits))
+    if (isTRUE(all.equal(v, round(v)))) return(sprintf("%d", as.integer(round(v))))
+    formatC(v, format = "g", digits = 3)
+  }
+
   if (length(upos) == 0)
     return(list(color = function(x) rep(zero_col, length(x)),
-                leg_cols = zero_col, leg_labs = "0"))
+                leg_cols = zero_col, leg_labs = zlab))
+
+  # classInt aborts on a single unique value rather than returning one class.
+  # One county with a nonzero rate is an ordinary rural result, not an error.
+  if (length(upos) == 1L) {
+    col1 <- palette(1)
+    return(list(
+      color = function(x) {
+        out <- rep(col1, length(x))
+        out[is.na(x) | x <= 0] <- zero_col
+        out
+      },
+      leg_cols = c(zero_col, col1), leg_labs = c(zlab, fmt(upos))))
+  }
+
   k    <- min(k, length(upos))
   brks <- unique(classInt::classIntervals(pos, n = k, style = "jenks")$brks)
+  # When the class count reaches the number of distinct values, jenks returns
+  # breaks extrapolated past both ends of the data -- and this function induces
+  # exactly that case with the min() above. A first class labelled "-1.6-2.2"
+  # asserts a negative rate; clamping the outer breaks to the observed range
+  # fixes the labels without moving any value between classes.
+  brks[1] <- min(pos)
+  brks[length(brks)] <- max(pos)
+  brks <- unique(brks)
   k    <- length(brks) - 1L
   cols <- palette(k)
   idxp <- findInterval(pos, brks, rightmost.closed = TRUE, all.inside = TRUE)
@@ -48,14 +89,14 @@ mysterymaps_jenks_zero_scale <- function(n, k = 6, zero_col = "#e0e0e0",
       return(paste0(lo, "\u2013", hi))
     }
     v <- pos[idxp == i]                           # integer (count) labels
-    if (!length(v)) return(sprintf("%d\u2013%d", ceiling(brks[i]), floor(brks[i + 1L])))
-    if (min(v) == max(v)) as.character(min(v)) else sprintf("%d\u2013%d", min(v), max(v))
+    if (!length(v)) return(paste0(fmt(ceiling(brks[i])), "\u2013",
+                                  fmt(floor(brks[i + 1L]))))
+    if (min(v) == max(v)) fmt(min(v)) else paste0(fmt(min(v)), "\u2013", fmt(max(v)))
   }, character(1))
   color <- function(x) {
     out <- cols[findInterval(x, brks, rightmost.closed = TRUE, all.inside = TRUE)]
     out[is.na(x) | x <= 0] <- zero_col
     out
   }
-  zlab <- if (is.null(digits)) "0" else formatC(0, format = "f", digits = digits)
   list(color = color, leg_cols = c(zero_col, cols), leg_labs = c(zlab, labs))
 }

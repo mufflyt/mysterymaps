@@ -1,3 +1,36 @@
+# mysterymaps (development version)
+
+## Bug fixes: `mysterymaps_jenks_zero_scale()`
+
+Three defects found by adversarial tests, all reachable from ordinary county
+data:
+
+* **A single county with a nonzero rate aborted the map.** `classInt` errors
+  with "single unique value" rather than returning one class, so a study area
+  where exactly one county has providers — an ordinary rural result — failed
+  instead of rendering. It now returns a single positive class.
+* **Rates without `digits` aborted the map.** The count-label branch used
+  `sprintf("%d")`, which errors on a fractional double, so passing rates and
+  omitting `digits` errored out of the whole map rather than mislabelling one
+  class. Labels now format according to the value.
+* **Legends could claim impossible values.** When the class count reached the
+  number of distinct values — which the function induced on itself — jenks
+  returned breaks extrapolated past both ends of the data, producing a first
+  class labelled `-1.6–2.2` for a rate with a floor of zero. The outer breaks
+  are clamped to the observed range; no value changes class.
+
+`NA` is also dropped before classification rather than being passed through and
+omitted by `classInt`, which removes a spurious warning per map.
+
+## Known gaps, pinned by tests but not changed
+
+* Zero and `NA` render in the same colour, so a county measured at zero and a
+  county never measured are indistinguishable on the map. Changing this affects
+  every published map and is a design decision, not a bug fix.
+* A negative value is absorbed into the zero class and `Inf` is shaded as the
+  top class. Both mean an upstream calculation went wrong, and neither
+  currently surfaces.
+
 # mysterymaps 0.2.0 (2026-08-09)
 
 ## New: the county access map template
