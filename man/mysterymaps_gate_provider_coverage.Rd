@@ -51,6 +51,7 @@ gap toward exactly the regions the map exists to describe.
 \seealso{
 Other county-access-template: 
 \code{\link{mysterymaps_county_access_map}()},
+\code{\link{mysterymaps_guard_water_masks}()},
 \code{\link{mysterymaps_name_search}()},
 \code{\link{mysterymaps_notes_panel}()}
 }

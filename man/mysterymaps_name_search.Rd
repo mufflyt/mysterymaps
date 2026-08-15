@@ -6,6 +6,7 @@
 \usage{
 mysterymaps_name_search(
   map,
+  group = NULL,
   placeholder = "Search name…",
   zoom = 11L,
   position = "topleft"
@@ -13,6 +14,8 @@ mysterymaps_name_search(
 }
 \arguments{
 \item{map}{a leaflet map.}
+
+\item{group}{\link{character} or NULL: marker groups to search. NULL detects them.}
 
 \item{placeholder}{\link{character(1)}: text shown in the empty box.}
 
@@ -28,19 +31,29 @@ Wraps \href{https://github.com/stefanocudini/leaflet-search}{Leaflet.Control.Sea
 so a reader can find one provider among thousands instead of hunting dots.
 }
 \details{
-The plugin is loaded from a content delivery network (CDN) rather than
-vendored: an access map is already 15-20 MB of geometry, and a fourth copy of
-somebody else's library inside it helps nobody. The consequence is explicit —
-the map opens offline, but the search box only works with network access.
-
-Markers are discovered at run time by scanning for circle markers that carry
-a tooltip, which is what a name label attaches to. That avoids requiring the
-caller to thread a layer id through, and it degrades quietly: if no such
-markers exist the control is simply not added.
+The plugin ships with \code{leaflet.extras} as a local HTML dependency, so a
+self-contained widget stays self-contained. An earlier version loaded it from
+a CDN to save a few hundred kilobytes in a 15-20 MB file; the cost was that
+the search box was inert for anyone opening the saved map offline, and a
+control that silently does nothing is worse than an absent one. The size
+argument was real but small, and it was buying the wrong thing.
 }
+\section{Which layers are searched}{
+
+\code{group = NULL} reads the marker groups already added to the map. leaflet
+stores the group name positionally in the widget call list -- argument 5 for
+\code{addCircleMarkers} -- which is undocumented, so the extraction is validated
+and the control is skipped with a warning rather than attached to nothing.
+Pass \code{group} explicitly to be certain, and to restrict the search.
+
+Markers must carry a \code{label}; that is the text searched.
+}
+
 \seealso{
 Other county-access-template: 
 \code{\link{mysterymaps_county_access_map}()},
+\code{\link{mysterymaps_gate_provider_coverage}()},
+\code{\link{mysterymaps_guard_water_masks}()},
 \code{\link{mysterymaps_notes_panel}()}
 }
 \concept{county-access-template}

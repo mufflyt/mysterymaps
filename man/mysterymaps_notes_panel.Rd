@@ -54,6 +54,8 @@ oldest.
 \seealso{
 Other county-access-template: 
 \code{\link{mysterymaps_county_access_map}()},
+\code{\link{mysterymaps_gate_provider_coverage}()},
+\code{\link{mysterymaps_guard_water_masks}()},
 \code{\link{mysterymaps_name_search}()}
 }
 \concept{county-access-template}
