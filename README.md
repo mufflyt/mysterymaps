@@ -230,11 +230,10 @@ one ran.
 
 - [`mufflyaccess`](https://github.com/mufflyt/mufflyaccess) — SSOT constants and
   safe arithmetic: canonical bands, CONUS geography, `safe_rate()`
-- [`twostep`](https://github.com/mufflyt/twostep) — E2SFCA accessibility,
-  population-weighted coverage, the access-language guard
-- [`isochrones`](https://github.com/mufflyt/isochrones) — routing, water masks,
-  the isochrone pipeline
-- [`cliff`](https://github.com/mufflyt/cliff) — workforce retirement modelling
+- `twostep` — E2SFCA accessibility, population-weighted coverage, the
+  access-language guard
+- `isochrones` — routing, water masks, the isochrone pipeline
+- `cliff` — workforce retirement modelling
 
 `vignette("canonical-functions")` maps hand-rolled code to the canonical call
 that already exists across these packages.

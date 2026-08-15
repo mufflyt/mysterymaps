@@ -13,15 +13,15 @@ mysterymaps_pluralize(
 )
 }
 \arguments{
-\item{n}{\link{numeric}: the count. \code{NA} returns \code{NA_character_}.}
+\item{n}{\code{numeric}: the count. \code{NA} returns \code{NA_character_}.}
 
-\item{singular}{\link{character(1)}: noun in its singular form.}
+\item{singular}{\code{character(1)}: noun in its singular form.}
 
-\item{plural}{\link{character(1)|NULL}: plural form. Defaults to \code{paste0(singular, "s")}.}
+\item{plural}{\code{character(1)|NULL}: plural form. Defaults to \code{paste0(singular, "s")}.}
 
-\item{big_mark}{\link{logical(1)}: comma-group counts of 1,000 or more.}
+\item{big_mark}{\code{logical(1)}: comma-group counts of 1,000 or more.}
 
-\item{include_n}{\link{logical(1)}: when \code{FALSE}, return only the agreed noun.}
+\item{include_n}{\code{logical(1)}: when \code{FALSE}, return only the agreed noun.}
 }
 \value{
 \link{character} the same length as \code{n}.
@@ -31,7 +31,7 @@ Returns a count and noun that agree in number: \verb{1 midwife}, \verb{13 midwiv
 }
 \details{
 Written because map labels built with \code{sprintf("\%d midwives", n)} render
-"1 midwives" whenever a county holds exactly one provider — visible on every
+"1 midwives" whenever a county holds exactly one provider -- visible on every
 single-provider county of a national choropleth, which is most of the rural
 ones.
 

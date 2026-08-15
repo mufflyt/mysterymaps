@@ -26,31 +26,31 @@ mysterymaps_county_access_map(
   legend_labels = NULL,
   point_fill = "#c2185b",
   point_alpha = 0.55,
-  search = "Search name…",
+  search = "Search name...",
   notes = NULL,
   bounds = c(24.5, -125, 49.4, -66.9)
 )
 }
 \arguments{
-\item{counties}{\link[sf:sf]{sf::sf}: county polygons.}
+\item{counties}{\code{sf}: county polygons.}
 
-\item{value_col}{\link{character(1)}: column in \code{counties} to shade.}
+\item{value_col}{\code{character(1)}: column in \code{counties} to shade.}
 
-\item{label_col, popup_col}{\link{character(1)}: columns holding hover and click HTML.}
+\item{label_col, popup_col}{\code{character(1)}: columns holding hover and click HTML.}
 
-\item{coverage}{\link{named list of sf}: dissolved drive-time bands, e.g.
+\item{coverage}{\verb{named list of sf}: dissolved drive-time bands, e.g.
 \code{list("Within 30 minutes" = iso30, "Within 60 minutes" = iso60)}.}
 
-\item{points}{\link{sf|NULL}: provider locations.}
+\item{points}{\code{sf|NULL}: provider locations.}
 
-\item{point_label_col, point_popup_col}{\link{character(1)}: columns on \code{points}.}
+\item{point_label_col, point_popup_col}{\code{character(1)}: columns on \code{points}.}
 
 \item{coverage_colors, coverage_labels, coverage_titles}{passed through to
 \code{\link[=mysterymaps_add_coverage_surfaces]{mysterymaps_add_coverage_surfaces()}}. Real maps carry a "beyond" band whose
 legend title differs from the "within" bands ("Coverage gap" rather than
 "Drive-time coverage"), so these are exposed rather than fixed.}
 
-\item{overlay_group}{\link{character(1)|NULL}: name of the point overlay in the
+\item{overlay_group}{\code{character(1)|NULL}: name of the point overlay in the
 layers control. Defaults to "Provider locations". Passing \code{NULL} when the
 caller adds its own point layer afterwards used to emit an overlay literally
 labelled "null" in the control.}
@@ -59,22 +59,22 @@ labelled "null" in the control.}
 audience; the popup and the unit label change together so they cannot
 disagree.}
 
-\item{coverage_popups}{\link{logical(1)}: attach a popup to each coverage band
+\item{coverage_popups}{\code{logical(1)}: attach a popup to each coverage band
 naming the band, its area and how many origins were dissolved into it.}
 
-\item{mesh}{\link{logical(1)}: draw an unfilled county outline that stays visible
+\item{mesh}{\code{logical(1)}: draw an unfilled county outline that stays visible
 under every base group. It carries no \code{group} deliberately: three
 group-bound copies triple the county geometry in the output file.}
 
-\item{legend_title}{\link{character(1)}: choropleth legend heading.}
+\item{legend_title}{\code{character(1)}: choropleth legend heading.}
 
-\item{jenks_k}{\link{integer(1)}: positive-class count for the scale.}
+\item{jenks_k}{\code{integer(1)}: positive-class count for the scale.}
 
-\item{jenks_digits}{\link{integer(1)}: decimals in the legend breaks. Use 0 when
+\item{jenks_digits}{\code{integer(1)}: decimals in the legend breaks. Use 0 when
 the quantity is a count of people: "0.2-2.6 midwives per 1,000 births"
 invites a reader to picture a fifth of a person.}
 
-\item{legend_labels}{\link{character|NULL}: replace the computed break labels
+\item{legend_labels}{\code{character|NULL}: replace the computed break labels
 outright. Wording such as "none" for the zero class, or "under 5" where
 rounding would otherwise render the first positive class as "0-5" and make
 it look like the zero class, is a caller decision.}

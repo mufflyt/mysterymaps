@@ -14,7 +14,7 @@ NULL
 #' The function detects whether `state_col` contains abbreviations or full
 #' names by sampling the first non-missing value. When the value is two
 #' characters or fewer it is treated as an abbreviation and looked up in
-#' [base::state.abb] / [base::state.name]. Longer values are lower-cased
+#' [datasets::state.abb] / [datasets::state.name]. Longer values are lower-cased
 #' and joined directly to the map polygon data. DC and US territories are not
 #' present in the built-in datasets and will appear as no-data states.
 #'

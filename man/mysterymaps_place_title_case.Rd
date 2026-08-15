@@ -7,7 +7,7 @@
 mysterymaps_place_title_case(x)
 }
 \arguments{
-\item{x}{\link{character}: place names, e.g. \code{"EADS"} or \code{"EADS, CO"}.}
+\item{x}{\code{character}: place names, e.g. \code{"EADS"} or \code{"EADS, CO"}.}
 }
 \value{
 \link{character} the same length as \code{x}.

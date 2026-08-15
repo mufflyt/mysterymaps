@@ -7,12 +7,12 @@
 mysterymaps_format_credentials(x, keep = .MM_CRED_KEEP, max_n = 3L)
 }
 \arguments{
-\item{x}{\link{character}: raw credential text, e.g. \code{"RN, CNM"}.}
+\item{x}{\code{character}: raw credential text, e.g. \code{"RN, CNM"}.}
 
-\item{keep}{\link{character}: credentials to display. Defaults to midwifery,
+\item{keep}{\code{character}: credentials to display. Defaults to midwifery,
 women's-health nurse-practitioner and physician credentials.}
 
-\item{max_n}{\link{integer(1)}: most credentials to show; extras are dropped
+\item{max_n}{\code{integer(1)}: most credentials to show; extras are dropped
 rather than allowed to overrun a popup line.}
 }
 \value{
@@ -34,7 +34,7 @@ Selection is a KEEP-list, not a drop-list. The text is unbounded, so an
 exclusion list quietly admits whatever new string appears next; an inclusion
 list fails closed. Degrees and licences that are not credentials in the
 honorific sense (\code{RN}, \code{APRN}, \code{ARNP}, \code{MSN}, \code{DNP}, \code{PhD}) are therefore not
-shown by default — pass \code{keep} to change that.
+shown by default -- pass \code{keep} to change that.
 
 Order follows the source string, so a provider who lists \verb{CNM, WHNP-BC} keeps
 that order rather than having one imposed.

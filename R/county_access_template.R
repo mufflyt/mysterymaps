@@ -24,14 +24,14 @@
 #'
 #' @param map a leaflet map.
 #' @param group [character] or NULL: marker groups to search. NULL detects them.
-#' @param placeholder [character(1)]: text shown in the empty box.
-#' @param zoom [integer(1)]: zoom level to fly to on a hit.
-#' @param position [character(1)]: leaflet control position.
+#' @param placeholder `character(1)`: text shown in the empty box.
+#' @param zoom `integer(1)`: zoom level to fly to on a hit.
+#' @param position `character(1)`: leaflet control position.
 #' @return the map, with the control attached.
 #' @family county-access-template
 #' @export
 mysterymaps_name_search <- function(map, group = NULL,
-                                    placeholder = "Search name\u2026",
+                                    placeholder = "Search name...",
                                     zoom = 11L, position = "topleft") {
   if (!requireNamespace("leaflet.extras", quietly = TRUE)) {
     warning("leaflet.extras is not installed; no search control added.",
@@ -82,14 +82,14 @@ mysterymaps_name_search <- function(map, group = NULL,
 #' oldest.
 #'
 #' @param map a leaflet map.
-#' @param title [character(1)]: panel heading; the year belongs here.
-#' @param sections [named list]: heading -> HTML paragraph.
-#' @param vintages [data.frame]: columns `source` and `vintage`; optional `url`
+#' @param title `character(1)`: panel heading; the year belongs here.
+#' @param sections `named list`: heading -> HTML paragraph.
+#' @param vintages `data.frame`: columns `source` and `vintage`; optional `url`
 #'   renders the source name as a link.
-#' @param as_of [character(1)]: the "Data as of" line, e.g. the roster year.
-#' @param max_height [character(1)]: CSS max-height so the panel never covers
+#' @param as_of `character(1)`: the "Data as of" line, e.g. the roster year.
+#' @param max_height `character(1)`: CSS max-height so the panel never covers
 #'   the map.
-#' @param bottom [character(1)]: CSS offset; the default clears a bottom-left
+#' @param bottom `character(1)`: CSS offset; the default clears a bottom-left
 #'   scale bar, which otherwise draws underneath the panel.
 #' @return the map, with the panel attached.
 #' @family county-access-template
@@ -156,35 +156,35 @@ mysterymaps_notes_panel <- function(map, title, sections, vintages,
 #' own colour. Folding "no provider" into the bottom bin of a continuous ramp
 #' reads as "few" and is the single most misleading thing an access map can do.
 #'
-#' @param counties [sf]: county polygons.
-#' @param value_col [character(1)]: column in `counties` to shade.
-#' @param label_col,popup_col [character(1)]: columns holding hover and click HTML.
-#' @param coverage [named list of sf]: dissolved drive-time bands, e.g.
+#' @param counties `sf`: county polygons.
+#' @param value_col `character(1)`: column in `counties` to shade.
+#' @param label_col,popup_col `character(1)`: columns holding hover and click HTML.
+#' @param coverage `named list of sf`: dissolved drive-time bands, e.g.
 #'   `list("Within 30 minutes" = iso30, "Within 60 minutes" = iso60)`.
 #' @param coverage_colors,coverage_labels,coverage_titles passed through to
 #'   [mysterymaps_add_coverage_surfaces()]. Real maps carry a "beyond" band whose
 #'   legend title differs from the "within" bands ("Coverage gap" rather than
 #'   "Drive-time coverage"), so these are exposed rather than fixed.
-#' @param overlay_group [character(1)|NULL]: name of the point overlay in the
+#' @param overlay_group `character(1)|NULL`: name of the point overlay in the
 #'   layers control. Defaults to "Provider locations". Passing `NULL` when the
 #'   caller adds its own point layer afterwards used to emit an overlay literally
 #'   labelled "null" in the control.
 #' @param coverage_area_units `"km"` (default) or `"mi"`. Square miles for a US
 #'   audience; the popup and the unit label change together so they cannot
 #'   disagree.
-#' @param coverage_popups [logical(1)]: attach a popup to each coverage band
+#' @param coverage_popups `logical(1)`: attach a popup to each coverage band
 #'   naming the band, its area and how many origins were dissolved into it.
-#' @param mesh [logical(1)]: draw an unfilled county outline that stays visible
+#' @param mesh `logical(1)`: draw an unfilled county outline that stays visible
 #'   under every base group. It carries no `group` deliberately: three
 #'   group-bound copies triple the county geometry in the output file.
-#' @param points [sf|NULL]: provider locations.
-#' @param point_label_col,point_popup_col [character(1)]: columns on `points`.
-#' @param legend_title [character(1)]: choropleth legend heading.
-#' @param jenks_k [integer(1)]: positive-class count for the scale.
-#' @param jenks_digits [integer(1)]: decimals in the legend breaks. Use 0 when
+#' @param points `sf|NULL`: provider locations.
+#' @param point_label_col,point_popup_col `character(1)`: columns on `points`.
+#' @param legend_title `character(1)`: choropleth legend heading.
+#' @param jenks_k `integer(1)`: positive-class count for the scale.
+#' @param jenks_digits `integer(1)`: decimals in the legend breaks. Use 0 when
 #'   the quantity is a count of people: "0.2-2.6 midwives per 1,000 births"
 #'   invites a reader to picture a fifth of a person.
-#' @param legend_labels [character|NULL]: replace the computed break labels
+#' @param legend_labels `character|NULL`: replace the computed break labels
 #'   outright. Wording such as "none" for the zero class, or "under 5" where
 #'   rounding would otherwise render the first positive class as "0-5" and make
 #'   it look like the zero class, is a caller decision.
@@ -229,7 +229,7 @@ mysterymaps_county_access_map <- function(counties, value_col,
                                           legend_labels = NULL,
                                           point_fill = "#c2185b",
                                           point_alpha = 0.55,
-                                          search = "Search name\u2026",
+                                          search = "Search name...",
                                           notes = NULL,
                                           bounds = c(24.5, -125, 49.4, -66.9)) {
   coverage_area_units <- match.arg(coverage_area_units)

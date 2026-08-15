@@ -7,20 +7,20 @@
 #'
 #' @details
 #' This fails quietly without a gate. A missing isochrone does not error, does
-#' not warn, and does not leave a hole you would notice — it simply removes
+#' not warn, and does not leave a hole you would notice -- it simply removes
 #' shading that should have been there, and the map still looks plausible. On
 #' the midwifery access map 490 of 11,792 midwives sat outside their own
 #' 30-minute surface, concentrated in Missouri (117), Iowa (112) and Kansas
 #' (79). Clustered like that, the loss is not random: it biases the coverage
 #' gap toward exactly the regions the map exists to describe.
 #'
-#' @param providers [sf]: provider points.
-#' @param surface [sf|sfc]: the dissolved coverage polygon(s).
-#' @param label [character(1)]: band name for the message, e.g. "30-minute".
-#' @param max_missing_pct [numeric(1)]: tolerated share outside, as a
-#'   percentage. Defaults to 0 — a provider outside their own isochrone is a
+#' @param providers `sf`: provider points.
+#' @param surface `sf|sfc`: the dissolved coverage polygon(s).
+#' @param label `character(1)`: band name for the message, e.g. "30-minute".
+#' @param max_missing_pct `numeric(1)`: tolerated share outside, as a
+#'   percentage. Defaults to 0 -- a provider outside their own isochrone is a
 #'   defect, not a rounding error.
-#' @param group_col [character(1)|NULL]: column to break the report down by
+#' @param group_col `character(1)|NULL`: column to break the report down by
 #'   (a state column makes a clustered failure obvious immediately).
 #' @param on_fail `"error"` (default) or `"warn"`.
 #' @return Invisibly a list with `n`, `n_outside`, `pct_outside` and, when

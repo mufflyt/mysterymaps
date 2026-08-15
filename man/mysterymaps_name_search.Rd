@@ -7,7 +7,7 @@
 mysterymaps_name_search(
   map,
   group = NULL,
-  placeholder = "Search name…",
+  placeholder = "Search name...",
   zoom = 11L,
   position = "topleft"
 )
@@ -17,11 +17,11 @@ mysterymaps_name_search(
 
 \item{group}{\link{character} or NULL: marker groups to search. NULL detects them.}
 
-\item{placeholder}{\link{character(1)}: text shown in the empty box.}
+\item{placeholder}{\code{character(1)}: text shown in the empty box.}
 
-\item{zoom}{\link{integer(1)}: zoom level to fly to on a hit.}
+\item{zoom}{\code{integer(1)}: zoom level to fly to on a hit.}
 
-\item{position}{\link{character(1)}: leaflet control position.}
+\item{position}{\code{character(1)}: leaflet control position.}
 }
 \value{
 the map, with the control attached.

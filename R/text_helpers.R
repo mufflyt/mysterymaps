@@ -4,7 +4,7 @@
 #'
 #' @details
 #' Written because map labels built with `sprintf("%d midwives", n)` render
-#' "1 midwives" whenever a county holds exactly one provider — visible on every
+#' "1 midwives" whenever a county holds exactly one provider -- visible on every
 #' single-provider county of a national choropleth, which is most of the rural
 #' ones.
 #'
@@ -12,11 +12,11 @@
 #' default, never an assumption: pass `plural` for anything that does not take
 #' it. `0` takes the plural ("0 midwives"), which is what English does.
 #'
-#' @param n [numeric]: the count. `NA` returns `NA_character_`.
-#' @param singular [character(1)]: noun in its singular form.
-#' @param plural [character(1)|NULL]: plural form. Defaults to `paste0(singular, "s")`.
-#' @param big_mark [logical(1)]: comma-group counts of 1,000 or more.
-#' @param include_n [logical(1)]: when `FALSE`, return only the agreed noun.
+#' @param n `numeric`: the count. `NA` returns `NA_character_`.
+#' @param singular `character(1)`: noun in its singular form.
+#' @param plural `character(1)|NULL`: plural form. Defaults to `paste0(singular, "s")`.
+#' @param big_mark `logical(1)`: comma-group counts of 1,000 or more.
+#' @param include_n `logical(1)`: when `FALSE`, return only the agreed noun.
 #'
 #' @return [character] the same length as `n`.
 #'
@@ -67,7 +67,7 @@ mysterymaps_pluralize <- function(n, singular, plural = NULL,
 #' Input that is already mixed case is left alone: it is likelier to be correct
 #' than a blind re-case would be.
 #'
-#' @param x [character]: place names, e.g. `"EADS"` or `"EADS, CO"`.
+#' @param x `character`: place names, e.g. `"EADS"` or `"EADS, CO"`.
 #' @return [character] the same length as `x`.
 #'
 #' @examples
@@ -189,15 +189,15 @@ mysterymaps_place_title_case <- function(x) {
 #' exclusion list quietly admits whatever new string appears next; an inclusion
 #' list fails closed. Degrees and licences that are not credentials in the
 #' honorific sense (`RN`, `APRN`, `ARNP`, `MSN`, `DNP`, `PhD`) are therefore not
-#' shown by default — pass `keep` to change that.
+#' shown by default -- pass `keep` to change that.
 #'
 #' Order follows the source string, so a provider who lists `CNM, WHNP-BC` keeps
 #' that order rather than having one imposed.
 #'
-#' @param x [character]: raw credential text, e.g. `"RN, CNM"`.
-#' @param keep [character]: credentials to display. Defaults to midwifery,
+#' @param x `character`: raw credential text, e.g. `"RN, CNM"`.
+#' @param keep `character`: credentials to display. Defaults to midwifery,
 #'   women's-health nurse-practitioner and physician credentials.
-#' @param max_n [integer(1)]: most credentials to show; extras are dropped
+#' @param max_n `integer(1)`: most credentials to show; extras are dropped
 #'   rather than allowed to overrun a popup line.
 #' @return [character] the same length as `x`; `NA` where nothing survives.
 #'

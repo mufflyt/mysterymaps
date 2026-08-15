@@ -12,12 +12,12 @@ mysterymaps_guard_water_masks(
 )
 }
 \arguments{
-\item{masks}{\link{named list of sf/sfc}: water masks, named by state abbreviation.}
+\item{masks}{\verb{named list of sf/sfc}: water masks, named by state abbreviation.}
 
-\item{census_water_km2}{\link{named numeric}: census \code{AWATER} per state, in km².
+\item{census_water_km2}{\verb{named numeric}: census \code{AWATER} per state, in km^2.
 Supply from \code{tigris::states()$AWATER / 1e6}.}
 
-\item{max_ratio}{\link{numeric(1)}: a mask larger than this multiple of the state's
+\item{max_ratio}{\code{numeric(1)}: a mask larger than this multiple of the state's
 mapped water is not water. Defaults to 5.}
 
 \item{action}{\code{"exclude"} (default) drops the offenders and returns the rest;
@@ -31,12 +31,12 @@ records which were dropped and their ratios.
 }
 \description{
 A land clip subtracts water from a coverage surface. If the "water" polygon is
-actually the state boundary, the clip subtracts the state — silently, because
+actually the state boundary, the clip subtracts the state -- silently, because
 removing too much geometry does not error, does not warn, and leaves no hole a
 reader would recognise as a defect.
 }
 \details{
-Five states once carried a single-feature mask covering 102–104\% of their own
+Five states once carried a single-feature mask covering 102-104\% of their own
 land area. \code{st_difference()} erased every isochrone in Missouri, Iowa, Kansas,
 West Virginia and Arkansas, and the map reported the rural interior as having
 no provider access at all. The upstream cause was a downloader that logged
@@ -45,12 +45,12 @@ high-resolution mask, and a fallback wrote the state boundary in its place.
 }
 \section{Why census water area is the denominator}{
 
-The obvious test — mask area as a share of the state's LAND area — flags
+The obvious test -- mask area as a share of the state's LAND area -- flags
 Michigan at 68\% and would exclude it. Michigan's boundary contains the Great
 Lakes, so a mask that size is correct there, and dropping it lets the surface
 run across Lake Michigan: the exact failure the clip exists to prevent.
 
-Measured against census \code{AWATER} the cases separate cleanly — Michigan is
+Measured against census \code{AWATER} the cases separate cleanly -- Michigan is
 0.95x its mapped water, while the inverted masks are 45x to 162x. Choose the
 denominator that distinguishes the failure from the legitimate extreme, not
 the one that is easiest to reach.

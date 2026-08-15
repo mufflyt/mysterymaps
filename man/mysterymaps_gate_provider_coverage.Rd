@@ -14,17 +14,17 @@ mysterymaps_gate_provider_coverage(
 )
 }
 \arguments{
-\item{providers}{\link[sf:sf]{sf::sf}: provider points.}
+\item{providers}{\code{sf}: provider points.}
 
-\item{surface}{\link{sf|sfc}: the dissolved coverage polygon(s).}
+\item{surface}{\code{sf|sfc}: the dissolved coverage polygon(s).}
 
-\item{label}{\link{character(1)}: band name for the message, e.g. "30-minute".}
+\item{label}{\code{character(1)}: band name for the message, e.g. "30-minute".}
 
-\item{max_missing_pct}{\link{numeric(1)}: tolerated share outside, as a
-percentage. Defaults to 0 — a provider outside their own isochrone is a
+\item{max_missing_pct}{\code{numeric(1)}: tolerated share outside, as a
+percentage. Defaults to 0 -- a provider outside their own isochrone is a
 defect, not a rounding error.}
 
-\item{group_col}{\link{character(1)|NULL}: column to break the report down by
+\item{group_col}{\code{character(1)|NULL}: column to break the report down by
 (a state column makes a clustered failure obvious immediately).}
 
 \item{on_fail}{\code{"error"} (default) or \code{"warn"}.}
@@ -41,7 +41,7 @@ surface understates access by exactly that much.
 }
 \details{
 This fails quietly without a gate. A missing isochrone does not error, does
-not warn, and does not leave a hole you would notice — it simply removes
+not warn, and does not leave a hole you would notice -- it simply removes
 shading that should have been there, and the map still looks plausible. On
 the midwifery access map 490 of 11,792 midwives sat outside their own
 30-minute surface, concentrated in Missouri (117), Iowa (112) and Kansas

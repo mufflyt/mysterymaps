@@ -17,19 +17,19 @@ mysterymaps_notes_panel(
 \arguments{
 \item{map}{a leaflet map.}
 
-\item{title}{\link{character(1)}: panel heading; the year belongs here.}
+\item{title}{\code{character(1)}: panel heading; the year belongs here.}
 
-\item{sections}{\link{named list}: heading -> HTML paragraph.}
+\item{sections}{\verb{named list}: heading -> HTML paragraph.}
 
-\item{vintages}{\link{data.frame}: columns \code{source} and \code{vintage}; optional \code{url}
+\item{vintages}{\code{data.frame}: columns \code{source} and \code{vintage}; optional \code{url}
 renders the source name as a link.}
 
-\item{as_of}{\link{character(1)}: the "Data as of" line, e.g. the roster year.}
+\item{as_of}{\code{character(1)}: the "Data as of" line, e.g. the roster year.}
 
-\item{max_height}{\link{character(1)}: CSS max-height so the panel never covers
+\item{max_height}{\code{character(1)}: CSS max-height so the panel never covers
 the map.}
 
-\item{bottom}{\link{character(1)}: CSS offset; the default clears a bottom-left
+\item{bottom}{\code{character(1)}: CSS offset; the default clears a bottom-left
 scale bar, which otherwise draws underneath the panel.}
 }
 \value{

@@ -29,6 +29,9 @@ mysterymaps_add_coverage_surfaces(
 \item{fill_opacity}{Numeric fill opacity. Default 0.55.}
 
 \item{weight}{Outline weight. Default 0.6.}
+
+\item{popups}{Character vector of popup HTML, one per surface, or \code{NULL} for
+no popups.}
 }
 \value{
 The leaflet map, with a \code{mysterymaps_base_legends} attribute mapping group

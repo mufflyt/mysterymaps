@@ -66,6 +66,8 @@ Suggests:
     viridis,
     webshot,
     webshot2
+Remotes:
+    mufflyt/mysterycall
 Config/testthat/edition: 3
 Config/Needs/website: pkgdown
 RoxygenNote: 7.3.3

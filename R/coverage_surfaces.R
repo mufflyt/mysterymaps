@@ -38,6 +38,8 @@
 #' @param legend_titles Character vector of legend titles, recycled.
 #' @param fill_opacity Numeric fill opacity. Default 0.55.
 #' @param weight Outline weight. Default 0.6.
+#' @param popups Character vector of popup HTML, one per surface, or `NULL` for
+#'   no popups.
 #' @return The leaflet map, with a `mysterymaps_base_legends` attribute mapping group
 #'   names to legend CSS keys, for [mysterymaps_base_legend_switcher()].
 #' @examples
