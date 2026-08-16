@@ -63,6 +63,9 @@ Suggests:
     rnaturalearth,
     sf,
     testthat (>= 3.1.5),
+    withr,
+    units,
+    mapproj,
     viridis,
     webshot,
     webshot2
@@ -70,7 +73,7 @@ Remotes:
     mufflyt/mysterycall
 Config/testthat/edition: 3
 Config/Needs/website: pkgdown
-Config/Needs/lint: lintr
+Config/Needs/lint: lintr, cyclocomp
 Config/Needs/coverage: covr, xml2
 Config/Needs/check: rcmdcheck, covr, lintr, spelling, urlchecker, cffr, desc
 VignetteBuilder: knitr

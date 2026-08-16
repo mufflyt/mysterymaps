@@ -84,6 +84,7 @@ jobs:
           dependencies: '"all"'
           extra-packages: |
             any::lintr
+            any::cyclocomp
             any::spelling
             any::roxygen2
             any::desc
@@ -144,7 +145,10 @@ jobs:
       - uses: r-lib/actions/setup-r-dependencies@v2
         with:
           dependencies: '"all"'
-          extra-packages: any::covr, any::xml2
+          # rnaturalearthdata is not a declared Suggests but several tests need
+          # it; without it they skip, and a skipped test covers no code. That
+          # alone took measured coverage from 95% to 79%.
+          extra-packages: any::covr, any::xml2, any::rnaturalearthdata
           needs: coverage
 
       - name: Measure and gate

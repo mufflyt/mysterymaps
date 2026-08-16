@@ -279,7 +279,7 @@ jobs:
           # local::. matters: without the package installed, object_usage_linter
           # cannot resolve imported bindings (`%>%`, `.data`) and reports ~78
           # false positives.
-          extra-packages: any::lintr, local::.
+          extra-packages: any::lintr, any::cyclocomp, local::.
           needs: lint
 
       - name: Lint
