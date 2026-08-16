@@ -22,6 +22,10 @@ skip_unless_dots <- function() {
               "rnaturalearth", "rnaturalearthdata", "rnaturalearthhires")) {
     skip_if_not_installed(p)
   }
+  # These draw a dot map, which draws ACOG districts, which reads the table
+  # packaged inside mysterycall. Absent on a runner that resolved mysterycall
+  # without its extdata.
+  skip_if_no_acog_csv()
 }
 
 physicians <- function(n = 5) {
