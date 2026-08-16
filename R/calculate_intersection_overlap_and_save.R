@@ -229,6 +229,29 @@ mysterymaps_calculate_overlap <- function(block_groups,
   output_shapefile <- file.path(output_dir, sprintf("intersect_%s_minutes.shp", drive_time_minutes))
   dir.create(output_dir, recursive = TRUE, showWarnings = FALSE)
   suppressWarnings(sf::st_write(sf::st_transform(intersect, 4326), output_shapefile, append = FALSE))
+
+  # And the same table as CSV. The shapefile format truncates field names to
+  # ten characters -- `area_method` arrives as `ar_mthd` -- so the shapefile
+  # alone cannot be read by a downstream script that expects the documented
+  # column names.
+  output_csv <- file.path(output_dir, sprintf("intersect_%s_minutes.csv", drive_time_minutes))
+  utils::write.csv(intersect_df, output_csv, row.names = FALSE)
+
+  # A GEOID is a fixed-width identifier, not a number. utils::read.csv() type
+  # converts "080010001" to the integer 80010001 even though it was written
+  # quoted, which silently turns Colorado's state FIPS 08 into 8 and makes
+  # every downstream join miss. The join then yields NA, and an NA county on a
+  # rare-subspecialty map is indistinguishable from a measured zero.
+  #
+  # So the artifact declares its own types. `.csvt` is the GDAL/OGR sidecar
+  # convention and is picked up automatically by sf::st_read() and ogr2ogr;
+  # R callers want the documented colClasses instead, which is why the same
+  # information appears in ?mysterymaps_calculate_overlap.
+  csvt <- vapply(intersect_df, function(col) {
+    if (is.character(col) || is.factor(col)) "String" else "Real"
+  }, character(1))
+  writeLines(paste(sprintf('"%s"', unname(csvt)), collapse = ","),
+             paste0(tools::file_path_sans_ext(output_csv), ".csvt"))
   message("Intersection calculated and saved successfully.")
 
   # Validate GEOID compatibility before join (Bug #4 fix)

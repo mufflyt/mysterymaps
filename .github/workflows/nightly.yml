@@ -1,0 +1,558 @@
+name: Nightly
+
+# The whole-package beating, once a night.
+#
+# Schedule: 09:17 UTC == 02:17 MST (UTC-7).
+# GitHub Actions cron is UTC-only and does not observe daylight saving, so this
+# fires at 02:17 MST year-round. During Denver's MDT half of the year that is
+# 03:17 local. MST was what was asked for, so MST is what is pinned.
+on:
+  schedule:
+    - cron: '17 9 * * *'
+  workflow_dispatch:
+    inputs:
+      skip_slow:
+        description: 'Skip the slow jobs (full OS matrix, force-suggests, pkgdown)'
+        type: boolean
+        default: false
+
+concurrency:
+  group: nightly-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  # Resolves the GitHub-only mysterycall dependency named in Remotes:.
+  GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+  R_KEEP_PKG_SOURCE: yes
+  _R_CHECK_CRAN_INCOMING_: false
+  NOT_CRAN: true
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # 1. R CMD check across every OS and R version the package claims to support.
+  #    DESCRIPTION says R (>= 4.1.0); oldrel-3 is the oldest release still
+  #    reachable through r-lib/actions, so that is the floor exercised here.
+  # ---------------------------------------------------------------------------
+  check-matrix:
+    name: check ${{ matrix.config.os }} R-${{ matrix.config.r }}
+    if: ${{ !inputs.skip_slow }}
+    runs-on: ${{ matrix.config.os }}
+    timeout-minutes: 75
+    strategy:
+      fail-fast: false
+      matrix:
+        config:
+          - { os: ubuntu-latest,  r: 'devel', http-user-agent: 'release' }
+          - { os: ubuntu-latest,  r: 'release' }
+          - { os: ubuntu-latest,  r: 'oldrel-1' }
+          - { os: ubuntu-latest,  r: 'oldrel-2' }
+          - { os: ubuntu-latest,  r: 'oldrel-3' }
+          - { os: macos-latest,   r: 'release' }
+          - { os: windows-latest, r: 'release' }
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: r-lib/actions/setup-pandoc@v2
+
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: ${{ matrix.config.r }}
+          http-user-agent: ${{ matrix.config.http-user-agent }}
+          use-public-rspm: true
+
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          extra-packages: any::rcmdcheck
+          needs: check
+
+      - uses: r-lib/actions/check-r-package@v2
+        with:
+          upload-snapshots: true
+          args: 'c("--no-manual", "--as-cran")'
+          error-on: '"warning"'
+          build_args: 'c("--no-manual", "--compact-vignettes=gs+qpdf")'
+
+      - name: Gate on unexpected NOTEs
+        if: always()
+        shell: Rscript {0}
+        run: source(".github/scripts/gate-check-notes.R")
+
+  # ---------------------------------------------------------------------------
+  # 2. The strict pass: every Suggests installed and required, donttest examples
+  #    executed, and R's own paranoid check switches turned on. This is where
+  #    latent length>1 conditions and partial argument matching surface.
+  # ---------------------------------------------------------------------------
+  check-strict:
+    name: check strict (force-suggests + donttest)
+    if: ${{ !inputs.skip_slow }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    env:
+      _R_CHECK_FORCE_SUGGESTS_: true
+      _R_CHECK_LENGTH_1_CONDITION_: true
+      _R_CHECK_LENGTH_1_LOGIC2_: true
+      _R_CHECK_RD_XREFS_: true
+      _R_CHECK_CODE_USAGE_WITH_ONLY_BASE_ATTACHED_: true
+      _R_CHECK_DOT_INTERNAL_: true
+      _R_CHECK_REPLACING_IMPORTS_: true
+      _R_CHECK_S3_METHODS_SHOW_POSSIBLE_ISSUES_: true
+      _R_CHECK_TIMINGS_: 10
+      _R_CHECK_XREFS_USE_ALIASES_FROM_CRAN_: false
+      _R_CHECK_SUGGESTS_ONLY_: false
+      _R_CHECK_PKG_SIZES_: true
+      _R_CHECK_CODETOOLS_PROFILE_: "suppressLocalUnused=FALSE"
+      _R_CHECK_SCREEN_DEVICE_: stop
+    steps:
+      - uses: actions/checkout@v4
+      - uses: r-lib/actions/setup-pandoc@v2
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: release
+          use-public-rspm: true
+
+      - name: System libraries for the headless suggested packages
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            libcurl4-openssl-dev libssl-dev libxml2-dev libgit2-dev \
+            libudunits2-dev libgdal-dev libgeos-dev libproj-dev \
+            libfontconfig1-dev libharfbuzz-dev libfribidi-dev \
+            libfreetype6-dev libpng-dev libtiff5-dev libjpeg-dev \
+            libmagick++-dev ghostscript libasound2-dev
+
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          # `all` pulls Suggests too, which _R_CHECK_FORCE_SUGGESTS_ then insists on.
+          dependencies: '"all"'
+          extra-packages: |
+            any::rcmdcheck
+            any::rnaturalearthdata
+          needs: check
+
+      - name: Chrome for webshot2
+        uses: browser-actions/setup-chrome@v1
+
+      - uses: r-lib/actions/check-r-package@v2
+        with:
+          args: 'c("--no-manual", "--as-cran", "--run-donttest")'
+          error-on: '"warning"'
+          check-dir: '"check"'
+
+      - name: Gate on unexpected NOTEs
+        if: always()
+        shell: Rscript {0}
+        run: source(".github/scripts/gate-check-notes.R")
+
+  # ---------------------------------------------------------------------------
+  # 3. Depends-only check. Installs nothing from Suggests and asserts the
+  #    package still checks clean -- i.e. every requireNamespace() guard in R/
+  #    actually guards something. This catches a Suggests package used
+  #    unconditionally, which is invisible on a fully-loaded machine.
+  # ---------------------------------------------------------------------------
+  check-deps-only:
+    name: check with Suggests absent
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      _R_CHECK_DEPENDS_ONLY_: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: r-lib/actions/setup-pandoc@v2
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: release
+          use-public-rspm: true
+
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          dependencies: '"hard"'
+          extra-packages: any::rcmdcheck
+          needs: check
+
+      - name: R CMD check (hard dependencies only)
+        shell: Rscript {0}
+        run: |
+          # --no-tests: with _R_CHECK_DEPENDS_ONLY_ set, testthat itself is out
+          # of reach, so running the test directory here would fail on the
+          # harness rather than on the package. The tests-no-suggests job is
+          # the one that runs them without Suggests.
+          res <- rcmdcheck::rcmdcheck(
+            args = c("--no-manual", "--no-tests", "--no-vignettes",
+                     "--no-build-vignettes", "--ignore-vignettes"),
+            build_args = c("--no-build-vignettes"),
+            error_on = "warning",
+            check_dir = "check"
+          )
+
+  # ---------------------------------------------------------------------------
+  # 4. Run the test suite with Suggests absent. R CMD check skips the tests when
+  #    the harness cannot load, so this runs testthat directly and asserts the
+  #    skips are skips rather than failures.
+  # ---------------------------------------------------------------------------
+  tests-no-suggests:
+    name: tests with Suggests absent
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: release
+          use-public-rspm: true
+
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          dependencies: '"hard"'
+          extra-packages: any::testthat
+
+      - name: testthat with only hard dependencies present
+        shell: Rscript {0}
+        run: |
+          pkgs <- rownames(installed.packages())
+          soft <- c("sf", "leaflet", "leaflet.extras", "ggplot2", "hereR",
+                    "lwgeom", "webshot", "webshot2", "htmlwidgets")
+          cat("Suggested packages present (should be none):",
+              paste(intersect(soft, pkgs), collapse = ", "), "\n")
+          install.packages(".", repos = NULL, type = "source")
+          library(testthat); library(mysterymaps)
+          res <- test_dir("tests/testthat", package = "mysterymaps",
+                          stop_on_failure = TRUE, stop_on_warning = FALSE,
+                          reporter = "summary")
+
+  # ---------------------------------------------------------------------------
+  # 5. Coverage, gated on a floor. The floor only ever goes up; lower it and the
+  #    next person will not notice coverage rotting away underneath them.
+  # ---------------------------------------------------------------------------
+  coverage:
+    name: coverage
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: release
+          use-public-rspm: true
+
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          dependencies: '"all"'
+          extra-packages: any::covr, any::xml2
+          needs: coverage
+
+      - name: Measure and gate
+        shell: Rscript {0}
+        run: |
+          source(".github/scripts/coverage-gate.R")
+
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: |
+            coverage.json
+            cobertura.xml
+          if-no-files-found: warn
+
+  # ---------------------------------------------------------------------------
+  # 6. Static analysis.
+  # ---------------------------------------------------------------------------
+  lint:
+    name: lintr
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: release
+          use-public-rspm: true
+
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          dependencies: '"all"'
+          # local::. matters: without the package installed, object_usage_linter
+          # cannot resolve imported bindings (`%>%`, `.data`) and reports ~78
+          # false positives.
+          extra-packages: any::lintr, local::.
+          needs: lint
+
+      - name: Lint
+        shell: Rscript {0}
+        run: |
+          lints <- lintr::lint_package()
+          print(lints)
+          if (length(lints)) {
+            writeLines(sprintf("::error::%d lint(s) found", length(lints)))
+            quit(status = 1)
+          }
+
+  # ---------------------------------------------------------------------------
+  # 7. Prose: spelling in Rd/vignettes/README, and every URL in the package.
+  #    A dead link in documentation is a CRAN WARNING and a reader dead-end.
+  # ---------------------------------------------------------------------------
+  spelling:
+    name: spelling
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: r-lib/actions/setup-pandoc@v2
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: release
+          use-public-rspm: true
+
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          dependencies: '"hard"'
+          extra-packages: any::spelling
+
+      - name: Spell check
+        shell: Rscript {0}
+        run: |
+          bad <- spelling::spell_check_package(".")
+          if (nrow(bad)) {
+            print(bad)
+            writeLines("Add genuine words to inst/WORDLIST via spelling::update_wordlist().")
+            quit(status = 1)
+          }
+          cat("No misspellings.\n")
+
+  urls:
+    name: URL check
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: release
+          use-public-rspm: true
+
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          dependencies: '"hard"'
+          extra-packages: any::urlchecker
+
+      - name: Check every URL in DESCRIPTION, man/, README and vignettes/
+        shell: Rscript {0}
+        run: source(".github/scripts/url-check.R")
+
+  # ---------------------------------------------------------------------------
+  # 8. Documentation drift. man/ and NAMESPACE are generated; if regenerating
+  #    them changes anything, the committed copies are stale and the rendered
+  #    docs no longer describe the code.
+  # ---------------------------------------------------------------------------
+  doc-drift:
+    name: roxygen drift
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: release
+          use-public-rspm: true
+
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          dependencies: '"all"'
+          extra-packages: any::roxygen2, any::desc, any::remotes
+          needs: roxygen2
+
+      - name: Pin roxygen2 to the version that generated man/
+        # Without this the job fails whenever roxygen2 ships a cosmetic output
+        # change, which is noise rather than drift. DESCRIPTION records the
+        # version that produced the committed Rd files; use exactly that one.
+        shell: Rscript {0}
+        run: |
+          want <- desc::desc_get_field("Config/roxygen2/version", default = NA)
+          have <- as.character(packageVersion("roxygen2"))
+          if (is.na(want)) {
+            stop("DESCRIPTION has no Config/roxygen2/version; run roxygen2::roxygenise() and commit.")
+          }
+          cat(sprintf("pinned %s, installed %s\n", want, have))
+          if (!identical(want, have)) {
+            remotes::install_version("roxygen2", version = want, upgrade = "never")
+          }
+
+      - name: Regenerate documentation
+        run: Rscript -e 'roxygen2::roxygenise()'
+
+      - name: Fail if man/ or NAMESPACE moved
+        run: |
+          if [ -n "$(git status --porcelain man NAMESPACE DESCRIPTION)" ]; then
+            echo "::error::Generated docs are stale. Run devtools::document() and commit."
+            git status --porcelain man NAMESPACE DESCRIPTION
+            git diff -- man NAMESPACE DESCRIPTION
+            exit 1
+          fi
+          echo "Documentation is in sync with the roxygen comments."
+
+  # ---------------------------------------------------------------------------
+  # 9. Package metadata: CITATION.cff, codemeta.json and DESCRIPTION must all
+  #    still describe this package at this version.
+  # ---------------------------------------------------------------------------
+  metadata:
+    name: citation and metadata
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: release
+          use-public-rspm: true
+
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          dependencies: '"hard"'
+          extra-packages: any::cffr, any::jsonlite, any::desc
+
+      - name: Validate CITATION.cff / codemeta.json / DESCRIPTION
+        shell: Rscript {0}
+        run: source(".github/scripts/metadata-check.R")
+
+  # ---------------------------------------------------------------------------
+  # 10. Source hygiene: non-ASCII in R/ (a past bug in this repo), tabs, stray
+  #     browser() calls, TODO markers left in exported code, oversize files.
+  # ---------------------------------------------------------------------------
+  hygiene:
+    name: source hygiene
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: release
+          use-public-rspm: true
+
+      - name: Hygiene sweep
+        shell: Rscript {0}
+        run: source(".github/scripts/hygiene.R")
+
+  # ---------------------------------------------------------------------------
+  # 11. Examples, run for real with every Suggests available. R CMD check
+  #     already runs them, but this isolates the failure so a broken example is
+  #     not buried in a 4,000-line check log.
+  # ---------------------------------------------------------------------------
+  examples:
+    name: run all examples
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: r-lib/actions/setup-pandoc@v2
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: release
+          use-public-rspm: true
+
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          dependencies: '"all"'
+          extra-packages: any::devtools, any::rnaturalearthdata
+
+      - name: Run examples
+        shell: Rscript {0}
+        run: |
+          devtools::load_all(".")
+          devtools::run_examples(run_donttest = TRUE, run_dontrun = FALSE,
+                                 document = FALSE)
+
+  # ---------------------------------------------------------------------------
+  # 12. pkgdown. The site is the public face of the package; a reference topic
+  #     missing from _pkgdown.yml is a function nobody will find.
+  # ---------------------------------------------------------------------------
+  pkgdown:
+    name: pkgdown site
+    if: ${{ !inputs.skip_slow }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: r-lib/actions/setup-pandoc@v2
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: release
+          use-public-rspm: true
+
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          dependencies: '"all"'
+          extra-packages: any::pkgdown, local::.
+          needs: website
+
+      - name: Build site (warnings are failures)
+        shell: Rscript {0}
+        run: |
+          options(warn = 2)
+          pkgdown::build_site(new_process = FALSE, install = FALSE,
+                              preview = FALSE)
+
+      - name: Every exported function appears in the reference index
+        shell: Rscript {0}
+        run: source(".github/scripts/pkgdown-coverage.R")
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pkgdown-site
+          path: docs
+          if-no-files-found: ignore
+
+  # ---------------------------------------------------------------------------
+  # 13. One place to look. Fails the run if anything above failed, so a red
+  #     nightly is a single line rather than a scavenger hunt.
+  # ---------------------------------------------------------------------------
+  nightly-summary:
+    name: nightly summary
+    if: always()
+    needs:
+      - check-matrix
+      - check-strict
+      - check-deps-only
+      - tests-no-suggests
+      - coverage
+      - lint
+      - spelling
+      - urls
+      - doc-drift
+      - metadata
+      - hygiene
+      - examples
+      - pkgdown
+    runs-on: ubuntu-latest
+    steps:
+      - name: Report
+        env:
+          RESULTS: ${{ toJSON(needs) }}
+        run: |
+          python3 - <<'PY'
+          import json, os
+          results = json.loads(os.environ["RESULTS"])
+          icon = {"success": "PASS", "failure": "FAIL",
+                  "cancelled": "CANCELLED", "skipped": "skipped"}
+          lines = ["| Job | Result |", "|---|---|"]
+          bad = []
+          for job, info in sorted(results.items()):
+              r = info.get("result", "unknown")
+              lines.append(f"| {job} | {icon.get(r, r)} |")
+              if r in ("failure", "cancelled"):
+                  bad.append(job)
+          summary = "\n".join(lines)
+          print(summary)
+          with open(os.environ["GITHUB_STEP_SUMMARY"], "a") as fh:
+              fh.write("## Nightly results\n\n" + summary + "\n")
+          if bad:
+              print(f"::error::Nightly failed: {', '.join(bad)}")
+              raise SystemExit(1)
+          print("Nightly is green.")
+          PY

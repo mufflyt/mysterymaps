@@ -53,8 +53,8 @@ mysterymaps_calculate_overlap(block_groups, isochrones_joined, 30L, "data/shp/")
 \code{\link[=mysterymaps_isochrones_for_df]{mysterymaps_isochrones_for_df()}} to generate the \code{isochrones_joined}
 input; \code{\link[=mysterymaps_create_isochrones]{mysterymaps_create_isochrones()}} for single-point isochrone creation.
 
-Other geospatial helpers: 
-\code{\link{mysterymaps_geocode}()},
-\code{\link{mysterymaps_hrr}()}
+Other geospatial helpers:
+\code{\link[=mysterymaps_geocode]{mysterymaps_geocode()}},
+\code{\link[=mysterymaps_hrr]{mysterymaps_hrr()}}
 }
 \concept{geospatial helpers}

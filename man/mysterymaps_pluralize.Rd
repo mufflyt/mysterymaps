@@ -48,8 +48,8 @@ mysterymaps_pluralize(1, "midwife", "midwives", include_n = FALSE)  # "midwife"
 
 }
 \seealso{
-Other text: 
-\code{\link{mysterymaps_format_credentials}()},
-\code{\link{mysterymaps_place_title_case}()}
+Other text:
+\code{\link[=mysterymaps_format_credentials]{mysterymaps_format_credentials()}},
+\code{\link[=mysterymaps_place_title_case]{mysterymaps_place_title_case()}}
 }
 \concept{text}

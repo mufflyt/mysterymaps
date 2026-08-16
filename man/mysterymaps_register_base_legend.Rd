@@ -22,10 +22,10 @@ it. Use for legends added outside \code{\link[=mysterymaps_add_coverage_surfaces
 choropleth legend that shares the layer control with coverage surfaces.
 }
 \seealso{
-Other coverage-surfaces: 
-\code{\link{mysterymaps_add_coverage_surfaces}()},
-\code{\link{mysterymaps_base_legend_switcher}()},
-\code{\link{mysterymaps_jenks_zero_scale}()},
-\code{\link{mysterymaps_zoom_gated_labels}()}
+Other coverage-surfaces:
+\code{\link[=mysterymaps_add_coverage_surfaces]{mysterymaps_add_coverage_surfaces()}},
+\code{\link[=mysterymaps_base_legend_switcher]{mysterymaps_base_legend_switcher()}},
+\code{\link[=mysterymaps_jenks_zero_scale]{mysterymaps_jenks_zero_scale()}},
+\code{\link[=mysterymaps_zoom_gated_labels]{mysterymaps_zoom_gated_labels()}}
 }
 \concept{coverage-surfaces}

@@ -66,7 +66,7 @@ already containing rates (0-1) are used directly.
 The function detects whether \code{state_col} contains abbreviations or full
 names by sampling the first non-missing value. When the value is two
 characters or fewer it is treated as an abbreviation and looked up in
-\link[datasets:state]{datasets::state.abb} / \link[datasets:state]{datasets::state.name}. Longer values are lower-cased
+\link[datasets:state.abb]{datasets::state.abb} / \link[datasets:state.name]{datasets::state.name}. Longer values are lower-cased
 and joined directly to the map polygon data. DC and US territories are not
 present in the built-in datasets and will appear as no-data states.
 }
@@ -114,6 +114,6 @@ mysterymaps_geographic_map(
 }
 \seealso{
 \code{\link[=mysterymaps_map_acceptance_rate]{mysterymaps_map_acceptance_rate()}} for a simpler one-call
-choropleth; \code{\link[mysterycall:mysterycall_forest_plot]{mysterycall::mysterycall_forest_plot()}} for model-level visualization.
+choropleth; \code{\link[mysterycall:mysterycall_forest_plot]{mysterycall_forest_plot()}} for model-level visualization.
 }
 \concept{reporting}

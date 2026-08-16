@@ -64,10 +64,10 @@ because \code{leaflet::addLegend(group=)} follows overlay groups only.
 }
 }
 \seealso{
-Other coverage-surfaces: 
-\code{\link{mysterymaps_base_legend_switcher}()},
-\code{\link{mysterymaps_jenks_zero_scale}()},
-\code{\link{mysterymaps_register_base_legend}()},
-\code{\link{mysterymaps_zoom_gated_labels}()}
+Other coverage-surfaces:
+\code{\link[=mysterymaps_base_legend_switcher]{mysterymaps_base_legend_switcher()}},
+\code{\link[=mysterymaps_jenks_zero_scale]{mysterymaps_jenks_zero_scale()}},
+\code{\link[=mysterymaps_register_base_legend]{mysterymaps_register_base_legend()}},
+\code{\link[=mysterymaps_zoom_gated_labels]{mysterymaps_zoom_gated_labels()}}
 }
 \concept{coverage-surfaces}

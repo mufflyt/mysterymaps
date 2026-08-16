@@ -58,10 +58,10 @@ right-skewed; equal intervals put almost every county in the first bin.
 }
 }
 \seealso{
-Other coverage-surfaces: 
-\code{\link{mysterymaps_add_coverage_surfaces}()},
-\code{\link{mysterymaps_base_legend_switcher}()},
-\code{\link{mysterymaps_register_base_legend}()},
-\code{\link{mysterymaps_zoom_gated_labels}()}
+Other coverage-surfaces:
+\code{\link[=mysterymaps_add_coverage_surfaces]{mysterymaps_add_coverage_surfaces()}},
+\code{\link[=mysterymaps_base_legend_switcher]{mysterymaps_base_legend_switcher()}},
+\code{\link[=mysterymaps_register_base_legend]{mysterymaps_register_base_legend()}},
+\code{\link[=mysterymaps_zoom_gated_labels]{mysterymaps_zoom_gated_labels()}}
 }
 \concept{coverage-surfaces}

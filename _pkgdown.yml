@@ -49,6 +49,7 @@ reference:
       - mysterymaps_isochrones_for_df
       - mysterymaps_calculate_overlap
       - mysterymaps_gate_provider_coverage
+      - mysterymaps_guard_water_masks
       - mysterymaps_clear_isochrone_cache
       - mysterymaps_geocode
 

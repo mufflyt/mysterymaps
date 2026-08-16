@@ -9,7 +9,8 @@ mysterymaps_map_physicians(
   jitter_range = 0.05,
   color_palette = "magma",
   popup_var = "name",
-  output_dir = NULL
+  output_dir = NULL,
+  seed = NULL
 )
 }
 \arguments{
@@ -25,15 +26,29 @@ coordinates.}
 
 \item{output_dir}{Directory where the HTML map and PNG screenshot are saved.
 Defaults to a session-specific temporary folder.}
+
+\item{seed}{Integer or \code{NULL}. Seed for the coordinate jitter, so a published
+dot map can be regenerated exactly. \code{NULL} (default) leaves the caller's
+random stream alone and produces a different jitter each run.}
 }
 \value{
-Invisibly returns the Leaflet map object.
+Invisibly returns the Leaflet map object, with a \code{mysterymaps_seed}
+attribute recording the seed actually used.
 }
 \description{
 This function creates a Leaflet dot map of physicians using their longitude
 and latitude coordinates. It also adds ACOG district boundaries to the map
 and saves it as an HTML file with an accompanying PNG screenshot.
 }
+\section{Reproducibility}{
+
+The jitter moves every point by up to \code{jitter_range} degrees. That is a real
+displacement on a published figure, so it has to be replayable: pass \code{seed}
+and the same map comes back. The seed is applied locally -- the caller's
+\code{.Random.seed} is saved and restored -- so seeding a map does not silently
+reseed the rest of a script.
+}
+
 \examples{
 \dontshow{if (interactive()) withAutoprint(\{ # examplesIf}
 # Load required libraries
@@ -53,16 +68,16 @@ mysterymaps_map_physicians(physician_data)
 \dontshow{\}) # examplesIf}
 }
 \seealso{
-Other mapping: 
-\code{\link{mysterymaps_clear_isochrone_cache}()},
-\code{\link{mysterymaps_create_isochrones}()},
-\code{\link{mysterymaps_hrr_maps}()},
-\code{\link{mysterymaps_isochrones_for_df}()},
-\code{\link{mysterymaps_map_acceptance_rate}()},
-\code{\link{mysterymaps_map_acog_districts}()},
-\code{\link{mysterymaps_map_base}()},
-\code{\link{mysterymaps_map_block_group}()},
-\code{\link{mysterymaps_map_leaflet}()},
-\code{\link{mysterymaps_plot_isochrones}()}
+Other mapping:
+\code{\link[=mysterymaps_clear_isochrone_cache]{mysterymaps_clear_isochrone_cache()}},
+\code{\link[=mysterymaps_create_isochrones]{mysterymaps_create_isochrones()}},
+\code{\link[=mysterymaps_hrr_maps]{mysterymaps_hrr_maps()}},
+\code{\link[=mysterymaps_isochrones_for_df]{mysterymaps_isochrones_for_df()}},
+\code{\link[=mysterymaps_map_acceptance_rate]{mysterymaps_map_acceptance_rate()}},
+\code{\link[=mysterymaps_map_acog_districts]{mysterymaps_map_acog_districts()}},
+\code{\link[=mysterymaps_map_base]{mysterymaps_map_base()}},
+\code{\link[=mysterymaps_map_block_group]{mysterymaps_map_block_group()}},
+\code{\link[=mysterymaps_map_leaflet]{mysterymaps_map_leaflet()}},
+\code{\link[=mysterymaps_plot_isochrones]{mysterymaps_plot_isochrones()}}
 }
 \concept{mapping}

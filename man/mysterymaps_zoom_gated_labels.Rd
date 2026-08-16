@@ -30,10 +30,10 @@ reader learns anything. Drawing every point on a canvas renderer and gating
 the \emph{labels} keeps the distribution visible at every zoom.
 }
 \seealso{
-Other coverage-surfaces: 
-\code{\link{mysterymaps_add_coverage_surfaces}()},
-\code{\link{mysterymaps_base_legend_switcher}()},
-\code{\link{mysterymaps_jenks_zero_scale}()},
-\code{\link{mysterymaps_register_base_legend}()}
+Other coverage-surfaces:
+\code{\link[=mysterymaps_add_coverage_surfaces]{mysterymaps_add_coverage_surfaces()}},
+\code{\link[=mysterymaps_base_legend_switcher]{mysterymaps_base_legend_switcher()}},
+\code{\link[=mysterymaps_jenks_zero_scale]{mysterymaps_jenks_zero_scale()}},
+\code{\link[=mysterymaps_register_base_legend]{mysterymaps_register_base_legend()}}
 }
 \concept{coverage-surfaces}

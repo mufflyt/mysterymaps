@@ -1,0 +1,20 @@
+# R CMD check NOTEs that are environmental rather than defects.
+# One regex per line. Anything not matched here fails the nightly.
+#
+# Adding a line here is a claim that the NOTE cannot be fixed in the package.
+# Say why, in a comment, so the claim can be argued with later.
+
+# CI runners frequently cannot reach the worldclockapi service used to verify
+# the build clock. Nothing to do with this package.
+unable to verify current time
+
+# A fresh git checkout can carry mtimes a few seconds ahead of the runner clock.
+checking for future file timestamps
+
+# 'devel' builds routinely lack binaries for suggested packages on the day the
+# nightly runs; the strict job installs them explicitly and is the real gate.
+Packages? suggested but not available for checking
+
+# The HTML manual needs a full LaTeX install that the runners do not carry.
+# --no-manual is passed for the same reason.
+checking (PDF|HTML) version of manual

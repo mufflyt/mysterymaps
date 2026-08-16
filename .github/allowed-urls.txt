@@ -1,0 +1,10 @@
+# URLs that an anonymous checker cannot reach, and why.
+# Exact match against the URL as it appears in the source. One per line.
+#
+# A private repository answers 404 to a logged-out request, which is
+# indistinguishable from a dead link. Listing it here says "this is private,
+# not broken" -- and makes the claim reviewable when the repo goes public.
+
+# github.com/mufflyt/isochrones is private as of 2026-08. Remove this line when
+# it is opened up; the check will then verify it for real.
+https://github.com/mufflyt/isochrones

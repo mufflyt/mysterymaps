@@ -1,0 +1,298 @@
+name: Scientific Nightly
+
+# The scientific assault. Runs against the frozen national fixture and against
+# generated adversarial data, and asks a harder question than "does the package
+# work":
+#
+#   How many different ways can we make a believable but scientifically false
+#   national map, and does mysterymaps catch every one of them?
+#
+# SCOPE. This repository owns geometry -> spatial calculation -> classification
+# -> map -> artifact. It does NOT own provider linkage, deduplication of
+# provider identities, denominators, source ingestion, or parallel execution.
+# Those rows report NOT OWNED in the final gate, and the capability-guards job
+# fails the build if any of them ever appears in R/ without its adversarial
+# tests. NOT OWNED is acceptable. NOT TESTED is not.
+#
+# Schedule: 09:47 UTC == 02:47 MST, thirty minutes after the software nightly
+# so a red software run is already visible when this one starts.
+
+on:
+  schedule:
+    # Tier B: every night.
+    - cron: '47 9 * * *'
+    # Tier C: Sunday, same time, with 400 property cases per property. The
+    # workflow is identical; only the campaign size changes, so a deep-audit
+    # failure is reproducible by rerunning the nightly with deep: true.
+    - cron: '47 9 * * 0'
+  workflow_dispatch:
+    inputs:
+      property_n:
+        description: 'Property-test cases per property (deep audit uses 400)'
+        type: string
+        default: '60'
+      deep:
+        description: 'Deep audit: 400 property cases per property (Tier C)'
+        type: boolean
+        default: false
+
+concurrency:
+  group: scientific-nightly-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  # Resolves the GitHub-only mysterycall dependency named in Remotes:.
+  GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+  R_KEEP_PKG_SOURCE: yes
+  _R_CHECK_CRAN_INCOMING_: false
+  NOT_CRAN: true
+  MYSTERYMAPS_RESULTS_DIR: ci-results
+  # Tier B (nightly) runs 60 cases per property. Tier C -- the weekly deep
+  # audit, and `deep: true` on a manual run -- runs 400, which is where the
+  # rarer generated counterexamples actually turn up.
+  MYSTERYMAPS_PROPERTY_N: >-
+    ${{ inputs.deep && '400' || (github.event.schedule == '47 9 * * 0' && '400')
+        || inputs.property_n || '60' }}
+
+jobs:
+  # ===========================================================================
+  # Software contracts. The tarball, not the source checkout.
+  # ===========================================================================
+  package-check:
+    name: package-check
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: r-lib/actions/setup-pandoc@v2
+      - uses: r-lib/actions/setup-r@v2
+        with: { r-version: release, use-public-rspm: true }
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          dependencies: '"all"'
+          extra-packages: any::rcmdcheck, any::rnaturalearthdata
+          needs: check
+
+      - name: R CMD check from the built tarball
+        shell: Rscript {0}
+        run: |
+          dir.create("ci-results", showWarnings = FALSE)
+          writeLines("fail", "ci-results/package-check.result")
+          res <- rcmdcheck::rcmdcheck(args = c("--no-manual", "--as-cran"),
+                                      error_on = "never", check_dir = "check")
+          cat(res$stdout)
+          ok <- length(res$errors) == 0 && length(res$warnings) == 0
+          if (ok) writeLines("pass", "ci-results/package-check.result")
+          if (!ok) quit(status = 1)
+
+      - name: Gate on unexpected NOTEs
+        if: always()
+        shell: Rscript {0}
+        run: source(".github/scripts/gate-check-notes.R")
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: { name: result-package-check, path: ci-results/ }
+
+  # ===========================================================================
+  # The scientific domains. One job per row of the final gate, so a scientific
+  # failure is never buried inside one enormous log.
+  # ===========================================================================
+  domains:
+    name: ${{ matrix.job }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - job: geometry-assault
+            files: test-geometry-assault.R
+          - job: spatial-conservation
+            files: test-spatial-conservation.R
+          - job: crs-s2-invariance
+            files: test-crs-s2-invariance.R
+          - job: map-semantics
+            files: test-map-semantics.R
+          - job: zero-vs-missing
+            files: test-zero-vs-missing.R
+          - job: boundary-assignment
+            files: test-boundary-and-state.R
+          - job: metamorphic
+            files: test-metamorphic.R
+          - job: property-tests
+            files: test-property-geometry.R
+          - job: output-contracts
+            files: test-output-contracts.R
+          - job: state-leakage
+            files: test-boundary-and-state.R test-rng-and-dedup-discipline.R
+          - job: national-map-fixture
+            files: test-national-map-fixture.R test-extreme-fixtures.R
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: r-lib/actions/setup-r@v2
+        with: { r-version: release, use-public-rspm: true }
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          dependencies: '"all"'
+          extra-packages: any::rnaturalearthdata, local::.
+          needs: check
+
+      - name: ${{ matrix.job }}
+        run: Rscript .github/scripts/run-domain.R ${{ matrix.job }} ${{ matrix.files }}
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: result-${{ matrix.job }}
+          path: ci-results/
+
+  # ===========================================================================
+  # Named scientific regressions. Every defect ever found, kept as its own
+  # named test so a red line says which specific error has returned.
+  # ===========================================================================
+  named-regressions:
+    name: named-regressions
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: r-lib/actions/setup-r@v2
+        with: { r-version: release, use-public-rspm: true }
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          dependencies: '"all"'
+          extra-packages: any::rnaturalearthdata, local::.
+      - run: Rscript .github/scripts/run-domain.R named-regressions test-regressions-named.R
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: { name: result-named-regressions, path: ci-results/ }
+
+  # ===========================================================================
+  # Capability escalation guards. Semantic, not name-matching: they detect the
+  # OPERATIONS that constitute a capability and demand its adversarial tests.
+  # ===========================================================================
+  capability-guards:
+    name: capability-guards
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: r-lib/actions/setup-r@v2
+        with: { r-version: release, use-public-rspm: true }
+
+      - name: Guard the boundaries this package does not own
+        shell: bash
+        run: |
+          mkdir -p ci-results
+          echo fail > ci-results/capability-guards.result
+          Rscript .github/scripts/capability-guards.R
+          echo pass > ci-results/capability-guards.result
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: { name: result-capability-guards, path: ci-results/ }
+
+  # ===========================================================================
+  # Mutation assault. Not a coverage percentage: a fixed list of
+  # high-consequence scientific corruptions, every one of which must die.
+  # ===========================================================================
+  mutation-assault:
+    name: mutation-assault
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - uses: r-lib/actions/setup-r@v2
+        with: { r-version: release, use-public-rspm: true }
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          dependencies: '"all"'
+          extra-packages: any::rnaturalearthdata, local::.
+
+      - name: Kill every high-consequence mutant
+        shell: bash
+        run: |
+          mkdir -p ci-results
+          echo fail > ci-results/mutation-assault.result
+          Rscript .github/scripts/mutation-assault.R
+          echo pass > ci-results/mutation-assault.result
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: result-mutation-assault
+          path: |
+            ci-results/
+            mutation-assault.json
+
+  # ===========================================================================
+  # Prove the CI is not decorative (SPEC 52). A suite that silently stops
+  # running is the failure mode every other job here cannot detect.
+  # ===========================================================================
+  ci-selftest:
+    name: ci-selftest
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: r-lib/actions/setup-r@v2
+        with: { r-version: release, use-public-rspm: true }
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          dependencies: '"all"'
+          extra-packages: local::.
+      - run: Rscript .github/scripts/ci-selftest.R
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: { name: result-ci-selftest, path: ci-results/ }
+
+  # ===========================================================================
+  # The gate. One line, no ambiguous yellow.
+  # ===========================================================================
+  scientific-gate:
+    name: scientific-gate
+    if: always()
+    needs:
+      - package-check
+      - domains
+      - named-regressions
+      - capability-guards
+      - mutation-assault
+      - ci-selftest
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: r-lib/actions/setup-r@v2
+        with: { r-version: release, use-public-rspm: true }
+
+      - uses: actions/download-artifact@v4
+        with:
+          path: downloaded
+          pattern: result-*
+          merge-multiple: true
+
+      - name: Collect results
+        run: |
+          mkdir -p ci-results
+          find downloaded -name '*.result' -exec cp {} ci-results/ \; 2>/dev/null || true
+          find downloaded -name '*.accounting' -exec cp {} ci-results/ \; 2>/dev/null || true
+          echo "--- results collected ---"
+          ls -la ci-results/ || true
+          echo "--- accounting ---"
+          cat ci-results/*.accounting 2>/dev/null || true
+
+      - name: Scientific gate
+        run: Rscript .github/scripts/scientific-gate.R
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: scientific-gate
+          path: |
+            ci-results/
+            scientific-gate.txt

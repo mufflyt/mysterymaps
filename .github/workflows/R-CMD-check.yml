@@ -1,0 +1,152 @@
+name: R-CMD-check
+
+# The fast lane. Every push and pull request gets a real check on the two
+# platforms most breakages show up on, plus the cheap static gates. The full
+# beating -- every OS, every R version, force-suggests, coverage floors, link
+# checking -- runs nightly; see nightly.yml.
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: check-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  # Resolves the GitHub-only mysterycall dependency named in Remotes:.
+  GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+  R_KEEP_PKG_SOURCE: yes
+  _R_CHECK_CRAN_INCOMING_: false
+  NOT_CRAN: true
+
+jobs:
+  check:
+    name: check ${{ matrix.config.os }} R-${{ matrix.config.r }}
+    runs-on: ${{ matrix.config.os }}
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        config:
+          - { os: ubuntu-latest, r: 'release' }
+          - { os: macos-latest,  r: 'release' }
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: r-lib/actions/setup-pandoc@v2
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: ${{ matrix.config.r }}
+          use-public-rspm: true
+
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          extra-packages: any::rcmdcheck
+          needs: check
+
+      - uses: r-lib/actions/check-r-package@v2
+        with:
+          upload-snapshots: true
+          args: 'c("--no-manual", "--as-cran")'
+          # error-on can be "warning" here only because _R_CHECK_CRAN_INCOMING_
+          # is false in this workflow's env. With the incoming check on,
+          # --as-cran warns that mysterycall is not in a mainstream repository
+          # -- true by design while this package is not CRAN-bound -- and every
+          # run would fail on it. Turning that one check off is what buys the
+          # strictness everywhere else.
+          error-on: '"warning"'
+
+      - name: Gate on unexpected NOTEs
+        if: always()
+        shell: Rscript {0}
+        run: source(".github/scripts/gate-check-notes.R")
+
+  static:
+    name: lint, spelling, hygiene, docs
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: r-lib/actions/setup-pandoc@v2
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: release
+          use-public-rspm: true
+
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          dependencies: '"all"'
+          extra-packages: |
+            any::lintr
+            any::spelling
+            any::roxygen2
+            any::desc
+            any::remotes
+            local::.
+
+      - name: Source hygiene
+        if: always()
+        shell: Rscript {0}
+        run: source(".github/scripts/hygiene.R")
+
+      - name: Lint
+        if: always()
+        shell: Rscript {0}
+        run: |
+          lints <- lintr::lint_package()
+          print(lints)
+          if (length(lints)) quit(status = 1)
+
+      - name: Spelling
+        if: always()
+        shell: Rscript {0}
+        run: |
+          bad <- spelling::spell_check_package(".")
+          if (nrow(bad)) { print(bad); quit(status = 1) }
+          cat("No misspellings.\n")
+
+      - name: Documentation is in sync
+        if: always()
+        shell: Rscript {0}
+        run: |
+          want <- desc::desc_get_field("Config/roxygen2/version", default = NA)
+          if (!is.na(want) && !identical(want, as.character(packageVersion("roxygen2")))) {
+            remotes::install_version("roxygen2", version = want, upgrade = "never")
+          }
+          roxygen2::roxygenise()
+
+      - name: Fail if man/ or NAMESPACE moved
+        if: always()
+        run: |
+          if [ -n "$(git status --porcelain man NAMESPACE DESCRIPTION)" ]; then
+            echo "::error::Generated docs are stale. Run devtools::document() and commit."
+            git diff -- man NAMESPACE DESCRIPTION
+            exit 1
+          fi
+
+  coverage:
+    name: coverage
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: release
+          use-public-rspm: true
+
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          dependencies: '"all"'
+          extra-packages: any::covr, any::xml2
+          needs: coverage
+
+      - name: Measure and gate
+        shell: Rscript {0}
+        run: source(".github/scripts/coverage-gate.R")

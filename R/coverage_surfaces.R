@@ -191,4 +191,3 @@ function(el, x) {
     as.integer(max_labels))
   htmlwidgets::onRender(map, js)
 }
-

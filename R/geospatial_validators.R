@@ -53,6 +53,17 @@ validate_sf_inputs <- function(...,
     }
   }
 
+  # Check the class BEFORE reading a CRS off the first object. Passing a plain
+  # data.frame is the commonest caller mistake, and st_crs() on one returns NA,
+  # so leaving this until sanitize_object() reported "Reference CRS is missing"
+  # -- an accurate statement about the wrong problem, sending the caller to
+  # inspect a CRS that was never there.
+  for (nm in object_names) {
+    if (!inherits(objects[[nm]], "sf")) {
+      stop(sprintf("`%s` must be an sf object for %s.", nm, context), call. = FALSE)
+    }
+  }
+
   ref_crs <- if (!is.null(target_crs)) {
     sf::st_crs(target_crs)
   } else {
@@ -111,6 +122,19 @@ validate_sf_inputs <- function(...,
       if (isTRUE(auto_fix)) {
         obj <- sf::st_make_valid(obj)
         still_invalid <- which(!sf::st_is_valid(obj))
+        if (length(still_invalid)) {
+          # s2 declines to repair a self-intersecting ring that the planar
+          # algorithm splits cleanly into a MULTIPOLYGON -- and a
+          # self-intersecting ring is precisely what a drive-time routing API
+          # returns. Retry on the plane before giving up, restoring the
+          # caller's s2 setting either way.
+          old_s2 <- sf::sf_use_s2()
+          on.exit(suppressMessages(sf::sf_use_s2(old_s2)), add = TRUE)
+          suppressMessages(sf::sf_use_s2(FALSE))
+          obj <- sf::st_make_valid(obj)
+          still_invalid <- which(!sf::st_is_valid(obj))
+          suppressMessages(sf::sf_use_s2(old_s2))
+        }
         if (length(still_invalid)) {
           stop(sprintf("`%s` has geometries that remain invalid after repair (rows: %s) during %s.",
                        name, paste(still_invalid, collapse = ", "), context), call. = FALSE)

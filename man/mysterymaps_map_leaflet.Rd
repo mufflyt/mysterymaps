@@ -20,16 +20,16 @@ map <- mysterymaps_map_leaflet()
 \dontshow{\}) # examplesIf}
 }
 \seealso{
-Other mapping: 
-\code{\link{mysterymaps_clear_isochrone_cache}()},
-\code{\link{mysterymaps_create_isochrones}()},
-\code{\link{mysterymaps_hrr_maps}()},
-\code{\link{mysterymaps_isochrones_for_df}()},
-\code{\link{mysterymaps_map_acceptance_rate}()},
-\code{\link{mysterymaps_map_acog_districts}()},
-\code{\link{mysterymaps_map_base}()},
-\code{\link{mysterymaps_map_block_group}()},
-\code{\link{mysterymaps_map_physicians}()},
-\code{\link{mysterymaps_plot_isochrones}()}
+Other mapping:
+\code{\link[=mysterymaps_clear_isochrone_cache]{mysterymaps_clear_isochrone_cache()}},
+\code{\link[=mysterymaps_create_isochrones]{mysterymaps_create_isochrones()}},
+\code{\link[=mysterymaps_hrr_maps]{mysterymaps_hrr_maps()}},
+\code{\link[=mysterymaps_isochrones_for_df]{mysterymaps_isochrones_for_df()}},
+\code{\link[=mysterymaps_map_acceptance_rate]{mysterymaps_map_acceptance_rate()}},
+\code{\link[=mysterymaps_map_acog_districts]{mysterymaps_map_acog_districts()}},
+\code{\link[=mysterymaps_map_base]{mysterymaps_map_base()}},
+\code{\link[=mysterymaps_map_block_group]{mysterymaps_map_block_group()}},
+\code{\link[=mysterymaps_map_physicians]{mysterymaps_map_physicians()}},
+\code{\link[=mysterymaps_plot_isochrones]{mysterymaps_plot_isochrones()}}
 }
 \concept{mapping}

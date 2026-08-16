@@ -115,7 +115,13 @@ mysterymaps_hrr_maps <- function(
   if (!requireNamespace("ggplot2", quietly = TRUE)) {
     stop("Package 'ggplot2' is required for mysterymaps_hrr_maps(). Install with: install.packages('ggplot2')", call. = FALSE)
   }
-  sf::sf_use_s2(FALSE)
+  # Spherical geometry makes the 0.3-degree honeycomb intersection intractably
+  # slow, so it goes off for the duration -- and comes back on afterwards.
+  # Leaving it off silently changes the result of every sf operation the caller
+  # runs next, in a session where nothing announced the change.
+  old_s2 <- sf::sf_use_s2()
+  on.exit(suppressMessages(sf::sf_use_s2(old_s2)), add = TRUE)
+  suppressMessages(sf::sf_use_s2(FALSE))
 
   # Load USA shapefile
   message("Loading USA shapefile...")

@@ -53,6 +53,21 @@ mysterymaps_map_acog_districts <- function(acog_districts_file = NULL) {
   if (!"State" %in% names(districts)) {
     stop("The ACOG districts file must contain a 'State' column.", call. = FALSE)
   }
+  if (!"ACOG_District" %in% names(districts)) {
+    stop("The ACOG districts file must contain an 'ACOG_District' column.",
+         call. = FALSE)
+  }
+
+  # Subregion and State_Abbreviations are optional: the coalesce() calls below
+  # and further down exist to fall back to ACOG_District and to the Natural
+  # Earth postal code respectively. dplyr::coalesce() cannot reach a column
+  # that is not there, so materialise them as NA first -- otherwise a caller's
+  # own CSV fails with "Column `Subregion` not found in `.data`", which reads
+  # as a bug rather than a missing optional column.
+  if (!"Subregion" %in% names(districts)) districts$Subregion <- NA_character_
+  if (!"State_Abbreviations" %in% names(districts)) {
+    districts$State_Abbreviations <- NA_character_
+  }
 
   districts <- dplyr::mutate(
     districts,
@@ -98,4 +113,3 @@ mysterymaps_map_acog_districts <- function(acog_districts_file = NULL) {
 
   sf::st_as_sf(districts_sf)
 }
-

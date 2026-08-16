@@ -1,0 +1,23 @@
+{
+  "package": 95.2941,
+  "files": {
+    "R/calculate_intersection_overlap_and_save.R": 92.35,
+    "R/county_access_template.R": 95.73,
+    "R/coverage_gates.R": 100,
+    "R/coverage_surfaces.R": 100,
+    "R/create_individual_isochrone_plots.R": 95.83,
+    "R/create_isochrones_for_dataframe.R": 92.5,
+    "R/create_isochrones.R": 94.12,
+    "R/geocode.R": 91.74,
+    "R/geographic_map.R": 98.53,
+    "R/geospatial_validators.R": 92.37,
+    "R/hrr.R": 93.94,
+    "R/jenks_zero_scale.R": 96.15,
+    "R/map_acceptance_rate.R": 100,
+    "R/map_create_acog_districts_sf.R": 92.86,
+    "R/map_create_base.R": 96,
+    "R/map_create_block_group_overlap.R": 100,
+    "R/map_create_leaflet_base.R": 100,
+    "R/text_helpers.R": 97.01
+  }
+}

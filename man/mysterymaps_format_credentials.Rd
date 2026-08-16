@@ -47,8 +47,8 @@ mysterymaps_format_credentials("RN")            # NA
 
 }
 \seealso{
-Other text: 
-\code{\link{mysterymaps_place_title_case}()},
-\code{\link{mysterymaps_pluralize}()}
+Other text:
+\code{\link[=mysterymaps_place_title_case]{mysterymaps_place_title_case()}},
+\code{\link[=mysterymaps_pluralize]{mysterymaps_pluralize()}}
 }
 \concept{text}
