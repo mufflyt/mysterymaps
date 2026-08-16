@@ -19,7 +19,7 @@ stub_webshot <- function(env = parent.frame()) {
 
 skip_unless_dots <- function() {
   for (p in c("leaflet", "webshot", "viridis", "htmlwidgets", "sf",
-              "rnaturalearth", "rnaturalearthdata")) {
+              "rnaturalearth", "rnaturalearthdata", "rnaturalearthhires")) {
     skip_if_not_installed(p)
   }
 }

@@ -135,3 +135,25 @@ test_that("negative values are not silently folded into the zero class", {
   sc <- mysterymaps_jenks_zero_scale(c(-3, 0, 2, 9))
   expect_identical(sc$color(-3), sc$color(0))
 })
+
+test_that("KNOWN GAP: Inf is excluded from the breaks but shaded as top class", {
+  # Two separate behaviours, and only one of them is a gap.
+  #
+  # Excluding Inf from the BREAKS is correct and load-bearing: without
+  # `pos <- pos[is.finite(pos)]` a single Inf makes classIntervals() return
+  # non-finite breaks and every county lands in one class. That is asserted
+  # here so the filter cannot be removed silently.
+  #
+  # Shading Inf as the top class is the gap -- NEWS.md, "Known gaps, pinned by
+  # tests but not changed". A zero denominator becomes the best-supplied
+  # county on the map. test-jenks-zero-scale-semantics.R pins the colour; this
+  # pins the thing that must not regress while the gap stands.
+  vals <- c(0, 1, 4, 9, 25, Inf)
+  sc <- suppressWarnings(mysterymaps_jenks_zero_scale(vals))
+
+  # The breaks are computed from the finite values only: the finite classes
+  # are identical with and without the Inf present.
+  finite_only <- suppressWarnings(mysterymaps_jenks_zero_scale(c(0, 1, 4, 9, 25)))
+  expect_equal(sc$leg_labs, finite_only$leg_labs)
+  expect_equal(sc$color(c(1, 4, 9, 25)), finite_only$color(c(1, 4, 9, 25)))
+})

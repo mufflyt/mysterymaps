@@ -148,7 +148,7 @@ jobs:
           # rnaturalearthdata is not a declared Suggests but several tests need
           # it; without it they skip, and a skipped test covers no code. That
           # alone took measured coverage from 95% to 79%.
-          extra-packages: any::covr, any::xml2, any::rnaturalearthdata
+          extra-packages: any::covr, any::xml2, any::rnaturalearthdata, ropensci/rnaturalearthhires
           needs: coverage
 
       - name: Measure and gate
@@ -156,10 +156,20 @@ jobs:
         run: source(".github/scripts/coverage-gate.R")
 
       - name: Show test output if coverage failed
+        # covr reports only "Failure in .../testthat.Rout.fail" and never its
+        # contents, so a failing test is invisible in CI. The first attempt at
+        # this step printed nothing: `bash -e -o pipefail` kills the step on
+        # find's permission-denied stderr, and the pipeline's exit status is
+        # the while-loop's. Run it detached from those failure modes.
         if: failure()
-        shell: bash
+        shell: bash --noprofile --norc {0}
         run: |
-          # covr reports only "Failure in .../testthat.Rout.fail" and never its
-          # contents, which makes a failing test invisible in CI. Print it.
-          find /tmp "${RUNNER_TEMP:-/tmp}" . -name 'testthat.Rout.fail' 2>/dev/null |
-            while read -r f; do echo "=== $f ==="; cat "$f"; done
+          set +e
+          echo "searching for testthat output..."
+          for root in /tmp "${RUNNER_TEMP:-/tmp}" "${HOME}" .; do
+            find "$root" -name 'testthat.Rout*' -print 2>/dev/null
+          done | sort -u | while read -r f; do
+            echo "=========== $f ==========="
+            tail -200 "$f"
+          done
+          exit 0

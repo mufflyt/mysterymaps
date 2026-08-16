@@ -79,6 +79,16 @@ mysterymaps_map_acog_districts <- function(acog_districts_file = NULL) {
   if (!requireNamespace("rnaturalearth", quietly = TRUE)) {
     stop("Package 'rnaturalearth' is required for mysterymaps_map_acog_districts()", call. = FALSE)
   }
+  # ne_states() reads the high-resolution state boundaries, which live in
+  # rnaturalearthhires -- not on CRAN, so it is absent on a stock CI runner
+  # and on any machine that installed rnaturalearth without it. Without this
+  # guard the failure arrives from inside rnaturalearth naming neither this
+  # function nor the package to install.
+  if (!requireNamespace("rnaturalearthhires", quietly = TRUE)) {
+    stop("Package 'rnaturalearthhires' is required for state boundaries. ",
+         "Install with: install.packages('rnaturalearthhires', ",
+         "repos = 'https://ropensci.r-universe.dev')", call. = FALSE)
+  }
   states_sf <- rnaturalearth::ne_states(country = "united states of america", returnclass = "sf")
   states_sf <- dplyr::transmute(
     states_sf,

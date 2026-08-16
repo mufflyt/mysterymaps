@@ -30,6 +30,7 @@ test_that("a UTF-8 BOM on the State header is repaired, not fatal", {
   skip_if_not_installed("sf")
   skip_if_not_installed("rnaturalearth")
   skip_if_not_installed("rnaturalearthdata")
+  skip_if_not_installed("rnaturalearthhires")
   dir <- withr::local_tempdir()
   path <- file.path(dir, "bom.csv")
   con <- file(path, open = "wb")
@@ -44,6 +45,7 @@ test_that("districts come back as sf polygons, one row per district", {
   skip_if_not_installed("sf")
   skip_if_not_installed("rnaturalearth")
   skip_if_not_installed("rnaturalearthdata")
+  skip_if_not_installed("rnaturalearthhires")
   dir <- withr::local_tempdir()
   out <- mysterymaps_map_acog_districts(write_lookup(dir))
 
@@ -57,6 +59,7 @@ test_that("states in one district are dissolved into a single geometry", {
   skip_if_not_installed("sf")
   skip_if_not_installed("rnaturalearth")
   skip_if_not_installed("rnaturalearthdata")
+  skip_if_not_installed("rnaturalearthhires")
   dir <- withr::local_tempdir()
   path <- write_lookup(dir, rows = c("Colorado,District VIII,Mountain",
                                      "Wyoming,District VIII,Mountain"))
@@ -73,6 +76,7 @@ test_that("districts are returned in sorted order", {
   skip_if_not_installed("sf")
   skip_if_not_installed("rnaturalearth")
   skip_if_not_installed("rnaturalearthdata")
+  skip_if_not_installed("rnaturalearthhires")
   dir <- withr::local_tempdir()
   path <- write_lookup(dir, rows = c("Wyoming,District Z,Mountain",
                                      "Colorado,District A,Mountain"))
@@ -84,6 +88,7 @@ test_that("a lookup naming no real state is an error, not an empty map", {
   skip_if_not_installed("sf")
   skip_if_not_installed("rnaturalearth")
   skip_if_not_installed("rnaturalearthdata")
+  skip_if_not_installed("rnaturalearthhires")
   dir <- withr::local_tempdir()
   path <- write_lookup(dir, rows = "Atlantis,District I,Nowhere")
   expect_error(mysterymaps_map_acog_districts(path),
@@ -94,6 +99,7 @@ test_that("State_Abbreviations falls back to the Natural Earth postal code", {
   skip_if_not_installed("sf")
   skip_if_not_installed("rnaturalearth")
   skip_if_not_installed("rnaturalearthdata")
+  skip_if_not_installed("rnaturalearthhires")
   dir <- withr::local_tempdir()
   out <- mysterymaps_map_acog_districts(write_lookup(dir))
   expect_false(anyNA(out$State_Abbreviations))

@@ -10,6 +10,7 @@ skip_unless_dots <- function() {
   skip_if_not_installed("sf")
   skip_if_not_installed("rnaturalearth")
   skip_if_not_installed("rnaturalearthdata")
+  skip_if_not_installed("rnaturalearthhires")
 }
 
 physicians <- function(n = 5) {

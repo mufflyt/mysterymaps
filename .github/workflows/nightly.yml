@@ -131,6 +131,7 @@ jobs:
           extra-packages: |
             any::rcmdcheck
             any::rnaturalearthdata
+            ropensci/rnaturalearthhires
           needs: check
 
       - name: Chrome for webshot2

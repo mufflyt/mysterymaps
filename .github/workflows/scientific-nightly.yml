@@ -139,7 +139,7 @@ jobs:
       - uses: r-lib/actions/setup-r-dependencies@v2
         with:
           dependencies: '"all"'
-          extra-packages: any::rnaturalearthdata, local::.
+          extra-packages: any::rnaturalearthdata, ropensci/rnaturalearthhires, local::.
           needs: check
 
       - name: ${{ matrix.job }}
@@ -166,7 +166,7 @@ jobs:
       - uses: r-lib/actions/setup-r-dependencies@v2
         with:
           dependencies: '"all"'
-          extra-packages: any::rnaturalearthdata, local::.
+          extra-packages: any::rnaturalearthdata, ropensci/rnaturalearthhires, local::.
       - run: Rscript .github/scripts/run-domain.R named-regressions test-regressions-named.R
       - uses: actions/upload-artifact@v4
         if: always()
@@ -212,7 +212,7 @@ jobs:
       - uses: r-lib/actions/setup-r-dependencies@v2
         with:
           dependencies: '"all"'
-          extra-packages: any::rnaturalearthdata, local::.
+          extra-packages: any::rnaturalearthdata, ropensci/rnaturalearthhires, local::.
 
       - name: Kill every high-consequence mutant
         shell: bash

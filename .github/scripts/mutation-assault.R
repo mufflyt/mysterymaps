@@ -40,8 +40,11 @@ MUTANTS <- list(
   list(id = "na_becomes_zero", domain = "zero-vs-missing",
        killers = c("test-zero-vs-missing.R", "test-national-map-fixture.R"),
        file = "R/jenks_zero_scale.R",
-       from = "out[is.na(x)] <- na_col",
-       to   = "out[is.na(x)] <- zero_col",
+       # Anchored on the PAIR: `out[is.na(x)] <- na_col` alone appears in all
+       # three branches of the scale, so a bare match is ambiguous and the
+       # harness refuses to guess. This pins the general (Jenks) branch.
+       from = "    out[!is.na(x) & x <= 0] <- zero_col\n    out[is.na(x)] <- na_col",
+       to   = "    out[!is.na(x) & x <= 0] <- zero_col\n    out[is.na(x)] <- zero_col",
        harm = paste("An unmeasured county is painted as a measured zero and",
                     "the legend calls it 0. On a rare-subspecialty map this is",
                     "indistinguishable from the finding.")),
@@ -49,17 +52,25 @@ MUTANTS <- list(
   list(id = "zero_becomes_na", domain = "zero-vs-missing",
        killers = c("test-zero-vs-missing.R", "test-national-map-fixture.R"),
        file = "R/jenks_zero_scale.R",
-       from = "out[!is.na(x) & x <= 0] <- zero_col",
-       to   = "out[!is.na(x) & x <= 0] <- na_col",
+       from = "    out[!is.na(x) & x <= 0] <- zero_col\n    out[is.na(x)] <- na_col",
+       to   = "    out[!is.na(x) & x <= 0] <- na_col\n    out[is.na(x)] <- na_col",
        harm = paste("A genuine provider desert is reported as missing data,",
                     "erasing the finding the map exists to show.")),
 
-  list(id = "is_na_negated", domain = "zero-vs-missing",
+  # Negating the is.na() filter on `pos` was tried here and is an EQUIVALENT
+  # MUTANT against this implementation: the mutation lets NAs back into `pos`,
+  # and the very next line -- `pos <- pos[is.finite(pos)]` -- removes them
+  # again. The defensive line makes the corruption unobservable. Replaced with
+  # a mutation that removes that filter instead, which is genuinely fatal:
+  # a non-finite rate then reaches classIntervals().
+  list(id = "finite_filter_removed", domain = "zero-vs-missing",
        killers = c("test-zero-vs-missing.R", "test-jenks-zero-scale.R"),
        file = "R/jenks_zero_scale.R",
-       from = "pos  <- n[!is.na(n) & n > 0]",
-       to   = "pos  <- n[is.na(n) | n > 0]",
-       harm = "NA re-enters the classifier and the break computation."),
+       from = "  pos  <- pos[is.finite(pos)]",
+       to   = "  pos  <- pos",
+       harm = paste("An Inf produced by a zero denominator upstream reaches the",
+                    "classifier, and the break computation returns non-finite",
+                    "breaks that colour every county in one class.")),
 
   list(id = "na_legend_suppressed", domain = "zero-vs-missing",
        killers = c("test-zero-vs-missing.R", "test-national-map-fixture.R"),
@@ -179,8 +190,8 @@ MUTANTS <- list(
   list(id = "labels_reversed", domain = "classification",
        killers = c("test-map-semantics.R", "test-property-geometry.R"),
        file = "R/jenks_zero_scale.R",
-       from = "c(list(color = color, has_na = has_na), legend(c(zero_col, cols), c(zlab, labs)))",
-       to   = "c(list(color = color, has_na = has_na), legend(c(zero_col, cols), c(zlab, rev(labs))))",
+       from = "c(list(color = color), with_na(c(zero_col, cols), c(zlab, labs)))",
+       to   = "c(list(color = color), with_na(c(zero_col, cols), c(zlab, rev(labs))))",
        harm = paste("The legend labels are desynchronised from the colours they",
                     "sit beside, so the counties with the most providers are",
                     "captioned as the ones with the fewest. Every class is still",
