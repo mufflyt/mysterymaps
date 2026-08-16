@@ -150,3 +150,12 @@ jobs:
       - name: Measure and gate
         shell: Rscript {0}
         run: source(".github/scripts/coverage-gate.R")
+
+      - name: Show test output if coverage failed
+        if: failure()
+        shell: bash
+        run: |
+          # covr reports only "Failure in .../testthat.Rout.fail" and never its
+          # contents, which makes a failing test invisible in CI. Print it.
+          find /tmp "${RUNNER_TEMP:-/tmp}" . -name 'testthat.Rout.fail' 2>/dev/null |
+            while read -r f; do echo "=== $f ==="; cat "$f"; done

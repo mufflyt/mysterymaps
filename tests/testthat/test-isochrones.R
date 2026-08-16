@@ -17,6 +17,12 @@ fake_isoline <- function(...) {
 # they only need to not fail.
 mock_hereR <- function(isoline = fake_isoline) {
   skip_if_not_installed("hereR")
+  # Blank HERE_API_KEY for the duration. These tests pass an explicit api_key
+  # and must prove that argument works; with a real key in the developer's
+  # environment they would pass even when the argument is ignored entirely --
+  # which is exactly how the missing api_key= forwarding in
+  # mysterymaps_isochrones_for_df() survived local runs and only failed on CI.
+  withr::local_envvar(c(HERE_API_KEY = ""), .local_envir = parent.frame())
   local_mocked_bindings(
     isoline = isoline,
     set_key = function(...) invisible(NULL),
@@ -257,4 +263,33 @@ test_that("checkpoints are written to output_dir as .rds and .gpkg", {
 
   expect_length(list.files(out_dir, pattern = "\\.rds$"), 1L)
   expect_length(list.files(out_dir, pattern = "\\.gpkg$"), 1L)
+})
+
+
+test_that("regression-api-key-is-forwarded-to-the-routing-call", {
+  # mysterymaps_isochrones_for_df() validated api_key, passed it to
+  # hereR::set_key(), and then called mysterymaps_create_isochrones() without
+  # it -- so the inner call fell back to Sys.getenv("HERE_API_KEY"). With no
+  # env var the documented argument did nothing.
+  skip_if_not_installed("sf")
+  skip_if_not_installed("hereR")
+  skip_if_not_installed("easyr")
+  skip_if_not_installed("lwgeom")
+
+  withr::local_envvar(c(HERE_API_KEY = ""))
+  seen <- NULL
+  local_mocked_bindings(
+    isoline = fake_isoline,
+    set_key = function(api_key, ...) { seen <<- api_key; invisible(NULL) },
+    set_freemium = function(...) invisible(NULL),
+    set_verbose = function(...) invisible(NULL),
+    .package = "hereR")
+  mysterymaps_clear_isochrone_cache()
+
+  out <- suppressMessages(mysterymaps_isochrones_for_df(
+    data.frame(lat = 40.5, long = -100.5), breaks = 1800,
+    api_key = "explicit-key-only", output_dir = withr::local_tempdir()))
+
+  expect_s3_class(out, "sf")
+  expect_identical(seen, "explicit-key-only")
 })

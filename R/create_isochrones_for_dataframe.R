@@ -162,7 +162,14 @@ mysterymaps_isochrones_for_df <- function(
 
     # Get isochrones for that point
     Sys.sleep(0.4)
-    point_isochrones <- mysterymaps_create_isochrones(location = point_temp, range = breaks)
+    # Forward api_key. Without it the inner call falls back to its own default,
+    # Sys.getenv("HERE_API_KEY") -- so an explicit api_key= was validated here,
+    # handed to hereR::set_key(), and then silently ignored for every actual
+    # request. A caller who supplied a key but had no env var got "routing API
+    # key is required" from three frames down, naming the argument they had
+    # just passed.
+    point_isochrones <- mysterymaps_create_isochrones(
+      location = point_temp, range = breaks, api_key = api_key)
     if (is.list(point_isochrones) && length(point_isochrones) && !is.null(point_isochrones$error)) {
       next
     }
