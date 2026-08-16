@@ -117,3 +117,106 @@ test_that("sf, readr and rnaturalearth are each named in their own error", {
                  sprintf("'%s' is required", pkg))
   }
 })
+
+# ---------------------------------------------------------------------------
+# The branches the dot-map tests used to reach incidentally
+# ---------------------------------------------------------------------------
+#
+# Mocking mysterymaps_map_acog_districts() out of the dot-map tests was right --
+# those tests are about jitter and seeding -- but it removed the only thing
+# exercising these paths. They are error and fallback branches, which is
+# exactly the code that most needs a test of its own rather than incidental
+# traffic from somewhere else.
+
+test_that("the packaged table is used when no file is given", {
+  skip_if_not_installed("sf")
+  skip_if_not_installed("rnaturalearth")
+  skip_if_not_installed("rnaturalearthdata")
+  skip_if_not_installed("rnaturalearthhires")
+  p <- system.file("extdata", "acog_districts.csv", package = "mysterycall")
+  skip_if(!nzchar(p), "mysterycall's packaged table is unavailable")
+
+  out <- mysterymaps_map_acog_districts()
+  expect_s3_class(out, "sf")
+  expect_gt(nrow(out), 0L)
+})
+
+test_that("an absent packaged table names mysterycall, not an empty path", {
+  # system.file() returns "" when the file is missing, and the generic message
+  # then reads "Could not locate the ACOG districts file at ''" -- true, and
+  # useless to whoever has to fix it.
+  local_mocked_bindings(
+    system.file = function(..., package = "base") {
+      if (identical(package, "mysterycall")) "" else base::system.file(..., package = package)
+    },
+    .package = "base")
+
+  expect_error(mysterymaps_map_acog_districts(),
+               "packaged ACOG districts table")
+  expect_error(mysterymaps_map_acog_districts(), "mysterycall")
+})
+
+test_that("a byte-order mark on the State header is repaired", {
+  # Excel writes a BOM on every CSV it exports, and readr surfaces it as a
+  # column whose name is not "State". The rename is what keeps such a file
+  # usable instead of failing on a missing column.
+  skip_if_not_installed("sf")
+  skip_if_not_installed("rnaturalearth")
+  skip_if_not_installed("rnaturalearthdata")
+  skip_if_not_installed("rnaturalearthhires")
+
+  dir <- withr::local_tempdir()
+  path <- file.path(dir, "bom-name.csv")
+  writeLines(c("..State,ACOG_District,Subregion",
+               "Colorado,District VIII,Mountain"), path)
+
+  out <- mysterymaps_map_acog_districts(path)
+  expect_s3_class(out, "sf")
+  expect_equal(nrow(out), 1L)
+})
+
+test_that("a table without ACOG_District is refused by name", {
+  dir <- withr::local_tempdir()
+  path <- file.path(dir, "no-district.csv")
+  writeLines(c("State,Subregion", "Colorado,Mountain"), path)
+
+  expect_error(mysterymaps_map_acog_districts(path),
+               "must contain an 'ACOG_District' column")
+})
+
+test_that("Subregion is optional and falls back to the district name", {
+  # dplyr::coalesce() cannot reach a column that is not there, so the fallback
+  # only works because the column is materialised as NA first.
+  skip_if_not_installed("sf")
+  skip_if_not_installed("rnaturalearth")
+  skip_if_not_installed("rnaturalearthdata")
+  skip_if_not_installed("rnaturalearthhires")
+
+  dir <- withr::local_tempdir()
+  path <- file.path(dir, "no-subregion.csv")
+  writeLines(c("State,ACOG_District", "Colorado,District VIII"), path)
+
+  out <- mysterymaps_map_acog_districts(path)
+  expect_s3_class(out, "sf")
+  expect_identical(out$Subregion, out$ACOG_District)
+})
+
+test_that("a failure inside ne_states names the off-CRAN package to install", {
+  # rnaturalearthhires is not on CRAN, so this is the common failure for
+  # anyone who installed rnaturalearth on its own. The message has to say so;
+  # rnaturalearth's own error does not mention this function or the repo.
+  skip_if_not_installed("sf")
+  skip_if_not_installed("rnaturalearth")
+
+  dir <- withr::local_tempdir()
+  path <- file.path(dir, "ok.csv")
+  writeLines(c("State,ACOG_District,Subregion",
+               "Colorado,District VIII,Mountain"), path)
+
+  local_mocked_bindings(
+    ne_states = function(...) stop("no data available"),
+    .package = "rnaturalearth")
+
+  expect_error(mysterymaps_map_acog_districts(path), "rnaturalearthhires")
+  expect_error(mysterymaps_map_acog_districts(path), "r-universe")
+})
