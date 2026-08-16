@@ -11,6 +11,9 @@
 
 `%||%` <- function(a, b) if (is.null(a)) b else a
 
+out_dir <- Sys.getenv("MYSTERYMAPS_RESULTS_DIR", "ci-results")
+dir.create(file.path(out_dir, "covr-pkg"), recursive = TRUE, showWarnings = FALSE)
+
 floor_file <- ".github/coverage-floor.txt"
 cfg <- if (file.exists(floor_file)) {
   kv <- read.dcf(floor_file)
@@ -28,7 +31,11 @@ exempt <- if (!is.null(cfg$ExemptFiles)) {
 cov <- covr::package_coverage(
   quiet = FALSE,
   clean = FALSE,
-  install_path = file.path(normalizePath(tempdir(), winslash = "/"), "pkg")
+  # NOT tempdir(): covr installs the instrumented package there, and the
+  # directory is removed when this R process exits -- taking
+  # testthat.Rout.fail with it, so a later "print the failure" step finds
+  # nothing. A path under the results dir survives for the artifact upload.
+  install_path = normalizePath(file.path(out_dir, "covr-pkg"), mustWork = FALSE)
 )
 
 pct <- covr::percent_coverage(cov)

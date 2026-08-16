@@ -151,6 +151,20 @@ jobs:
           extra-packages: any::covr, any::xml2, any::rnaturalearthdata, ropensci/rnaturalearthhires
           needs: coverage
 
+      # Run the suite plainly first. covr reports a failure only as a path to
+      # a file inside its own tempdir, which it then deletes -- so a failing
+      # test under covr is invisible. A normal testthat run names it.
+      - name: Tests (visible, before instrumentation)
+        shell: Rscript {0}
+        run: |
+          library(testthat); library(mysterymaps)
+          r <- test_dir("tests/testthat", package = "mysterymaps",
+                        reporter = "summary", stop_on_failure = FALSE)
+          d <- as.data.frame(r)
+          cat(sprintf("\nPASS %d  FAIL %d  ERROR %d  SKIP %d\n",
+                      sum(d$passed), sum(d$failed), sum(d$error), sum(d$skipped)))
+          if (sum(d$failed) + sum(d$error) > 0) quit(status = 1)
+
       - name: Measure and gate
         shell: Rscript {0}
         run: source(".github/scripts/coverage-gate.R")
