@@ -138,3 +138,59 @@ skip_if_no_acog_csv <- function() {
     skip("mysterycall's packaged acog_districts.csv is not available")
   }
 }
+
+# A stand-in for mysterymaps_map_acog_districts().
+#
+# mysterymaps_map_physicians() draws district boundaries, and the real
+# function reaches rnaturalearth::ne_states() (which needs the off-CRAN
+# rnaturalearthhires) and a lookup table packaged inside mysterycall. Tests
+# about JITTER and SEEDING have no stake in either, and skipping them for want
+# of that chain left the seeding code unmeasured on CI.
+#
+# map_physicians() reads only ACOG_District and the geometry, so this is
+# everything it needs.
+mm_fake_acog <- function(n = 3) {
+  skip_if_not_installed("sf")
+  polys <- lapply(seq_len(n), function(i) {
+    x <- -106 + (i - 1) * 2
+    sf::st_polygon(list(cbind(c(x, x + 2, x + 2, x, x),
+                              c(38, 38, 42, 42, 38))))
+  })
+  sf::st_sf(ACOG_District = paste("District", utils::as.roman(seq_len(n))),
+            Subregion = paste("Region", seq_len(n)),
+            geometry = sf::st_sfc(polys, crs = 4326))
+}
+
+# Use the stand-in for the duration of a test.
+mm_local_fake_acog <- function(env = parent.frame()) {
+  # .package matters: mysterymaps_map_physicians() calls
+  # mysterymaps::mysterymaps_map_acog_districts() namespace-qualified, so a
+  # mock bound only in the calling environment is never consulted. Without
+  # this the mock appeared to work under test_dir() and did nothing under
+  # R CMD check, where the tests run against the installed namespace.
+  local_mocked_bindings(mysterymaps_map_acog_districts = function(...) mm_fake_acog(),
+                        .package = "mysterymaps", .env = env)
+}
+
+# Everything a dot-map test needs, in one call, bound to the calling test's
+# frame so the mocks last exactly as long as the test does.
+#
+# This exists because the setup was previously three separate incantations
+# copied per test -- skips, a webshot stub, a district mock -- and edits to
+# them kept reaching some tests and not others. One function cannot drift
+# against itself.
+mm_setup_dot_map <- function(env = parent.frame()) {
+  for (p in c("leaflet", "webshot", "viridis", "htmlwidgets", "sf")) {
+    skip_if_not_installed(p)
+  }
+  # Never write a real screenshot: webshot needs PhantomJS.
+  local_mocked_bindings(
+    webshot = function(url, file, ...) { file.create(file); invisible(file) },
+    .package = "webshot", .env = env)
+  # Never fetch real district polygons: that reaches rnaturalearth (and the
+  # off-CRAN rnaturalearthhires) plus a table packaged in mysterycall, none of
+  # which these tests are about.
+  local_mocked_bindings(
+    mysterymaps_map_acog_districts = function(...) mm_fake_acog(),
+    .package = "mysterymaps", .env = env)
+}

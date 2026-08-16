@@ -136,17 +136,8 @@ test_that("the artifact records the CRS it was measured in", {
 })
 
 test_that("the jitter seed is recorded on the map object", {
-  skip_if_not_installed("leaflet")
-  skip_if_not_installed("webshot")
-  skip_if_not_installed("viridis")
-  skip_if_not_installed("htmlwidgets")
-  skip_if_not_installed("rnaturalearth")
-  skip_if_not_installed("rnaturalearthdata")
-  skip_if_not_installed("rnaturalearthhires")
-  skip_if_no_acog_csv()
-  local_mocked_bindings(
-    webshot = function(url, file, ...) { file.create(file); invisible(file) },
-    .package = "webshot")
+  # The subject is the recorded seed, not the district layer.
+  mm_setup_dot_map()
 
   pd <- data.frame(long = c(-105, -104), lat = c(39, 40),
                    name = c("a", "b"),

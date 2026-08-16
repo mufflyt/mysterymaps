@@ -8,10 +8,7 @@ skip_unless_dots <- function() {
   skip_if_not_installed("viridis")
   skip_if_not_installed("htmlwidgets")
   skip_if_not_installed("sf")
-  skip_if_not_installed("rnaturalearth")
-  skip_if_not_installed("rnaturalearthdata")
-  skip_if_not_installed("rnaturalearthhires")
-  skip_if_no_acog_csv()
+  # District data is mocked by mm_local_fake_acog(); see helper-fixtures.R.
 }
 
 physicians <- function(n = 5) {
@@ -35,14 +32,10 @@ test_that("each required package is named in its own error", {
 })
 
 test_that("the map carries markers, district polygons and a legend", {
-  skip_unless_dots()
+  mm_setup_dot_map()
   out <- withr::local_tempdir()
   # webshot needs PhantomJS, which is not installed on a CI runner; the
   # screenshot is not what this test is about.
-  local_mocked_bindings(webshot = function(url, file, ...) {
-    file.create(file)
-    invisible(file)
-  }, .package = "webshot")
 
   m <- suppressWarnings(suppressMessages(
     mysterymaps_map_physicians(physicians(), output_dir = out)))
@@ -54,12 +47,8 @@ test_that("the map carries markers, district polygons and a legend", {
 })
 
 test_that("an HTML file and a PNG land in output_dir", {
-  skip_unless_dots()
+  mm_setup_dot_map()
   out <- withr::local_tempdir()
-  local_mocked_bindings(webshot = function(url, file, ...) {
-    file.create(file)
-    invisible(file)
-  }, .package = "webshot")
 
   suppressWarnings(suppressMessages(
     mysterymaps_map_physicians(physicians(), output_dir = out)))
@@ -69,12 +58,8 @@ test_that("an HTML file and a PNG land in output_dir", {
 })
 
 test_that("the map is returned invisibly", {
-  skip_unless_dots()
+  mm_setup_dot_map()
   out <- withr::local_tempdir()
-  local_mocked_bindings(webshot = function(url, file, ...) {
-    file.create(file)
-    invisible(file)
-  }, .package = "webshot")
 
   expect_invisible(suppressWarnings(suppressMessages(
     mysterymaps_map_physicians(physicians(), output_dir = out))))
@@ -83,12 +68,8 @@ test_that("the map is returned invisibly", {
 test_that("jitter_range = 0 leaves the coordinates where they were", {
   # The jitter exists so co-located providers are both visible; it must be
   # switchable off for a map whose points are already distinct.
-  skip_unless_dots()
+  mm_setup_dot_map()
   out <- withr::local_tempdir()
-  local_mocked_bindings(webshot = function(url, file, ...) {
-    file.create(file)
-    invisible(file)
-  }, .package = "webshot")
 
   pd <- physicians(3)
   m <- suppressWarnings(suppressMessages(
@@ -102,12 +83,8 @@ test_that("jitter_range = 0 leaves the coordinates where they were", {
 test_that("the legend labels every ACOG district, not just those with points", {
   # The factor levels come from the district table rather than the data, so a
   # district with no providers still appears -- which is the finding.
-  skip_unless_dots()
+  mm_setup_dot_map()
   out <- withr::local_tempdir()
-  local_mocked_bindings(webshot = function(url, file, ...) {
-    file.create(file)
-    invisible(file)
-  }, .package = "webshot")
 
   m <- suppressWarnings(suppressMessages(
     mysterymaps_map_physicians(physicians(2), output_dir = out)))

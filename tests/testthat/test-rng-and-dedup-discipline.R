@@ -18,14 +18,13 @@ stub_webshot <- function(env = parent.frame()) {
 }
 
 skip_unless_dots <- function() {
-  for (p in c("leaflet", "webshot", "viridis", "htmlwidgets", "sf",
-              "rnaturalearth", "rnaturalearthdata", "rnaturalearthhires")) {
+  for (p in c("leaflet", "webshot", "viridis", "htmlwidgets", "sf")) {
     skip_if_not_installed(p)
   }
-  # These draw a dot map, which draws ACOG districts, which reads the table
-  # packaged inside mysterycall. Absent on a runner that resolved mysterycall
-  # without its extdata.
-  skip_if_no_acog_csv()
+  # Deliberately NOT skipping on rnaturalearth* or mysterycall's packaged
+  # district table: these tests are about the jitter seed, and the district
+  # layer is mocked out by mm_local_fake_acog(). Skipping for want of an
+  # unrelated data package left the seeding code unmeasured on CI.
 }
 
 physicians <- function(n = 5) {
@@ -46,8 +45,8 @@ test_that("the same seed reproduces the same jittered map exactly", {
   # A published dot map moves every provider by up to jitter_range degrees.
   # If that displacement cannot be replayed, the figure cannot be regenerated
   # and "why is this provider here" has no answer.
-  skip_unless_dots()
-  stub_webshot()
+  mm_setup_dot_map()
+  mm_setup_dot_map()
   out <- withr::local_tempdir()
 
   a <- suppressWarnings(suppressMessages(
@@ -60,8 +59,8 @@ test_that("the same seed reproduces the same jittered map exactly", {
 
 test_that("different seeds produce different jitter", {
   # The complement: a seed that changes nothing is not a seed.
-  skip_unless_dots()
-  stub_webshot()
+  mm_setup_dot_map()
+  mm_setup_dot_map()
   out <- withr::local_tempdir()
 
   a <- suppressWarnings(suppressMessages(
@@ -75,8 +74,8 @@ test_that("different seeds produce different jitter", {
 test_that("the seed used is recorded on the returned object", {
   # Provenance the package is responsible for: the artifact says how it was
   # made, rather than the caller having to remember.
-  skip_unless_dots()
-  stub_webshot()
+  mm_setup_dot_map()
+  mm_setup_dot_map()
   m <- suppressWarnings(suppressMessages(
     mysterymaps_map_physicians(physicians(), output_dir = withr::local_tempdir(),
                                seed = 99)))
@@ -86,8 +85,8 @@ test_that("the seed used is recorded on the returned object", {
 test_that("REGRESSION: seeding a map does not reseed the caller's stream", {
   # set.seed() without restoration would make drawing a map silently reseed
   # every simulation that ran after it in the same script.
-  skip_unless_dots()
-  stub_webshot()
+  mm_setup_dot_map()
+  mm_setup_dot_map()
   out <- withr::local_tempdir()
 
   set.seed(7)
@@ -105,8 +104,8 @@ test_that("REGRESSION: seeding a map does not reseed the caller's stream", {
 })
 
 test_that("an invalid seed is rejected rather than silently ignored", {
-  skip_unless_dots()
-  stub_webshot()
+  mm_setup_dot_map()
+  mm_setup_dot_map()
   out <- withr::local_tempdir()
   for (bad in list("42", c(1, 2), NA_real_)) {
     expect_error(
@@ -118,8 +117,8 @@ test_that("an invalid seed is rejected rather than silently ignored", {
 
 test_that("jitter_range = 0 makes the map deterministic without a seed", {
   # The escape hatch for anyone who would rather have no randomness at all.
-  skip_unless_dots()
-  stub_webshot()
+  mm_setup_dot_map()
+  mm_setup_dot_map()
   out <- withr::local_tempdir()
   a <- suppressWarnings(suppressMessages(
     mysterymaps_map_physicians(physicians(), jitter_range = 0, output_dir = out)))
