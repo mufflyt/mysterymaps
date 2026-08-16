@@ -1,0 +1,21 @@
+# Codecov is a viewer here, not the gate. The gate is
+# .github/scripts/coverage-gate.R, which reads .github/coverage-floor.txt and
+# fails the job -- so a Codecov outage cannot quietly turn coverage off.
+comment: false
+
+coverage:
+  status:
+    project:
+      default:
+        target: auto
+        threshold: 1%
+        informational: true
+    patch:
+      default:
+        target: 80%
+        informational: true
+
+ignore:
+  - "data-raw/**"
+  - "tests/**"
+  - "vignettes/**"

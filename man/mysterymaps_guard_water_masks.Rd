@@ -64,10 +64,10 @@ masks <- mysterymaps_guard_water_masks(masks, aw)
 }
 }
 \seealso{
-Other county-access-template: 
-\code{\link{mysterymaps_county_access_map}()},
-\code{\link{mysterymaps_gate_provider_coverage}()},
-\code{\link{mysterymaps_name_search}()},
-\code{\link{mysterymaps_notes_panel}()}
+Other county-access-template:
+\code{\link[=mysterymaps_county_access_map]{mysterymaps_county_access_map()}},
+\code{\link[=mysterymaps_gate_provider_coverage]{mysterymaps_gate_provider_coverage()}},
+\code{\link[=mysterymaps_name_search]{mysterymaps_name_search()}},
+\code{\link[=mysterymaps_notes_panel]{mysterymaps_notes_panel()}}
 }
 \concept{county-access-template}

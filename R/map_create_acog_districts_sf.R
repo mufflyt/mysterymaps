@@ -35,6 +35,16 @@ mysterymaps_map_acog_districts <- function(acog_districts_file = NULL) {
 
   if (is.null(acog_districts_file)) {
     acog_districts_file <- system.file("extdata", "acog_districts.csv", package = "mysterycall")
+    if (!nzchar(acog_districts_file)) {
+      # system.file() returns "" when the file is absent, and the generic
+      # message below then reads "Could not locate the ACOG districts file
+      # at ''" -- true, and useless. A caller who passed no file needs to know
+      # where the default was supposed to come from.
+      stop("Could not locate the packaged ACOG districts table. It ships in ",
+           "mysterycall (inst/extdata/acog_districts.csv); either that package ",
+           "is unavailable or its extdata was not installed. Pass ",
+           "`acog_districts_file` to use your own table.", call. = FALSE)
+    }
   }
 
   if (!nzchar(acog_districts_file) || !file.exists(acog_districts_file)) {
@@ -53,6 +63,21 @@ mysterymaps_map_acog_districts <- function(acog_districts_file = NULL) {
   if (!"State" %in% names(districts)) {
     stop("The ACOG districts file must contain a 'State' column.", call. = FALSE)
   }
+  if (!"ACOG_District" %in% names(districts)) {
+    stop("The ACOG districts file must contain an 'ACOG_District' column.",
+         call. = FALSE)
+  }
+
+  # Subregion and State_Abbreviations are optional: the coalesce() calls below
+  # and further down exist to fall back to ACOG_District and to the Natural
+  # Earth postal code respectively. dplyr::coalesce() cannot reach a column
+  # that is not there, so materialise them as NA first -- otherwise a caller's
+  # own CSV fails with "Column `Subregion` not found in `.data`", which reads
+  # as a bug rather than a missing optional column.
+  if (!"Subregion" %in% names(districts)) districts$Subregion <- NA_character_
+  if (!"State_Abbreviations" %in% names(districts)) {
+    districts$State_Abbreviations <- NA_character_
+  }
 
   districts <- dplyr::mutate(
     districts,
@@ -64,7 +89,25 @@ mysterymaps_map_acog_districts <- function(acog_districts_file = NULL) {
   if (!requireNamespace("rnaturalearth", quietly = TRUE)) {
     stop("Package 'rnaturalearth' is required for mysterymaps_map_acog_districts()", call. = FALSE)
   }
-  states_sf <- rnaturalearth::ne_states(country = "united states of america", returnclass = "sf")
+
+  # ne_states() reads high-resolution boundaries from rnaturalearthhires,
+  # which is NOT on CRAN. It is therefore absent on a stock runner, and on any
+  # machine that installed rnaturalearth without it.
+  #
+  # Caught here rather than guarded with requireNamespace(): naming an
+  # off-CRAN package anywhere in DESCRIPTION makes dependency resolution fail
+  # for every job, and calling requireNamespace() on an undeclared package is
+  # an R CMD check WARNING. A tryCatch gives the caller the same actionable
+  # message with neither cost.
+  states_sf <- tryCatch(
+    rnaturalearth::ne_states(country = "united states of america", returnclass = "sf"),
+    error = function(e) {
+      stop("Could not load state boundaries. rnaturalearth::ne_states() needs ",
+           "the 'rnaturalearthhires' package, which is not on CRAN. Install it ",
+           "with:\n  install.packages(\"rnaturalearthhires\", repos = ",
+           "\"https://ropensci.r-universe.dev\")\nUnderlying error: ",
+           conditionMessage(e), call. = FALSE)
+    })
   states_sf <- dplyr::transmute(
     states_sf,
     State = stringr::str_trim(name),
@@ -98,4 +141,3 @@ mysterymaps_map_acog_districts <- function(acog_districts_file = NULL) {
 
   sf::st_as_sf(districts_sf)
 }
-

@@ -41,8 +41,8 @@ mysterymaps_place_title_case("ISLE OF PALMS")   # "Isle of Palms"
 
 }
 \seealso{
-Other text: 
-\code{\link{mysterymaps_format_credentials}()},
-\code{\link{mysterymaps_pluralize}()}
+Other text:
+\code{\link[=mysterymaps_format_credentials]{mysterymaps_format_credentials()}},
+\code{\link[=mysterymaps_pluralize]{mysterymaps_pluralize()}}
 }
 \concept{text}

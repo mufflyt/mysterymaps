@@ -49,10 +49,10 @@ the midwifery access map 490 of 11,792 midwives sat outside their own
 gap toward exactly the regions the map exists to describe.
 }
 \seealso{
-Other county-access-template: 
-\code{\link{mysterymaps_county_access_map}()},
-\code{\link{mysterymaps_guard_water_masks}()},
-\code{\link{mysterymaps_name_search}()},
-\code{\link{mysterymaps_notes_panel}()}
+Other county-access-template:
+\code{\link[=mysterymaps_county_access_map]{mysterymaps_county_access_map()}},
+\code{\link[=mysterymaps_guard_water_masks]{mysterymaps_guard_water_masks()}},
+\code{\link[=mysterymaps_name_search]{mysterymaps_name_search()}},
+\code{\link[=mysterymaps_notes_panel]{mysterymaps_notes_panel()}}
 }
 \concept{county-access-template}

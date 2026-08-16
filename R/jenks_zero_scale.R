@@ -43,7 +43,16 @@ mysterymaps_jenks_zero_scale <- function(n, k = 6, zero_col = "#e0e0e0",
   # different, and shading them alike is the error this scale exists to
   # prevent at the other end. The legend gains the entry only when some value
   # is actually missing, so a complete map keeps a two-part legend.
-  has_na <- anyNA(n)
+  # Non-finite is not a measurement, and that includes Inf. A rate reaches Inf
+  # by division by a zero denominator -- a county with no births, no
+  # population -- so it is the emptiest place on the map, not the fullest.
+  #
+  # Inf was already kept out of the BREAKS by the is.finite() filter below, but
+  # color() still handed it the top class: findInterval(Inf, brks, all.inside =
+  # TRUE) returns the last interval. The county with no denominator therefore
+  # rendered as the best-supplied in the country, with no legend entry saying
+  # otherwise. Treat every non-finite value as the caller's `na_col`.
+  has_na <- !all(is.finite(n))
   with_na <- function(cols, labs) {
     if (!has_na) return(list(leg_cols = cols, leg_labs = labs))
     list(leg_cols = c(cols, na_col), leg_labs = c(labs, na_label))
@@ -71,7 +80,7 @@ mysterymaps_jenks_zero_scale <- function(n, k = 6, zero_col = "#e0e0e0",
   if (length(upos) == 0)
     return(c(list(color = function(x) {
                out <- rep(zero_col, length(x))
-               out[is.na(x)] <- na_col
+               out[!is.finite(x)] <- na_col
                out
              }),
              with_na(zero_col, zlab)))
@@ -83,8 +92,8 @@ mysterymaps_jenks_zero_scale <- function(n, k = 6, zero_col = "#e0e0e0",
     return(c(list(
       color = function(x) {
         out <- rep(col1, length(x))
-        out[!is.na(x) & x <= 0] <- zero_col
-        out[is.na(x)] <- na_col
+        out[is.finite(x) & x <= 0] <- zero_col
+        out[!is.finite(x)] <- na_col
         out
       }),
       with_na(c(zero_col, col1), c(zlab, fmt(upos)))))
@@ -119,8 +128,8 @@ mysterymaps_jenks_zero_scale <- function(n, k = 6, zero_col = "#e0e0e0",
     # Order matters: zero first, then NA over the top. findInterval() returns
     # NA for an NA input, so both would otherwise fall through to the same
     # branch -- which is exactly how they came to share a colour.
-    out[!is.na(x) & x <= 0] <- zero_col
-    out[is.na(x)] <- na_col
+    out[is.finite(x) & x <= 0] <- zero_col
+    out[!is.finite(x)] <- na_col
     out
   }
   c(list(color = color), with_na(c(zero_col, cols), c(zlab, labs)))

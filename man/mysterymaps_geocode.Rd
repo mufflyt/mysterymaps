@@ -33,7 +33,7 @@ finishes (requires the optional \code{beepr} package). Defaults to \code{TRUE}.}
 \item{quiet}{Logical flag controlling log verbosity. Defaults to the package
 quiet-mode option.}
 
-\item{tracker}{Optional progress tracker created with \code{\link[mysterycall:mysterycall_progress_tracker]{mysterycall::mysterycall_progress_tracker()}}.
+\item{tracker}{Optional progress tracker created with \code{\link[mysterycall:mysterycall_progress_tracker]{mysterycall_progress_tracker()}}.
 When supplied, the step named by \code{tracker_step} is automatically started and
 marked as complete or failed with an appropriate quality tier.}
 
@@ -83,7 +83,7 @@ Common errors and remedies:
 }
 
 An invalid or expired key is only detected at the first geocoding
-request, not at function entry. Run \code{\link[mysterycall:mysterycall_preflight_check]{mysterycall::mysterycall_preflight_check()}} with
+request, not at function entry. Run \code{\link[mysterycall:mysterycall_preflight_check]{mysterycall_preflight_check()}} with
 \code{check_apis = TRUE} before a long workflow to catch key problems early.
 }
 
@@ -93,12 +93,12 @@ result <- mysterymaps_geocode("addresses.csv", "my_api_key")
 \dontshow{\}) # examplesIf}
 }
 \seealso{
-\code{\link[mysterycall:mysterycall_preflight_check]{mysterycall::mysterycall_preflight_check()}} to validate API keys before a long
+\code{\link[mysterycall:mysterycall_preflight_check]{mysterycall_preflight_check()}} to validate API keys before a long
 workflow; \code{\link[=mysterymaps_create_isochrones]{mysterymaps_create_isochrones()}} to compute drive-time polygons
 from geocoded coordinates.
 
-Other geospatial helpers: 
-\code{\link{mysterymaps_calculate_overlap}()},
-\code{\link{mysterymaps_hrr}()}
+Other geospatial helpers:
+\code{\link[=mysterymaps_calculate_overlap]{mysterymaps_calculate_overlap()}},
+\code{\link[=mysterymaps_hrr]{mysterymaps_hrr()}}
 }
 \concept{geospatial helpers}

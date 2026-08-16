@@ -5,3 +5,10 @@
 *.tar.gz
 docs/
 .claude/settings.local.json
+/ci-results/
+/capability-guards.json
+/mutation-assault.json
+/scientific-gate.txt
+Rplots.pdf
+/coverage.json
+/cobertura.xml

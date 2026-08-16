@@ -52,10 +52,10 @@ have, and the year in the title is always the freshest input, never the
 oldest.
 }
 \seealso{
-Other county-access-template: 
-\code{\link{mysterymaps_county_access_map}()},
-\code{\link{mysterymaps_gate_provider_coverage}()},
-\code{\link{mysterymaps_guard_water_masks}()},
-\code{\link{mysterymaps_name_search}()}
+Other county-access-template:
+\code{\link[=mysterymaps_county_access_map]{mysterymaps_county_access_map()}},
+\code{\link[=mysterymaps_gate_provider_coverage]{mysterymaps_gate_provider_coverage()}},
+\code{\link[=mysterymaps_guard_water_masks]{mysterymaps_guard_water_masks()}},
+\code{\link[=mysterymaps_name_search]{mysterymaps_name_search()}}
 }
 \concept{county-access-template}

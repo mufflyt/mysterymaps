@@ -14,7 +14,7 @@ control.}
 \item{lat, lng}{Numeric latitude and longitude used to center the initial
 view. Defaults position the map over the continental United States.}
 
-\item{zoom}{Numeric zoom level passed to \code{\link[leaflet:map-methods]{leaflet::setView()}}.}
+\item{zoom}{Numeric zoom level passed to \code{\link[leaflet:setView]{leaflet::setView()}}.}
 }
 \value{
 A \code{\link[leaflet:leaflet]{leaflet::leaflet()}} map object pre-configured with controls and
@@ -32,16 +32,16 @@ mysterymaps_map_base("<strong>Custom title</strong>")
 \dontshow{\}) # examplesIf}
 }
 \seealso{
-Other mapping: 
-\code{\link{mysterymaps_clear_isochrone_cache}()},
-\code{\link{mysterymaps_create_isochrones}()},
-\code{\link{mysterymaps_hrr_maps}()},
-\code{\link{mysterymaps_isochrones_for_df}()},
-\code{\link{mysterymaps_map_acceptance_rate}()},
-\code{\link{mysterymaps_map_acog_districts}()},
-\code{\link{mysterymaps_map_block_group}()},
-\code{\link{mysterymaps_map_leaflet}()},
-\code{\link{mysterymaps_map_physicians}()},
-\code{\link{mysterymaps_plot_isochrones}()}
+Other mapping:
+\code{\link[=mysterymaps_clear_isochrone_cache]{mysterymaps_clear_isochrone_cache()}},
+\code{\link[=mysterymaps_create_isochrones]{mysterymaps_create_isochrones()}},
+\code{\link[=mysterymaps_hrr_maps]{mysterymaps_hrr_maps()}},
+\code{\link[=mysterymaps_isochrones_for_df]{mysterymaps_isochrones_for_df()}},
+\code{\link[=mysterymaps_map_acceptance_rate]{mysterymaps_map_acceptance_rate()}},
+\code{\link[=mysterymaps_map_acog_districts]{mysterymaps_map_acog_districts()}},
+\code{\link[=mysterymaps_map_block_group]{mysterymaps_map_block_group()}},
+\code{\link[=mysterymaps_map_leaflet]{mysterymaps_map_leaflet()}},
+\code{\link[=mysterymaps_map_physicians]{mysterymaps_map_physicians()}},
+\code{\link[=mysterymaps_plot_isochrones]{mysterymaps_plot_isochrones()}}
 }
 \concept{mapping}

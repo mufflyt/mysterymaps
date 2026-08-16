@@ -36,7 +36,7 @@ rates between 0 and 1. Values are multiplied by 100 for display.}
 workflow.}
 
 \item{palette}{Character scalar. Viridis color-scale option passed to
-\code{\link[ggplot2:scale_viridis]{ggplot2::scale_fill_viridis_c()}}. Default \code{"viridis"}.}
+\code{\link[ggplot2:scale_fill_viridis_c]{ggplot2::scale_fill_viridis_c()}}. Default \code{"viridis"}.}
 
 \item{title}{Character scalar. Plot title. Default
 \code{"Appointment Acceptance Rate (\%)"}.}
@@ -51,21 +51,21 @@ the fill scale. \code{NULL} (default) lets ggplot2 choose.}
 Default \code{"grey80"}.}
 
 \item{save_path}{Character scalar or \code{NULL}. When not \code{NULL}, the plot is
-written to this path via \code{\link[mysterycall:mysterycall_save_plot]{mysterycall::mysterycall_save_plot()}}.}
+written to this path via \code{\link[mysterycall:mysterycall_save_plot]{mysterycall_save_plot()}}.}
 
-\item{width}{Numeric. Width in inches passed to \code{\link[mysterycall:mysterycall_save_plot]{mysterycall::mysterycall_save_plot()}}.
+\item{width}{Numeric. Width in inches passed to \code{\link[mysterycall:mysterycall_save_plot]{mysterycall_save_plot()}}.
 Default \code{10}.}
 
-\item{height}{Numeric. Height in inches passed to \code{\link[mysterycall:mysterycall_save_plot]{mysterycall::mysterycall_save_plot()}}.
+\item{height}{Numeric. Height in inches passed to \code{\link[mysterycall:mysterycall_save_plot]{mysterycall_save_plot()}}.
 Default \code{7}.}
 
-\item{dpi}{Integer. Resolution passed to \code{\link[mysterycall:mysterycall_save_plot]{mysterycall::mysterycall_save_plot()}}.
+\item{dpi}{Integer. Resolution passed to \code{\link[mysterycall:mysterycall_save_plot]{mysterycall_save_plot()}}.
 Default \code{300L}.}
 }
 \value{
 A \code{ggplot} object of class \code{c("gg", "ggplot")}, returned invisibly.
 When \code{save_path} is not \code{NULL}, also writes the plot to disk via
-\code{\link[mysterycall:mysterycall_save_plot]{mysterycall::mysterycall_save_plot()}}.
+\code{\link[mysterycall:mysterycall_save_plot]{mysterycall_save_plot()}}.
 }
 \description{
 Draws a choropleth map of appointment acceptance rates using base-R map
@@ -82,19 +82,19 @@ mysterymaps_map_acceptance_rate(df, region_col = "state", rate_col = "rate")
 \dontshow{\}) # examplesIf}
 }
 \seealso{
-\code{\link[mysterycall:mysterycall_save_plot]{mysterycall::mysterycall_save_plot()}} to write the result to disk;
+\code{\link[mysterycall:mysterycall_save_plot]{mysterycall_save_plot()}} to write the result to disk;
 \code{\link[=mysterymaps_hrr_maps]{mysterymaps_hrr_maps()}} for HRR-level choropleth maps.
 
-Other mapping: 
-\code{\link{mysterymaps_clear_isochrone_cache}()},
-\code{\link{mysterymaps_create_isochrones}()},
-\code{\link{mysterymaps_hrr_maps}()},
-\code{\link{mysterymaps_isochrones_for_df}()},
-\code{\link{mysterymaps_map_acog_districts}()},
-\code{\link{mysterymaps_map_base}()},
-\code{\link{mysterymaps_map_block_group}()},
-\code{\link{mysterymaps_map_leaflet}()},
-\code{\link{mysterymaps_map_physicians}()},
-\code{\link{mysterymaps_plot_isochrones}()}
+Other mapping:
+\code{\link[=mysterymaps_clear_isochrone_cache]{mysterymaps_clear_isochrone_cache()}},
+\code{\link[=mysterymaps_create_isochrones]{mysterymaps_create_isochrones()}},
+\code{\link[=mysterymaps_hrr_maps]{mysterymaps_hrr_maps()}},
+\code{\link[=mysterymaps_isochrones_for_df]{mysterymaps_isochrones_for_df()}},
+\code{\link[=mysterymaps_map_acog_districts]{mysterymaps_map_acog_districts()}},
+\code{\link[=mysterymaps_map_base]{mysterymaps_map_base()}},
+\code{\link[=mysterymaps_map_block_group]{mysterymaps_map_block_group()}},
+\code{\link[=mysterymaps_map_leaflet]{mysterymaps_map_leaflet()}},
+\code{\link[=mysterymaps_map_physicians]{mysterymaps_map_physicians()}},
+\code{\link[=mysterymaps_plot_isochrones]{mysterymaps_plot_isochrones()}}
 }
 \concept{mapping}

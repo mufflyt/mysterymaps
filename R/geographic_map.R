@@ -112,6 +112,17 @@ mysterymaps_geographic_map <- function(data,
       call. = FALSE
     )
   }
+  # coord_map("albers") is resolved by mapproj at RENDER time, not at build
+  # time, so without this guard the function returns a ggplot happily and the
+  # failure lands later -- on print(), or inside ggsave() in someone else's
+  # script -- pointing at ggplot2 rather than at a missing package here.
+  if (!requireNamespace("mapproj", quietly = TRUE)) {
+    stop(
+      "Package 'mapproj' is required by coord_map(). ",
+      "Install with: install.packages('mapproj')",
+      call. = FALSE
+    )
+  }
   # ---- Input validation -------------------------------------------------------
   if (!is.data.frame(data)) {
     stop("`data` must be a data frame.", call. = FALSE)

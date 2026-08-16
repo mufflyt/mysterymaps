@@ -85,6 +85,13 @@ mysterymaps_map_acceptance_rate <- function(data,
   if (!requireNamespace("maps", quietly = TRUE)) {
     stop("Package 'maps' is required for state choropleth maps.", call. = FALSE)
   }
+  # coord_map("albers") is resolved by mapproj at RENDER time. Without this the
+  # returned ggplot looks fine and blows up later, inside someone else's
+  # print() or ggsave(), with an error that names ggplot2 rather than this.
+  if (!requireNamespace("mapproj", quietly = TRUE)) {
+    stop("Package 'mapproj' is required by coord_map(). ",
+         "Install with: install.packages('mapproj')", call. = FALSE)
+  }
 
   # ---- HRR guard -------------------------------------------------------------
   if (region_type == "hrr") {

@@ -65,7 +65,18 @@ mysterymaps_map_base <- function(title = NULL, lat = 39.8282, lng = -98.5795, zo
 #' @param popup_var The variable to use for popup text.
 #' @param output_dir Directory where the HTML map and PNG screenshot are saved.
 #'   Defaults to a session-specific temporary folder.
-#' @return Invisibly returns the Leaflet map object.
+#' @param seed Integer or `NULL`. Seed for the coordinate jitter, so a published
+#'   dot map can be regenerated exactly. `NULL` (default) leaves the caller's
+#'   random stream alone and produces a different jitter each run.
+#' @return Invisibly returns the Leaflet map object, with a `mysterymaps_seed`
+#'   attribute recording the seed actually used.
+#'
+#' @section Reproducibility:
+#' The jitter moves every point by up to `jitter_range` degrees. That is a real
+#' displacement on a published figure, so it has to be replayable: pass `seed`
+#' and the same map comes back. The seed is applied locally -- the caller's
+#' `.Random.seed` is saved and restored -- so seeding a map does not silently
+#' reseed the rest of a script.
 #'
 #' @importFrom dplyr mutate
 #' @importFrom stats runif as.formula
@@ -88,7 +99,7 @@ mysterymaps_map_base <- function(title = NULL, lat = 39.8282, lng = -98.5795, zo
 #'
 #' @family mapping
 #' @export
-mysterymaps_map_physicians <- function(physician_data, jitter_range = 0.05, color_palette = "magma", popup_var = "name", output_dir = NULL) {
+mysterymaps_map_physicians <- function(physician_data, jitter_range = 0.05, color_palette = "magma", popup_var = "name", output_dir = NULL, seed = NULL) {
   if (!requireNamespace("leaflet", quietly = TRUE)) {
     stop("Package 'leaflet' is required for mysterymaps_map_physicians()", call. = FALSE)
   }
@@ -107,19 +118,36 @@ mysterymaps_map_physicians <- function(physician_data, jitter_range = 0.05, colo
   } else {
     dir.create(output_dir, recursive = TRUE, showWarnings = FALSE)
   }
+  # Seed locally, then put the caller's stream back exactly as it was. Calling
+  # set.seed() without restoring would make this function reseed every
+  # downstream simulation in a script that happened to draw a map first.
+  if (!is.null(seed)) {
+    if (!is.numeric(seed) || length(seed) != 1L || is.na(seed)) {
+      stop("`seed` must be a single number or NULL.", call. = FALSE)
+    }
+    had_seed <- exists(".Random.seed", envir = globalenv(), inherits = FALSE)
+    if (had_seed) {
+      prev_seed <- get(".Random.seed", envir = globalenv(), inherits = FALSE)
+      on.exit(assign(".Random.seed", prev_seed, envir = globalenv()), add = TRUE)
+    } else {
+      on.exit(suppressWarnings(rm(".Random.seed", envir = globalenv())), add = TRUE)
+    }
+    set.seed(seed)
+  }
+
   jittered_physician_data <- dplyr::mutate(
     physician_data,
     lat = lat + runif(n()) * jitter_range,
     long = long + runif(n()) * jitter_range
   )
 
-  cat("Setting up the base map...\n")
+  message("Setting up the base map...")
   base_map <- mysterymaps_map_base("Physician Dot Map")
-  cat("Map setup complete.\n")
+  message("Map setup complete.")
 
-  cat("Generating the ACOG district boundaries...\n")
+  message("Generating the ACOG district boundaries...")
   acog_districts <- mysterymaps_map_acog_districts()
-  cat("ACOG district boundaries generated.\n")
+  message("ACOG district boundaries generated.")
 
   num_acog_districts <- dplyr::n_distinct(acog_districts$ACOG_District)
   district_colors <- viridis::viridis(num_acog_districts, option = color_palette)
@@ -164,10 +192,12 @@ mysterymaps_map_physicians <- function(physician_data, jitter_range = 0.05, colo
   png_file <- file.path(output_dir, paste0("dot_map_", timestamp, ".png"))
 
   htmlwidgets::saveWidget(widget = dot_map, file = html_file, selfcontained = TRUE)
-  cat("Leaflet map saved as HTML:", html_file, "\n")
+  message("Leaflet map saved as HTML: ", html_file)
 
   webshot::webshot(html_file, file = png_file)
-  cat("Screenshot saved as PNG:", png_file, "\n")
+  message("Screenshot saved as PNG: ", png_file)
 
+  # Record what was actually used, so the artifact can say how it was made.
+  attr(dot_map, "mysterymaps_seed") <- seed
   invisible(dot_map)
 }

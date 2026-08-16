@@ -10,3 +10,13 @@
 ^LICENSE\.md$
 ^\.claude$
 ^CLAUDE\.md$
+^\.lintr\.R$
+^codecov\.yml$
+^\.covrignore$
+^ci-results$
+^capability-guards\.json$
+^mutation-assault\.json$
+^scientific-gate\.txt$
+^Rplots\.pdf$
+^coverage\.json$
+^cobertura\.xml$
