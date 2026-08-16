@@ -1,0 +1,9 @@
+pandoc: 3.8.3
+pkgdown: 2.2.1
+pkgdown_sha: ~
+articles:
+  canonical-functions: canonical-functions.html
+last_built: 2026-08-16T16:25Z
+urls:
+  reference: https://mufflyt.github.io/mysterymaps/reference
+  article: https://mufflyt.github.io/mysterymaps/articles

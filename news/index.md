@@ -1,0 +1,147 @@
+# Changelog
+
+## mysterymaps (development version)
+
+### Bug fixes: `mysterymaps_jenks_zero_scale()`
+
+Three defects found by adversarial tests, all reachable from ordinary
+county data:
+
+- **A single county with a nonzero rate aborted the map.** `classInt`
+  errors with “single unique value” rather than returning one class, so
+  a study area where exactly one county has providers — an ordinary
+  rural result — failed instead of rendering. It now returns a single
+  positive class.
+- **Rates without `digits` aborted the map.** The count-label branch
+  used `sprintf("%d")`, which errors on a fractional double, so passing
+  rates and omitting `digits` errored out of the whole map rather than
+  mislabelling one class. Labels now format according to the value.
+- **Legends could claim impossible values.** When the class count
+  reached the number of distinct values — which the function induced on
+  itself — jenks returned breaks extrapolated past both ends of the
+  data, producing a first class labelled `-1.6–2.2` for a rate with a
+  floor of zero. The outer breaks are clamped to the observed range; no
+  value changes class.
+
+`NA` is also dropped before classification rather than being passed
+through and omitted by `classInt`, which removes a spurious warning per
+map.
+
+### Breaking: zero and `NA` are no longer the same colour
+
+A county measured at zero has no providers; a county never measured is
+unknown. Both used to render in `zero_col`, so the map could not tell
+them apart — the same conflation this scale exists to prevent at the
+other end of the ramp.
+
+`NA` and `NaN` now take a new `na_col`, default white, with a `No data`
+legend entry added **only when the data actually contains `NA`**, so
+complete maps keep a two-part legend. `NaN` counts as unknown: it
+reaches a rate through a zero denominator, which is unmeasurable rather
+than zero.
+
+Two consequences for existing code:
+
+- Published maps that contain `NA` geographies will change appearance.
+  Pass `na_col = zero_col` to
+  [`mysterymaps_jenks_zero_scale()`](https://mufflyt.github.io/mysterymaps/reference/mysterymaps_jenks_zero_scale.md)
+  to restore the old rendering.
+- A hand-written `legend_labels` vector sized for the old legend is now
+  one entry short whenever the data holds `NA`.
+  [`mysterymaps_county_access_map()`](https://mufflyt.github.io/mysterymaps/reference/mysterymaps_county_access_map.md)
+  already errors with both counts rather than shifting every label.
+
+### Fixed
+
+- [`mysterymaps_jenks_zero_scale()`](https://mufflyt.github.io/mysterymaps/reference/mysterymaps_jenks_zero_scale.md)
+  no longer shades `Inf` as the top class. A rate reaches `Inf` by
+  division by a zero denominator – a county with no births, no
+  population – so it is the emptiest place on the map, not the fullest.
+  Non-finite values now take `na_col` and gain the “No data” legend
+  entry, alongside `NA` and `NaN`. `Inf` was already excluded from the
+  Jenks breaks; only the colour was wrong.
+
+### Known gaps, pinned by tests but not changed
+
+- A negative value is absorbed into the zero class. It means an upstream
+  subtraction went wrong, and it does not currently surface.
+
+## mysterymaps 0.2.0 (2026-08-09)
+
+### New: the county access map template
+
+- [`mysterymaps_county_access_map()`](https://mufflyt.github.io/mysterymaps/reference/mysterymaps_county_access_map.md)
+  assembles the map this ecosystem kept rebuilding — a supply
+  choropleth, drive-time coverage surfaces as mutually exclusive base
+  layers, a legend that follows the active layer, CONUS framing. Two
+  studies had hand-built it separately, and the differences were bugs.
+- [`mysterymaps_notes_panel()`](https://mufflyt.github.io/mysterymaps/reference/mysterymaps_notes_panel.md)
+  renders the collapsible caveat panel with a data vintage list, once,
+  rather than repeating caveats in every popup.
+
+### New: layers and controls
+
+- [`mysterymaps_add_coverage_surfaces()`](https://mufflyt.github.io/mysterymaps/reference/mysterymaps_add_coverage_surfaces.md)
+  adds any named list of polygon layers as base groups with their own
+  legends. Coverage surfaces have no per-geography value, so the
+  choropleth builders could not express them.
+- [`mysterymaps_base_legend_switcher()`](https://mufflyt.github.io/mysterymaps/reference/mysterymaps_base_legend_switcher.md)
+  and
+  [`mysterymaps_register_base_legend()`](https://mufflyt.github.io/mysterymaps/reference/mysterymaps_register_base_legend.md)
+  show only the active base layer’s legend. **This fixes a real
+  defect:** `leaflet::addLegend(group=)` follows *overlay* groups only
+  and silently does nothing for `baseGroups`, so a map with four base
+  layers rendered all four legends at once.
+- [`mysterymaps_zoom_gated_labels()`](https://mufflyt.github.io/mysterymaps/reference/mysterymaps_zoom_gated_labels.md)
+  opens point tooltips only where they are legible — in view, above a
+  zoom threshold, up to a cap. The alternative, marker clustering,
+  replaces the data with a count.
+- [`mysterymaps_name_search()`](https://mufflyt.github.io/mysterymaps/reference/mysterymaps_name_search.md)
+  now bundles the Leaflet-search plugin through `leaflet.extras` instead
+  of loading it from a CDN. A saved self-contained widget previously had
+  a search box that silently did nothing offline.
+- [`mysterymaps_gate_provider_coverage()`](https://mufflyt.github.io/mysterymaps/reference/mysterymaps_gate_provider_coverage.md)
+  fails loudly when providers fall outside a coverage surface.
+
+### New: scales and labels
+
+- [`mysterymaps_jenks_zero_scale()`](https://mufflyt.github.io/mysterymaps/reference/mysterymaps_jenks_zero_scale.md)
+  moved here from the isochrones staging file and is now exported. Zero
+  gets its own colour class; positive values get Jenks natural breaks,
+  which suits right-skewed provider rates. An equal-interval bottom bin
+  had rendered 1,619 of 3,109 counties as “low” when the truth was
+  “none”.
+- [`mysterymaps_pluralize()`](https://mufflyt.github.io/mysterymaps/reference/mysterymaps_pluralize.md),
+  [`mysterymaps_format_credentials()`](https://mufflyt.github.io/mysterymaps/reference/mysterymaps_format_credentials.md)
+  and
+  [`mysterymaps_place_title_case()`](https://mufflyt.github.io/mysterymaps/reference/mysterymaps_place_title_case.md)
+  for map labels. The credential helper formats and deliberately does
+  not classify.
+
+### Documentation
+
+- First README, with figures generated by
+  `data-raw/make_readme_figures.R` from the North Carolina counties
+  shipped inside `sf` — no API key, no network, no private data. The
+  leaflet figure is a screenshot of a real widget.
+- [`vignette("canonical-functions")`](https://mufflyt.github.io/mysterymaps/articles/canonical-functions.md)
+  maps hand-rolled code to the canonical call that already exists across
+  `mufflyaccess`, `twostep`, `mysterymaps` and `cliff`.
+- `CITATION.cff`, `CITATION.bib` and `inst/CITATION` added so
+  [`citation()`](https://rdrr.io/r/utils/citation.html), GitHub and
+  reference managers agree.
+
+### Fixes
+
+- Removed five duplicate function definitions created when two sessions
+  wrote the same helpers in parallel. Which one ran depended on the
+  alphabetical order R sources `R/` in.
+- Repaired `NAMESPACE`, which had silently stopped being roxygen-managed
+  after a stray blank line displaced the generated-by marker from line
+  1.
+
+## mysterymaps 0.1.0
+
+- Initial release: isochrone generation via the HERE Routing API, state
+  and HRR choropleths, ACOG district overlays, leaflet base maps,
+  physician dot maps, and census block-group overlap.

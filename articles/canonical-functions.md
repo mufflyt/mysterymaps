@@ -1,0 +1,263 @@
+# Use the canonical function, not your own
+
+This vignette exists because a drive-time access map was built for a
+midwifery workforce study, and along the way its author re-implemented —
+badly — six things that already existed in this ecosystem, tested. Each
+section below pairs **what was written by hand** with **what should have
+been called**, so the next person can skip the detour.
+
+The packages, roughly outermost to innermost:
+
+| Package | Holds |
+|----|----|
+| `mufflyaccess` | SSOT constants and safe arithmetic: bands, CONUS geography, denominators |
+| `twostep` | E2SFCA accessibility, population-weighted coverage, access-language guard |
+| `mysterymaps` | Leaflet map construction |
+| `cliff` | Workforce cliff / retirement analysis |
+
+The rule of thumb: **if a value feels like it belongs to the project
+rather than to your script, it is probably already a constant
+somewhere.**
+
+## 1. Geography constants
+
+A map excluded non-contiguous states with a hand-typed FIPS vector:
+
+``` r
+
+# hand-rolled
+CONUS_EXCLUDE <- c("02", "15", "60", "66", "69", "72", "78")
+counties <- dplyr::filter(counties, !STATEFP %in% CONUS_EXCLUDE)
+```
+
+That vector is byte-identical to the canonical one. It was retyped, not
+derived, which means the next revision of either copy silently
+disagrees:
+
+``` r
+
+library(mufflyaccess)
+
+NON_CONTIGUOUS_FIPS
+#> [1] "02" "15" "60" "66" "69" "72" "78"
+
+counties <- dplyr::filter(counties, !STATEFP %in% NON_CONTIGUOUS_FIPS)
+```
+
+`CONUS_STATE_FIPS`, `CONUS_STATE_ABBR` and `NON_CONTIGUOUS_CODES` are
+there too. For point data, `cliff::in_conus_bbox()` replaces a
+hand-written bounding box — another thing that got retyped as
+`lat >= 17 & lat <= 72 & lon >= -180 & lon <= -64`.
+
+## 2. Drive-time bands
+
+``` r
+
+# hand-rolled
+BANDS <- c(30, 60)
+```
+
+``` r
+
+CANONICAL_BANDS
+#> [1]  30  60 120 180
+
+get_canonical_bands()
+get_primary_access_band()   # the band a headline result should quote
+```
+
+Using the constant makes an important thing visible: a map showing only
+30 and 60 is showing *half* the canonical set. That is a defensible
+choice — the midwifery study had no 120/180 polygons for newly-routed
+locations — but it should be a stated deviation, not an invisible one.
+
+## 3. Rates that do not blow up
+
+Rate construction was written inline, three times, slightly differently:
+
+``` r
+
+# hand-rolled
+midwives_per_1k <- ifelse(!is.na(births) & births >= 50,
+                          round(1000 * n_midwives / births, 2), NA_real_)
+```
+
+``` r
+
+midwives_per_1k <- safe_rate(n_midwives, births, multiplier = 1000, digits = 2)
+```
+
+`safe_divide()`, `safe_rate()`, `safe_ratio()`, `safe_percent()` all
+handle the zero denominator, the `NA`, and the `Inf` that
+[`round()`](https://rdrr.io/r/base/Round.html) will happily carry into a
+published table. `safe_divide(on_zero = "error")` turns a silent `NA`
+into a loud failure where that is what you want.
+
+## 4. Do not call it a shortage
+
+`twostep` ships a vocabulary guard, and it encodes a real methodological
+constraint: an accessibility surface without a defensible demand target
+cannot support normative claims.
+
+``` r
+
+library(twostep)
+
+ACCESS_FORBIDDEN_TERMS
+#> "shortage" "surplus" "adequacy" "adequate" "inadequate" "unmet need" ...
+
+ACCESS_SAFE_LABELS
+#> "modeled accessibility" "relative accessibility" "% of women with access" ...
+
+assert_access_language(map_caption, context = "map caption")
+```
+
+Wire it into the render, not into a review checklist:
+
+``` r
+
+caption <- "Ground within 60 minutes of a certified nurse-midwife"
+assert_access_language(caption, context = "legend title")   # passes
+
+bad <- "Counties with an inadequate midwifery supply"
+assert_access_language(bad)                                  # stops
+```
+
+## 5. Coverage measured in people, not acres
+
+A first draft reported coverage as **land area** — 1,759,430 km² within
+30 minutes. Land area rewards empty terrain: a polygon over rangeland
+counts the same as one over a city. The population-weighted version
+already exists:
+
+``` r
+
+compute_band_tract_overlap(bands_sf, tracts_sf)
+allocate_pop_areaweighted(tracts_sf, target_sf)
+zero_access_share(access_tbl)
+weighted_mean_all(x, w)
+```
+
+`TRACT_REACHED_COVERAGE_PCT` is the canonical threshold for calling a
+tract reached, so two studies asking “what share of births are within 60
+minutes?” give comparable answers.
+
+## 6. Rurality
+
+``` r
+
+rurality_from_ruca(ruca_codes)
+RUCA_NONMETRO_MIN
+```
+
+Written by hand, the metro/nonmetro cut is one `case_when()` and one
+chance to put the boundary in the wrong place.
+
+## 7. Coverage surfaces on a leaflet map
+
+This is the one case where the canonical answer did **not** exist, and
+the correct response was to add it here rather than keep a private copy.
+
+The package’s choropleth builders are organised around per-geography
+values. A dissolved coverage union has none — it answers “is this ground
+covered?”, not “what is this county’s number?” — so
+[`mysterymaps_add_coverage_surfaces()`](https://mufflyt.github.io/mysterymaps/reference/mysterymaps_add_coverage_surfaces.md)
+was added:
+
+``` r
+
+library(mysterymaps)
+library(leaflet)
+
+m <- leaflet() |>
+  addProviderTiles("CartoDB.PositronNoLabels") |>
+  addPolygons(data = counties, fillColor = ~pal(rate), group = "Supply") |>
+  mysterymaps_register_base_legend("Supply", key = "supply") |>
+  mysterymaps_add_coverage_surfaces(
+    surfaces = list("Within 30 minutes" = union30,
+                    "Within 60 minutes" = union60,
+                    "Beyond 60 minutes" = gap60),
+    colors        = c("#08519c", "#3182bd", "#d94801"),
+    legend_labels = c("within 30 min", "within 60 min", "more than 60 min"),
+    legend_titles = c("Drive-time coverage", "Drive-time coverage", "Coverage gap")) |>
+  addLayersControl(baseGroups = c("Supply", "Within 30 minutes",
+                                  "Within 60 minutes", "Beyond 60 minutes"))
+
+m <- mysterymaps_base_legend_switcher(m, default = "Supply")
+```
+
+Two behaviours worth knowing:
+
+**Base groups, not overlays.** Stacking a translucent coverage fill over
+a viridis choropleth multiplies two colour scales into a third belonging
+to neither. Coverage layers are alternative *views* of a map, not
+additions to it.
+
+**`addLegend(group=)` does not work with base groups.** It follows
+overlay groups only. A map with four base layers and four legends
+therefore renders all four at once, stacked down the edge — a live bug
+in more than one map in this ecosystem.
+[`mysterymaps_base_legend_switcher()`](https://mufflyt.github.io/mysterymaps/reference/mysterymaps_base_legend_switcher.md)
+attaches a `baselayerchange` handler that shows only the active layer’s
+legend.
+
+## 8. Labels on a crowded point layer
+
+The reflex for 11,792 points is marker clustering. Clustering replaces
+the data with a count and makes the reader zoom repeatedly before
+learning anything:
+
+``` r
+
+# what not to do
+addCircleMarkers(..., clusterOptions = markerClusterOptions())
+```
+
+Draw every point on a canvas renderer and gate the *labels* instead:
+
+``` r
+
+leaflet(options = leafletOptions(preferCanvas = TRUE)) |>
+  addCircleMarkers(data = providers, label = ~full_name, group = "Providers",
+                   options = pathOptions(pane = "pts")) |>
+  mysterymaps_zoom_gated_labels("Providers", min_zoom = 9, max_labels = 400)
+```
+
+The distribution stays visible at every zoom; names appear only where
+they are legible. Note `pathOptions(pane = "pts")` with
+`addMapPane("pts", zIndex = 650)` — without the pane, markers draw above
+a choropleth but do not reliably hit-test, so clicks land on the polygon
+underneath.
+
+## 9. Zero is not a small number
+
+``` r
+
+sc <- mm_jenks_zero_scale(counties$rate, k = 6, digits = 1)
+addPolygons(fillColor = sc$color(counties$rate))
+addLegend(colors = sc$leg_cols, labels = sc$leg_labs)
+```
+
+A hand-rolled scale binned `0.0–0.5`, so counties with **no** provider
+rendered identically to counties with a low rate — 1,619 of 3,109
+counties, over half the map, in the class the study was about.
+`mm_jenks_zero_scale()` gives zero its own colour and Jenks-classifies
+only the positive values.
+
+## How to check before you write
+
+``` r
+
+# Is there already a constant or helper for this?
+ls("package:mufflyaccess")
+ls("package:twostep")
+ls("package:mysterymaps")
+
+apropos("conus|band|rurality|safe_")
+```
+
+If a function seems missing, confirm it is genuinely missing rather than
+differently named — and if it really is absent, add it to the package
+that should own it. Keeping a private copy and documenting why your
+caller is special is how this ecosystem ended up with three copies of a
+gender gate, where a fix applied to one was a fix applied to none.
