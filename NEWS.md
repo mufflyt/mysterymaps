@@ -44,11 +44,19 @@ Two consequences for existing code:
   `mysterymaps_county_access_map()` already errors with both counts rather
   than shifting every label.
 
+## Fixed
+
+* `mysterymaps_jenks_zero_scale()` no longer shades `Inf` as the top class. A
+  rate reaches `Inf` by division by a zero denominator -- a county with no
+  births, no population -- so it is the emptiest place on the map, not the
+  fullest. Non-finite values now take `na_col` and gain the "No data" legend
+  entry, alongside `NA` and `NaN`. `Inf` was already excluded from the Jenks
+  breaks; only the colour was wrong.
+
 ## Known gaps, pinned by tests but not changed
 
-* A negative value is absorbed into the zero class and `Inf` is shaded as the
-  top class. Both mean an upstream calculation went wrong, and neither
-  currently surfaces.
+* A negative value is absorbed into the zero class. It means an upstream
+  subtraction went wrong, and it does not currently surface.
 
 # mysterymaps 0.2.0 (2026-08-09)
 

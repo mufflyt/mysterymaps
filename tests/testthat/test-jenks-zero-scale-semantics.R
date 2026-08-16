@@ -154,11 +154,29 @@ test_that("DOCUMENTED GAP: negative input is silently shaded as zero", {
   expect_identical(s$color(-5), "#e0e0e0")
 })
 
-test_that("DOCUMENTED GAP: Inf is shaded as the top class", {
-  # Inf reaches a rate through division by a zero denominator. It currently
-  # renders as the most-covered colour, which is the opposite of the truth.
-  s <- suppressWarnings(mysterymaps_jenks_zero_scale(c(0, 1.5, 3, 8), k = 3))
-  expect_identical(s$color(Inf), utils::tail(s$leg_cols, 1))
+test_that("REGRESSION: Inf is shaded as no data, not as the top class", {
+  # Was "DOCUMENTED GAP: Inf is shaded as the top class". Inf reaches a rate
+  # through division by a zero denominator -- a county with no births, no
+  # population -- so it is the emptiest place on the map, and rendering it as
+  # the most-covered colour was the opposite of the truth.
+  #
+  # Asserted against the PALETTE classes rather than tail(leg_cols, 1): the
+  # no-data colour is appended last, so comparing with the final entry would
+  # now pass for the wrong reason.
+  s <- suppressWarnings(mysterymaps_jenks_zero_scale(c(0, 1.5, 3, 8, Inf), k = 3))
+  palette_cols <- s$leg_cols[-c(1, length(s$leg_cols))]
+
+  expect_false(s$color(Inf) %in% palette_cols)
+  expect_identical(s$color(Inf), s$color(NA_real_))
+  expect_true("No data" %in% s$leg_labs)
+
+  # -Inf and NaN travel the same route.
+  expect_identical(s$color(-Inf), s$color(NA_real_))
+  expect_identical(s$color(NaN), s$color(NA_real_))
+
+  # A finite county keeps the class it had before the fix.
+  finite_only <- suppressWarnings(mysterymaps_jenks_zero_scale(c(0, 1.5, 3, 8), k = 3))
+  expect_identical(s$color(3), finite_only$color(3))
 })
 
 test_that("zero and NA are different colours", {
