@@ -15,7 +15,9 @@ mysterymaps_jenks_zero_scale(
 )
 }
 \arguments{
-\item{n}{Numeric vector of values (counts or rates).}
+\item{n}{Numeric vector of non-negative values (counts or rates). A negative
+value is an upstream arithmetic error rather than a low value and is
+rejected; see the \verb{Negative values} section.}
 
 \item{k}{Target number of classes for the positive values. Default 6.}
 
@@ -50,6 +52,20 @@ as "low" when the truth was "none".
 Jenks rather than equal intervals because provider rates are heavily
 right-skewed; equal intervals put almost every county in the first bin.
 }
+\section{Negative values}{
+
+A negative count or rate is rejected rather than coloured. It used to take
+\code{zero_col}, so a county whose supply arrived as -3 rendered identically to a
+county measured at zero and the legend labelled it \code{0} -- the same conflation
+this scale exists to prevent at the other end of the ramp, with an
+arithmetic error concealed inside it. No class represents a negative supply
+honestly, so the map is not built.
+
+If the intent is to map a \emph{change} between two periods, this scale is the
+wrong one: zero here is a distinguished floor category, not a midpoint, and
+a diverging scale is what a difference needs.
+}
+
 \examples{
 \dontrun{
   sc <- mysterymaps_jenks_zero_scale(counties$rate, k = 6, digits = 1)

@@ -128,12 +128,73 @@ test_that("the county template propagates the no-data class into the legend", {
   expect_true(any(grepl("No data", labs, fixed = TRUE)))
 })
 
-test_that("negative values are not silently folded into the zero class", {
-  # A negative rate is a data error upstream, not a low value. It currently
-  # takes the zero colour; this test pins that so the choice is visible and a
-  # future change to it is deliberate.
-  sc <- mysterymaps_jenks_zero_scale(c(-3, 0, 2, 9))
-  expect_identical(sc$color(-3), sc$color(0))
+test_that("REGRESSION: a negative value is rejected, not folded into zero", {
+  # A negative rate is an upstream arithmetic error, not a low value. It used
+  # to take the zero colour and be labelled "0", which is the fifth way to
+  # produce a believable desert -- and the only one that also hides the
+  # arithmetic. There is no honest class for it, so the map is not built.
+  expect_error(mysterymaps_jenks_zero_scale(c(-3, 0, 2, 9)),
+               "cannot be negative")
+})
+
+test_that("the negative-value error names the count, the minimum and a position", {
+  # A national map has 3,109 rows. "There is a negative value" is not
+  # actionable; which ones and how bad is.
+  err <- tryCatch(mysterymaps_jenks_zero_scale(c(0, 2, -0.5, 9, -4)),
+                  error = function(e) conditionMessage(e))
+  expect_match(err, "2 negative values")
+  expect_match(err, "-4", fixed = TRUE)
+  expect_match(err, "positions 3, 5")
+})
+
+test_that("the error points at a diverging scale rather than just refusing", {
+  # Mapping a change between two periods is a legitimate thing to want; this
+  # is simply the wrong scale for it, and saying so is cheaper than the user
+  # discovering it by pmax()-ing the negatives away.
+  err <- tryCatch(mysterymaps_jenks_zero_scale(c(-1, 0, 5)),
+                  error = function(e) conditionMessage(e))
+  expect_match(err, "diverging scale")
+})
+
+test_that("the rejection covers every degenerate branch of the scale", {
+  # Three code paths build a scale. All three used to colour a negative.
+  cases <- list(no_positive  = c(-1, 0, 0),
+                one_positive = c(-1, 0, 7),
+                general      = c(-1, 0, 1, 4, 9, 30))
+  for (nm in names(cases)) {
+    expect_error(mysterymaps_jenks_zero_scale(cases[[nm]]), "cannot be negative",
+                 info = sprintf("branch: %s", nm))
+  }
+})
+
+test_that("color() rejects a negative it was not built from", {
+  # The scale and the vector it colours need not be the same: a scale built
+  # from every county and applied to one state's subset would classify the
+  # national data cleanly and then colour a negative on the second call. That
+  # is the harder half to notice, so it is checked in each branch.
+  scales <- list(no_positive  = mysterymaps_jenks_zero_scale(c(0, 0, NA)),
+                 one_positive = mysterymaps_jenks_zero_scale(c(0, 7)),
+                 general      = mysterymaps_jenks_zero_scale(c(0, 1, 4, 9, 30)))
+  for (nm in names(scales)) {
+    expect_error(scales[[nm]]$color(c(1, -2)), "cannot be negative",
+                 info = sprintf("branch: %s", nm))
+  }
+})
+
+test_that("zero, NA and NaN still pass the negative guard untouched", {
+  # The guard must not turn the three legitimate non-positive states into
+  # errors: that would trade one collapse for an outage.
+  sc <- mysterymaps_jenks_zero_scale(c(0, NA, NaN, 3, 11))
+  expect_silent(sc$color(c(0, NA, NaN, 3)))
+  expect_identical(sc$color(0), sc$leg_cols[[1]])
+  expect_identical(sc$color(NaN), sc$color(NA_real_))
+})
+
+test_that("-Inf is rejected rather than treated as no data", {
+  # Inf is unmeasurable and shades as no data; -Inf is unmeasurable AND
+  # negative. The negative guard is the more specific complaint, so it wins.
+  expect_error(mysterymaps_jenks_zero_scale(c(0, 1, 4, -Inf)),
+               "cannot be negative")
 })
 
 test_that("Inf is excluded from the breaks AND shaded as no data", {

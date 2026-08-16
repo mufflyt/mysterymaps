@@ -53,10 +53,62 @@ Two consequences for existing code:
   entry, alongside `NA` and `NaN`. `Inf` was already excluded from the Jenks
   breaks; only the colour was wrong.
 
-## Known gaps, pinned by tests but not changed
+## Breaking: a negative count or rate is refused
 
-* A negative value is absorbed into the zero class. It means an upstream
-  subtraction went wrong, and it does not currently surface.
+`mysterymaps_jenks_zero_scale()` used to absorb a negative value into the zero
+class, so a county whose supply arrived as -3 rendered identically to a county
+measured at zero and the legend labelled it `0`. That is the conflation the
+scale exists to prevent, with an arithmetic error concealed inside it — and it
+is the direction that inflates the apparent desert. No class on this scale
+represents a negative supply honestly, so the map is no longer built. The error
+names the count, the minimum and the first few positions.
+
+Both the constructor and the `color()` it returns check, because they can be
+handed different vectors: a scale built from every county and applied to one
+state's subset would classify the national data cleanly and then colour a
+negative on the second call, which is the harder half to notice.
+
+`-Inf` now errors for the same reason rather than shading as no data. It is
+unmeasurable *and* negative, and the negative complaint is the more specific.
+
+If you are mapping a change between two periods, this scale was always the
+wrong one — zero here is a distinguished floor category, not a midpoint — and
+the error says so. Use a diverging scale.
+
+## Fixed: areas were measured in whatever CRS the caller happened to use
+
+`mysterymaps_guard_water_masks()` and the coverage-surface popups computed area
+as `sf::st_area(x) / 1e6`, which is square kilometres only when the geometry's
+CRS is in metres. Two independent failures followed, both producing a plausible
+number:
+
+* **The unit.** Several US state plane systems are in US survey feet. In
+  EPSG:2232 (NAD83 / Colorado Central) a polygon of 147,582 km² measures
+  1,588,550 — a factor of 10.76, with no warning, because the arithmetic is
+  valid and only the unit is wrong.
+* **The projection.** A conformal CRS preserves shape, not area. In EPSG:3857 —
+  the default of every slippy map — the same polygon measures roughly 1.8× its
+  true size, in metres, from a metre-declaring CRS. No unit conversion can
+  detect that.
+
+In the water-mask guard either one inverts the verdict. The guard divides a
+mask's area by the state's census water area and excludes anything above
+`max_ratio`; inflate the numerator and Michigan's legitimate Great Lakes mask
+crosses the threshold, is excluded, the water clip never runs, and the coverage
+surface spreads across the lakes — the failure the guard exists to prevent,
+produced by the guard.
+
+Both now measure geodesically on EPSG:4326 rather than in the caller's CRS, so
+the answer is the same from lon/lat, Albers, Web Mercator, UTM and survey feet,
+and is valid outside CONUS (the guard is handed Alaska and Hawaii). Spherical
+geometry is forced on for the measurement and restored afterwards: with it off,
+`sf` routes geodetic area through `lwgeom`, a Suggests absent on a bare runner,
+so the measurement would have errored on exactly the machines with nothing
+installed. Geometry carrying no CRS is refused by name instead of being assumed
+to be in metres.
+
+No user-facing behaviour changes for masks already supplied in lon/lat or in an
+equal-area CRS in metres, which is every documented path.
 
 # mysterymaps 0.2.0 (2026-08-09)
 
