@@ -53,8 +53,19 @@ mysterymaps_guard_water_masks <- function(masks, census_water_km2,
   ratio <- vapply(names(masks), function(st) {
     g <- masks[[st]]
     if (is.null(g)) return(NA_real_)
-    a <- sum(as.numeric(sf::st_area(sf::st_make_valid(
-      if (inherits(g, "sf")) sf::st_geometry(g) else g)))) / 1e6
+    # Not `st_area(...) / 1e6`. That is square kilometres only if the mask's
+    # CRS is in metres and equal-area: survey feet read 10.76x too large, Web
+    # Mercator about 1.8x. Either is enough to push Michigan's legitimate Great
+    # Lakes mask past max_ratio, drop the clip, and let the surface run across
+    # the lakes -- this guard producing the failure it exists to prevent.
+    # mm_area_in() measures geodesically instead of in the caller's CRS, so the
+    # verdict is about the geometry. See ?mm_area_in.
+    a <- tryCatch(
+      mm_area_in(sf::st_make_valid(
+        if (inherits(g, "sf")) sf::st_geometry(g) else g), "km^2"),
+      error = function(e)
+        stop(sprintf("water mask '%s': %s", st, conditionMessage(e)),
+             call. = FALSE))
     # `[[` on an absent name ERRORS rather than returning NULL, which would
     # abort an entire build over one state missing from the lookup. An absent
     # denominator means unknown, not guilty.

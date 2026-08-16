@@ -292,10 +292,16 @@ mysterymaps_county_access_map <- function(counties, value_col,
       # surface polygon rather than a duplicate copy of its geometry.
       args$popups <- vapply(names(coverage), function(nm) {
         sfc  <- coverage[[nm]]
-        area_m2 <- tryCatch(sum(as.numeric(sf::st_area(sf::st_geometry(sfc)))),
-                            error = function(e) NA_real_)
-        area <- if (identical(coverage_area_units, "mi")) area_m2 / 2.589988e6
-                else area_m2 / 1e6
+        # The popup states an area to the reader, so it is a claim like any
+        # other. A hard-coded /1e6 is right only for a CRS that is both in
+        # metres and equal-area: a surface on a state plane grid in US survey
+        # feet printed 10.76x its real size, and one straight off a Web
+        # Mercator tile pipeline about 1.8x. mm_area_in() measures geodesically
+        # instead. A surface with no CRS cannot be measured at all, and the
+        # popup says so rather than printing a number.
+        want <- if (identical(coverage_area_units, "mi")) "mi^2" else "km^2"
+        area <- tryCatch(mm_area_in(sf::st_geometry(sfc), want),
+                         error = function(e) NA_real_)
         unit <- if (identical(coverage_area_units, "mi")) "sq mi" else "km&sup2;"
         n_or <- if (is.list(sfc) && !is.null(sfc$n_origins_dissolved))
                   sfc$n_origins_dissolved else attr(sfc, "n_origins_dissolved")

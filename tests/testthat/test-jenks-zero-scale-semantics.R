@@ -145,13 +145,16 @@ test_that("NaN is treated as unknown, not as zero", {
   expect_identical(s$color(NaN), s$color(NA_real_))
 })
 
-test_that("DOCUMENTED GAP: negative input is silently shaded as zero", {
-  # A negative rate is impossible; arriving at one means an upstream
-  # subtraction went wrong. The scale currently absorbs it into the zero class,
-  # so the map renders "no providers" and the error never surfaces.
-  # Pinned as current behaviour, not endorsed -- see the note in NEWS.md.
+test_that("REGRESSION: negative input is rejected, not shaded as zero", {
+  # Was "DOCUMENTED GAP: negative input is silently shaded as zero". A negative
+  # rate is impossible; arriving at one means an upstream subtraction went
+  # wrong. The scale used to absorb it into the zero class, so the map rendered
+  # "no providers" and the arithmetic error never surfaced -- a believable
+  # desert manufactured out of a bug. No class is honest here, so it errors.
   s <- suppressWarnings(mysterymaps_jenks_zero_scale(c(0, 1.5, 3, 8), k = 3))
-  expect_identical(s$color(-5), "#e0e0e0")
+  expect_error(s$color(-5), "cannot be negative")
+  expect_error(mysterymaps_jenks_zero_scale(c(0, -1.5, 3, 8), k = 3),
+               "cannot be negative")
 })
 
 test_that("REGRESSION: Inf is shaded as no data, not as the top class", {
@@ -170,9 +173,11 @@ test_that("REGRESSION: Inf is shaded as no data, not as the top class", {
   expect_identical(s$color(Inf), s$color(NA_real_))
   expect_true("No data" %in% s$leg_labs)
 
-  # -Inf and NaN travel the same route.
-  expect_identical(s$color(-Inf), s$color(NA_real_))
+  # NaN travels the same route. -Inf does not: it is unmeasurable AND
+  # negative, and the negative complaint is the more specific one, so it
+  # errors rather than shading. See test-zero-vs-missing.R.
   expect_identical(s$color(NaN), s$color(NA_real_))
+  expect_error(s$color(-Inf), "cannot be negative")
 
   # A finite county keeps the class it had before the fix.
   finite_only <- suppressWarnings(mysterymaps_jenks_zero_scale(c(0, 1.5, 3, 8), k = 3))

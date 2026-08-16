@@ -37,5 +37,10 @@ contain the expected geometry types, possess sensible bounding boxes, and
 do not contain empty geometries. Invalid geometries are repaired with
 \code{sf::st_make_valid()} when possible.
 }
+\seealso{
+Other geospatial:
+\code{\link[=mm_area_in]{mm_area_in()}},
+\code{\link[=mm_honeycomb_counts]{mm_honeycomb_counts()}}
+}
 \concept{geospatial}
 \keyword{internal}

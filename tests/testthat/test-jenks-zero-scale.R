@@ -18,17 +18,17 @@ test_that("zero is the FIRST legend entry, not folded into the low bin", {
   expect_length(sc$leg_cols, length(sc$leg_labs))
 })
 
-test_that("NA and negatives get a defined colour, never a transparent hole", {
+test_that("NA gets a defined colour, never a transparent hole", {
   # findInterval() would otherwise hand NA back an NA colour, which leaflet
   # renders as transparent -- a hole that reads as "no county here".
   #
-  # NA now takes na_col rather than zero_col: see test-zero-vs-missing.R for
-  # why colouring an unmeasured county as a measured zero is the more
-  # dangerous of the two failures. Negatives still take the zero colour.
+  # NA takes na_col rather than zero_col: see test-zero-vs-missing.R for why
+  # colouring an unmeasured county as a measured zero is the more dangerous of
+  # the two failures. A negative gets no colour at all -- it is rejected.
   sc <- mysterymaps_jenks_zero_scale(c(0, 1, 5, 20))
-  expect_identical(sc$color(-3), "#e0e0e0")
   expect_false(is.na(sc$color(NA_real_)))
   expect_identical(sc$color(NA_real_), "#ffffff")
+  expect_error(sc$color(-3), "cannot be negative")
 })
 
 test_that("an all-zero column degrades to a single grey class, not an error", {

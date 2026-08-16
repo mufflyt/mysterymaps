@@ -53,10 +53,95 @@ Two consequences for existing code:
   entry, alongside `NA` and `NaN`. `Inf` was already excluded from the Jenks
   breaks; only the colour was wrong.
 
-## Known gaps, pinned by tests but not changed
+## Breaking: a negative count or rate is refused
 
-* A negative value is absorbed into the zero class. It means an upstream
-  subtraction went wrong, and it does not currently surface.
+`mysterymaps_jenks_zero_scale()` used to absorb a negative value into the zero
+class, so a county whose supply arrived as -3 rendered identically to a county
+measured at zero and the legend labelled it `0`. That is the conflation the
+scale exists to prevent, with an arithmetic error concealed inside it — and it
+is the direction that inflates the apparent desert. No class on this scale
+represents a negative supply honestly, so the map is no longer built. The error
+names the count, the minimum and the first few positions.
+
+Both the constructor and the `color()` it returns check, because they can be
+handed different vectors: a scale built from every county and applied to one
+state's subset would classify the national data cleanly and then colour a
+negative on the second call, which is the harder half to notice.
+
+`-Inf` now errors for the same reason rather than shading as no data. It is
+unmeasurable *and* negative, and the negative complaint is the more specific.
+
+If you are mapping a change between two periods, this scale was always the
+wrong one — zero here is a distinguished floor category, not a midpoint — and
+the error says so. Use a diverging scale.
+
+## Fixed: the honeycomb map deleted Honolulu
+
+`mysterymaps_hrr_maps()` filtered its provider counts with
+`dplyr::filter(grid_id > 9546L)`, commented `# Filter out Palmyra Atoll`.
+`grid_id` is `dplyr::row_number()` over `sf::st_make_grid()`, whose cells run
+in **longitude** order across the bounding box — so the cut removed the 9,546
+**westernmost** cells, whatever happened to be in them, and moved whenever
+Natural Earth shipped a polygon with a different extent.
+
+Measured against the current polygon (bbox 171.8°W–67.0°W, 18.9°N–71.4°N), the
+cut removed **1,223 cells containing US land** — 1,214 in western Alaska, 9 in
+Hawaii — among them **Honolulu, Kauai and Nome**. Palmyra Atoll is at 5.9°N,
+outside that bounding box altogether, so the filter never once removed the
+thing it named.
+
+What it removed was every physician in Honolulu, from a function that calls
+`mysterymaps_hrr(remove_HI_AK = FALSE)` two lines earlier to keep Hawaii
+deliberately, and that draws a Hawaii inset. The inset rendered empty and read
+as a workforce finding.
+
+The exclusion is now geographic (`southern_limit`, default 15°N — below Ka Lae
+at 18.9°N and above Palmyra), so it cannot drift with a data release. The
+counting step is split into `mm_honeycomb_counts()`, because the figure is a
+`gtable`: a cell losing every provider it holds was invisible to any assertion
+about the output, which is how this survived. It also forces spherical geometry
+off for its own work and restores it — clipping hexagons to a coastline leaves
+slivers that s2 rejects, so the count previously worked only because its one
+caller had switched s2 off a few lines earlier.
+
+`min_count` is now a named argument rather than a bare `> 1`. The behaviour is
+unchanged: a cell holding one provider is dropped and drawn exactly like a cell
+holding none, which is a small-cell suppression decision and now says so.
+
+## Fixed: areas were measured in whatever CRS the caller happened to use
+
+`mysterymaps_guard_water_masks()` and the coverage-surface popups computed area
+as `sf::st_area(x) / 1e6`, which is square kilometres only when the geometry's
+CRS is in metres. Two independent failures followed, both producing a plausible
+number:
+
+* **The unit.** Several US state plane systems are in US survey feet. In
+  EPSG:2232 (NAD83 / Colorado Central) a polygon of 147,582 km² measures
+  1,588,550 — a factor of 10.76, with no warning, because the arithmetic is
+  valid and only the unit is wrong.
+* **The projection.** A conformal CRS preserves shape, not area. In EPSG:3857 —
+  the default of every slippy map — the same polygon measures roughly 1.8× its
+  true size, in metres, from a metre-declaring CRS. No unit conversion can
+  detect that.
+
+In the water-mask guard either one inverts the verdict. The guard divides a
+mask's area by the state's census water area and excludes anything above
+`max_ratio`; inflate the numerator and Michigan's legitimate Great Lakes mask
+crosses the threshold, is excluded, the water clip never runs, and the coverage
+surface spreads across the lakes — the failure the guard exists to prevent,
+produced by the guard.
+
+Both now measure geodesically on EPSG:4326 rather than in the caller's CRS, so
+the answer is the same from lon/lat, Albers, Web Mercator, UTM and survey feet,
+and is valid outside CONUS (the guard is handed Alaska and Hawaii). Spherical
+geometry is forced on for the measurement and restored afterwards: with it off,
+`sf` routes geodetic area through `lwgeom`, a Suggests absent on a bare runner,
+so the measurement would have errored on exactly the machines with nothing
+installed. Geometry carrying no CRS is refused by name instead of being assumed
+to be in metres.
+
+No user-facing behaviour changes for masks already supplied in lon/lat or in an
+equal-area CRS in metres, which is every documented path.
 
 # mysterymaps 0.2.0 (2026-08-09)
 
