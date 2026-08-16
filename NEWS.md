@@ -75,6 +75,39 @@ If you are mapping a change between two periods, this scale was always the
 wrong one — zero here is a distinguished floor category, not a midpoint — and
 the error says so. Use a diverging scale.
 
+## Fixed: the honeycomb map deleted Honolulu
+
+`mysterymaps_hrr_maps()` filtered its provider counts with
+`dplyr::filter(grid_id > 9546L)`, commented `# Filter out Palmyra Atoll`.
+`grid_id` is `dplyr::row_number()` over `sf::st_make_grid()`, whose cells run
+in **longitude** order across the bounding box — so the cut removed the 9,546
+**westernmost** cells, whatever happened to be in them, and moved whenever
+Natural Earth shipped a polygon with a different extent.
+
+Measured against the current polygon (bbox 171.8°W–67.0°W, 18.9°N–71.4°N), the
+cut removed **1,223 cells containing US land** — 1,214 in western Alaska, 9 in
+Hawaii — among them **Honolulu, Kauai and Nome**. Palmyra Atoll is at 5.9°N,
+outside that bounding box altogether, so the filter never once removed the
+thing it named.
+
+What it removed was every physician in Honolulu, from a function that calls
+`mysterymaps_hrr(remove_HI_AK = FALSE)` two lines earlier to keep Hawaii
+deliberately, and that draws a Hawaii inset. The inset rendered empty and read
+as a workforce finding.
+
+The exclusion is now geographic (`southern_limit`, default 15°N — below Ka Lae
+at 18.9°N and above Palmyra), so it cannot drift with a data release. The
+counting step is split into `mm_honeycomb_counts()`, because the figure is a
+`gtable`: a cell losing every provider it holds was invisible to any assertion
+about the output, which is how this survived. It also forces spherical geometry
+off for its own work and restores it — clipping hexagons to a coastline leaves
+slivers that s2 rejects, so the count previously worked only because its one
+caller had switched s2 off a few lines earlier.
+
+`min_count` is now a named argument rather than a bare `> 1`. The behaviour is
+unchanged: a cell holding one provider is dropped and drawn exactly like a cell
+holding none, which is a small-cell suppression decision and now says so.
+
 ## Fixed: areas were measured in whatever CRS the caller happened to use
 
 `mysterymaps_guard_water_masks()` and the coverage-surface popups computed area

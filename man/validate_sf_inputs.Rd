@@ -39,7 +39,8 @@ do not contain empty geometries. Invalid geometries are repaired with
 }
 \seealso{
 Other geospatial:
-\code{\link[=mm_area_in]{mm_area_in()}}
+\code{\link[=mm_area_in]{mm_area_in()}},
+\code{\link[=mm_honeycomb_counts]{mm_honeycomb_counts()}}
 }
 \concept{geospatial}
 \keyword{internal}

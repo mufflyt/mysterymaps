@@ -60,6 +60,7 @@ failure above.
 
 \seealso{
 Other geospatial:
+\code{\link[=mm_honeycomb_counts]{mm_honeycomb_counts()}},
 \code{\link[=validate_sf_inputs]{validate_sf_inputs()}}
 }
 \concept{geospatial}

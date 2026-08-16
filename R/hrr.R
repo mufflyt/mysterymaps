@@ -133,22 +133,7 @@ mysterymaps_hrr_maps <- function(
 
   # Intersect honeycomb grid with physician data to get physician counts
   message("Intersecting honeycomb grid with physician data...")
-  honeycomb_grid_sf <- sf::st_make_grid(usa, c(0.3, 0.3), what = "polygons", square = FALSE) %>%
-    sf::st_sf() %>%
-    dplyr::mutate(grid_id = dplyr::row_number()) %>%
-    sf::st_intersection(sf::st_transform(usa, 4326))
-
-  intersections <- sf::st_intersection(honeycomb_grid_sf, sf::st_transform(physician_sf, 4326)) %>%
-    dplyr::filter(.data$grid_id > 9546L)  # Filter out Palmyra Atoll
-
-  physician_count_per_honey <- intersections %>%
-    dplyr::group_by(grid_id) %>%
-    dplyr::summarize(physician_count = n(), .groups = 'drop') %>%
-    dplyr::filter(.data$physician_count > 1)
-
-  # Join honeycomb grid with physician count
-  honeycomb_grid_with_physicians <- sf::st_join(honeycomb_grid_sf, physician_count_per_honey) %>%
-    dplyr::filter(!is.na(.data$physician_count))
+  honeycomb_grid_with_physicians <- mm_honeycomb_counts(usa, physician_sf)
 
   fill_limits <- range(honeycomb_grid_with_physicians$physician_count, na.rm = TRUE)
   if (any(is.infinite(fill_limits))) {
@@ -252,4 +237,80 @@ mysterymaps_hrr_maps <- function(
   ggplot2::ggsave(paste0(output_stub, ".png"), plot = combined_map, width = width, height = height, dpi = dpi, units = "in")
 
   invisible(combined_map)
+}
+
+#' Count providers per honeycomb cell over a study-area polygon
+#'
+#' Split out of [mysterymaps_hrr_maps()] because the count it produces was the
+#' one thing that function could not be tested on: it returns a `gtable`, so a
+#' cell losing every provider it holds is invisible to any assertion about the
+#' output.
+#'
+#' @section The row-index filter this replaces:
+#' The line here used to be `dplyr::filter(grid_id > 9546L)`, commented
+#' `# Filter out Palmyra Atoll`. `grid_id` is `dplyr::row_number()` over
+#' `sf::st_make_grid()`, whose cells run in longitude order across the bounding
+#' box of `usa` -- so the cut removed the 9,546 WESTERNMOST cells, whatever
+#' happened to be in them, and moved whenever Natural Earth shipped a polygon
+#' with a different extent.
+#'
+#' Measured against the current polygon (bbox 171.8W-67.0W, 18.9N-71.4N): the
+#' cut removed 1,223 cells containing US land -- 1,214 in western Alaska, 9 in
+#' Hawaii -- among them Honolulu, Kauai and Nome. Palmyra Atoll sits at 5.9N,
+#' outside that bounding box altogether, so the filter never once removed the
+#' thing it named. What it removed was every physician in Honolulu, from a map
+#' whose caller had just asked for Hawaii by name (`remove_HI_AK = FALSE`) and
+#' which draws a Hawaii inset. The inset rendered empty and read as a workforce
+#' finding.
+#'
+#' The intent -- keep a far-flung outlying territory from stretching the map --
+#' is kept and expressed as geography, which cannot drift with a data release.
+#' The southernmost point of the fifty states is Ka Lae, Hawaii, at 18.9N;
+#' `southern_limit` sits well below it and well above Palmyra.
+#'
+#' @param usa `sf`: the study-area polygon the grid is built over and clipped to.
+#' @param physician_sf `sf`: provider points.
+#' @param cellsize `numeric(1)`: hexagon size in degrees.
+#' @param min_count `integer(1)`: cells holding fewer than this many providers
+#'   are dropped rather than drawn. Two is the long-standing behaviour and is a
+#'   small-cell suppression choice, not a rendering detail -- a cell with one
+#'   provider is drawn exactly like a cell with none.
+#' @param southern_limit `numeric(1)`: cells entirely south of this latitude are
+#'   outlying territory, not study area.
+#' @return An `sf` of cells carrying a `physician_count`.
+#' @family geospatial
+#' @keywords internal
+mm_honeycomb_counts <- function(usa, physician_sf, cellsize = 0.3,
+                                min_count = 2L, southern_limit = 15) {
+  # This function owns the setting rather than inheriting it. Clipping tens of
+  # thousands of hexagons to a coastline leaves degenerate slivers that s2
+  # rejects outright ("Loop 0 is not valid: Edge 3 is degenerate"), so with
+  # spherical geometry on the count does not come out wrong -- it does not come
+  # out at all. It used to work only because its one caller happened to have
+  # switched s2 off a few lines earlier, which made the count a function of the
+  # session as much as of the data.
+  old_s2 <- sf::sf_use_s2()
+  on.exit(suppressMessages(sf::sf_use_s2(old_s2)), add = TRUE)
+  suppressMessages(sf::sf_use_s2(FALSE))
+
+  usa <- sf::st_transform(usa, 4326)
+
+  grid <- sf::st_make_grid(usa, c(cellsize, cellsize), what = "polygons",
+                           square = FALSE) %>%
+    sf::st_sf() %>%
+    dplyr::mutate(grid_id = dplyr::row_number()) %>%
+    sf::st_intersection(usa)
+
+  in_scope <- sf::st_sfc(sf::st_polygon(list(cbind(
+    c(-180, 180, 180, -180, -180),
+    c(southern_limit, southern_limit, 90, 90, southern_limit)))), crs = 4326)
+  grid <- grid[lengths(sf::st_intersects(grid, in_scope)) > 0L, , drop = FALSE]
+
+  counts <- sf::st_intersection(grid, sf::st_transform(physician_sf, 4326)) %>%
+    dplyr::group_by(.data$grid_id) %>%
+    dplyr::summarize(physician_count = dplyr::n(), .groups = "drop") %>%
+    dplyr::filter(.data$physician_count >= min_count)
+
+  sf::st_join(grid, counts) %>%
+    dplyr::filter(!is.na(.data$physician_count))
 }
