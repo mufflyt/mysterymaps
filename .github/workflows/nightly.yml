@@ -7,10 +7,6 @@ name: Nightly
 # fires at 02:17 MST year-round. During Denver's MDT half of the year that is
 # 03:17 local. MST was what was asked for, so MST is what is pinned.
 on:
-  # TEMPORARY: GitHub will not dispatch a workflow_dispatch workflow that
-  # is not on the default branch, so this file has never actually run.
-  # Added to exercise it against PR #4 before merge; remove once merged.
-  pull_request:
   schedule:
     - cron: '17 9 * * *'
   workflow_dispatch:

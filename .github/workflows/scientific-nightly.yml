@@ -18,10 +18,6 @@ name: Scientific Nightly
 # so a red software run is already visible when this one starts.
 
 on:
-  # TEMPORARY: GitHub will not dispatch a workflow_dispatch workflow that
-  # is not on the default branch, so this file has never actually run.
-  # Added to exercise it against PR #4 before merge; remove once merged.
-  pull_request:
   schedule:
     # Tier B: every night.
     - cron: '47 9 * * *'
