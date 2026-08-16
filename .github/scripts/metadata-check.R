@@ -33,6 +33,12 @@ if (!file.exists("CITATION.cff")) {
   }
 
   # cffr regenerates the file from DESCRIPTION; a diff means it is stale.
+  if (!requireNamespace("cffr", quietly = TRUE)) {
+    # Say so. This block was silently skipped on a machine without cffr, so
+    # every local run reported "Metadata is consistent" without ever executing
+    # the code that failed on CI.
+    cat("cffr is not installed; CITATION.cff regeneration NOT checked here.\n")
+  }
   if (requireNamespace("cffr", quietly = TRUE)) {
     tmp <- tempfile(fileext = ".cff")
     # Schema validation needs jsonvalidate (and V8 underneath it). A runner
@@ -41,7 +47,11 @@ if (!file.exists("CITATION.cff")) {
     # runner's package set rather than about the citation file.
     can_validate <- requireNamespace("jsonvalidate", quietly = TRUE)
     ok <- tryCatch({
-      cffr::cff_write(".", outfile = tmp, verbose = FALSE,
+      # "DESCRIPTION", not ".". cffr resolves `x` as a package name or a path
+      # to a DESCRIPTION file; given "." it looks for an installed package
+      # called "." and reports "`x` is not valid. If it is a package, you may
+      # need to install it with install.packages()".
+      cffr::cff_write("DESCRIPTION", outfile = tmp, verbose = FALSE,
                       validate = can_validate)
       TRUE
     }, error = function(e) {
