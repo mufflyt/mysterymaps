@@ -20,3 +20,4 @@
 ^Rplots\.pdf$
 ^coverage\.json$
 ^cobertura\.xml$
+^HALL_OF_SHAME\.md$
