@@ -35,14 +35,24 @@ if (!file.exists("CITATION.cff")) {
   # cffr regenerates the file from DESCRIPTION; a diff means it is stale.
   if (requireNamespace("cffr", quietly = TRUE)) {
     tmp <- tempfile(fileext = ".cff")
+    # Schema validation needs jsonvalidate (and V8 underneath it). A runner
+    # without them is a missing TOOL, not a metadata defect, so it reports and
+    # moves on -- failing the nightly for it would make the job about the
+    # runner's package set rather than about the citation file.
+    can_validate <- requireNamespace("jsonvalidate", quietly = TRUE)
     ok <- tryCatch({
-      cffr::cff_write(".", outfile = tmp, verbose = FALSE, validate = TRUE)
+      cffr::cff_write(".", outfile = tmp, verbose = FALSE,
+                      validate = can_validate)
       TRUE
     }, error = function(e) {
-      note("cffr could not validate CITATION.cff: %s", conditionMessage(e))
+      note("cffr could not write CITATION.cff: %s", conditionMessage(e))
       FALSE
     })
-    if (ok) cat("CITATION.cff validates against the schema.\n")
+    if (ok && can_validate) cat("CITATION.cff validates against the schema.\n")
+    if (ok && !can_validate) {
+      cat("CITATION.cff written; schema validation skipped ",
+          "(jsonvalidate not installed).\n", sep = "")
+    }
   }
 }
 

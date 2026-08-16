@@ -12,6 +12,10 @@ write_lookup <- function(dir, header = "State,ACOG_District,Subregion",
 }
 
 test_that("a missing lookup file is refused, with the path in the message", {
+  # Without sf the function stops at its own requireNamespace guard, so the
+  # expect_error() below would match the wrong error.
+  skip_if_not_installed("sf")
+  skip_if_not_installed("readr")
   expect_error(mysterymaps_map_acog_districts(file.path(tempdir(), "nope.csv")),
                "Could not locate the ACOG districts file")
   expect_error(mysterymaps_map_acog_districts(""),
@@ -19,6 +23,10 @@ test_that("a missing lookup file is refused, with the path in the message", {
 })
 
 test_that("a lookup with no State column is refused", {
+  # Without sf the function stops at its own requireNamespace guard, so the
+  # expect_error() below would match the wrong error.
+  skip_if_not_installed("sf")
+  skip_if_not_installed("readr")
   dir <- withr::local_tempdir()
   path <- write_lookup(dir, header = "Place,ACOG_District,Subregion")
   expect_error(mysterymaps_map_acog_districts(path),
@@ -142,6 +150,10 @@ test_that("the packaged table is used when no file is given", {
 })
 
 test_that("an absent packaged table names mysterycall, not an empty path", {
+  # Without sf the function stops at its own requireNamespace guard, so the
+  # expect_error() below would match the wrong error.
+  skip_if_not_installed("sf")
+  skip_if_not_installed("readr")
   # system.file() returns "" when the file is missing, and the generic message
   # then reads "Could not locate the ACOG districts file at ''" -- true, and
   # useless to whoever has to fix it.
@@ -176,6 +188,10 @@ test_that("a byte-order mark on the State header is repaired", {
 })
 
 test_that("a table without ACOG_District is refused by name", {
+  # Without sf the function stops at its own requireNamespace guard, so the
+  # expect_error() below would match the wrong error.
+  skip_if_not_installed("sf")
+  skip_if_not_installed("readr")
   dir <- withr::local_tempdir()
   path <- file.path(dir, "no-district.csv")
   writeLines(c("State,Subregion", "Colorado,Mountain"), path)

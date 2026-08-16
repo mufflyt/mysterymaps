@@ -31,6 +31,7 @@ test_that("a missing column is named, not silently ignored", {
 })
 
 test_that("REGRESSION: points use no custom pane, and canvas is shared", {
+  skip_if_not_installed("sf")
   skip_if_not_installed("leaflet")
   pts <- sf::st_as_sf(data.frame(name = c("A Person", "B Person"),
                                  pop = c("<b>A</b>", "<b>B</b>"),

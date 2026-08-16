@@ -139,10 +139,11 @@ test_that("negative values are not silently folded into the zero class", {
 test_that("Inf is excluded from the breaks AND shaded as no data", {
   # Two separate behaviours, and only one of them is a gap.
   #
-  # Excluding Inf from the BREAKS is correct and load-bearing: without
-  # `pos <- pos[is.finite(pos)]` a single Inf makes classIntervals() return
-  # non-finite breaks and every county lands in one class. That is asserted
-  # here so the filter cannot be removed silently.
+  # Correction to an earlier claim here: the is.finite() filter on `pos` is
+  # NOT load-bearing. classIntervals() omits infinite values on its own -- it
+  # says so, "var has infinite values, omitted in finding classes" -- and
+  # returns byte-identical breaks either way. The filter suppresses that
+  # warning. Measured, after a mutation that removed it survived.
   #
   # Shading it as no data is the fix: a zero denominator is the emptiest place
   # on the map, not the fullest. Both halves are pinned here because they are

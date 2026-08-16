@@ -43,8 +43,8 @@ MUTANTS <- list(
        # Anchored on the PAIR: `out[is.na(x)] <- na_col` alone appears in all
        # three branches of the scale, so a bare match is ambiguous and the
        # harness refuses to guess. This pins the general (Jenks) branch.
-       from = "    out[!is.na(x) & x <= 0] <- zero_col\n    out[is.na(x)] <- na_col",
-       to   = "    out[!is.na(x) & x <= 0] <- zero_col\n    out[is.na(x)] <- zero_col",
+       from = "    out[is.finite(x) & x <= 0] <- zero_col\n    out[!is.finite(x)] <- na_col",
+       to   = "    out[is.finite(x) & x <= 0] <- zero_col\n    out[!is.finite(x)] <- zero_col",
        harm = paste("An unmeasured county is painted as a measured zero and",
                     "the legend calls it 0. On a rare-subspecialty map this is",
                     "indistinguishable from the finding.")),
@@ -52,8 +52,8 @@ MUTANTS <- list(
   list(id = "zero_becomes_na", domain = "zero-vs-missing",
        killers = c("test-zero-vs-missing.R", "test-national-map-fixture.R"),
        file = "R/jenks_zero_scale.R",
-       from = "    out[!is.na(x) & x <= 0] <- zero_col\n    out[is.na(x)] <- na_col",
-       to   = "    out[!is.na(x) & x <= 0] <- na_col\n    out[is.na(x)] <- na_col",
+       from = "    out[is.finite(x) & x <= 0] <- zero_col\n    out[!is.finite(x)] <- na_col",
+       to   = "    out[!is.finite(x)] <- na_col\n    out[!is.finite(x)] <- na_col",
        harm = paste("A genuine provider desert is reported as missing data,",
                     "erasing the finding the map exists to show.")),
 
@@ -63,19 +63,28 @@ MUTANTS <- list(
   # again. The defensive line makes the corruption unobservable. Replaced with
   # a mutation that removes that filter instead, which is genuinely fatal:
   # a non-finite rate then reaches classIntervals().
-  list(id = "finite_filter_removed", domain = "zero-vs-missing",
-       killers = c("test-zero-vs-missing.R", "test-jenks-zero-scale.R"),
+  # Removing `pos <- pos[is.finite(pos)]` was tried here and is an EQUIVALENT
+  # MUTANT: classIntervals() omits infinite values on its own ("var has
+  # infinite values, omitted in finding classes") and returns byte-identical
+  # breaks. The filter suppresses that warning; it is not load-bearing, and an
+  # earlier comment in the tests claiming otherwise was wrong.
+  #
+  # The real regression in this area is reverting has_na to anyNA(): Inf is
+  # then still coloured as no-data but gains no legend entry, so the map shows
+  # a colour nothing explains.
+  list(id = "inf_missing_from_legend", domain = "zero-vs-missing",
+       killers = c("test-zero-vs-missing.R", "test-jenks-zero-scale-semantics.R"),
        file = "R/jenks_zero_scale.R",
-       from = "  pos  <- pos[is.finite(pos)]",
-       to   = "  pos  <- pos",
-       harm = paste("An Inf produced by a zero denominator upstream reaches the",
-                    "classifier, and the break computation returns non-finite",
-                    "breaks that colour every county in one class.")),
+       from = "has_na <- !all(is.finite(n))",
+       to   = "has_na <- anyNA(n)",
+       harm = paste("A county with a zero denominator is shaded as no-data but",
+                    "the legend never mentions a no-data class, so the reader",
+                    "sees a colour with no key.")),
 
   list(id = "na_legend_suppressed", domain = "zero-vs-missing",
        killers = c("test-zero-vs-missing.R", "test-national-map-fixture.R"),
        file = "R/jenks_zero_scale.R",
-       from = "has_na <- anyNA(n)",
+       from = "has_na <- !all(is.finite(n))",
        to   = "has_na <- FALSE",
        harm = paste("The map still separates the colours but never tells the",
                     "reader that a no-data class exists.")),
