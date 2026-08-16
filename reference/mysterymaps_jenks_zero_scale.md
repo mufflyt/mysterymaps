@@ -26,7 +26,9 @@ mysterymaps_jenks_zero_scale(
 
 - n:
 
-  Numeric vector of values (counts or rates).
+  Numeric vector of non-negative values (counts or rates). A negative
+  value is an upstream arithmetic error rather than a low value and is
+  rejected; see the `Negative values` section.
 
 - k:
 
@@ -67,6 +69,19 @@ and `leg_labs` for
 
 Jenks rather than equal intervals because provider rates are heavily
 right-skewed; equal intervals put almost every county in the first bin.
+
+## Negative values
+
+A negative count or rate is rejected rather than coloured. It used to
+take `zero_col`, so a county whose supply arrived as -3 rendered
+identically to a county measured at zero and the legend labelled it `0`
+– the same conflation this scale exists to prevent at the other end of
+the ramp, with an arithmetic error concealed inside it. No class
+represents a negative supply honestly, so the map is not built.
+
+If the intent is to map a *change* between two periods, this scale is
+the wrong one: zero here is a distinguished floor category, not a
+midpoint, and a diverging scale is what a difference needs.
 
 ## See also
 

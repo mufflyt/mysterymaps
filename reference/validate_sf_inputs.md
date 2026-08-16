@@ -50,3 +50,9 @@ validate_sf_inputs(
 ## Value
 
 A named list of validated sf objects.
+
+## See also
+
+Other geospatial:
+[`mm_area_in()`](https://mufflyt.github.io/mysterymaps/reference/mm_area_in.md),
+[`mm_honeycomb_counts()`](https://mufflyt.github.io/mysterymaps/reference/mm_honeycomb_counts.md)

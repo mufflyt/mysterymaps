@@ -80,7 +80,9 @@ as "low" when the truth was "none".</p>
 
 
 <dl><dt id="arg-n">n<a class="anchor" aria-label="anchor" href="#arg-n"></a></dt>
-<dd><p>Numeric vector of values (counts or rates).</p></dd>
+<dd><p>Numeric vector of non-negative values (counts or rates). A negative
+value is an upstream arithmetic error rather than a low value and is
+rejected; see the <code>Negative values</code> section.</p></dd>
 
 
 <dt id="arg-k">k<a class="anchor" aria-label="anchor" href="#arg-k"></a></dt>
@@ -120,6 +122,20 @@ count labels.</p></dd>
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
     <p>Jenks rather than equal intervals because provider rates are heavily
 right-skewed; equal intervals put almost every county in the first bin.</p>
+    </div>
+    <div class="section level2">
+    <h2 id="negative-values">Negative values<a class="anchor" aria-label="anchor" href="#negative-values"></a></h2>
+
+
+<p>A negative count or rate is rejected rather than coloured. It used to take
+<code>zero_col</code>, so a county whose supply arrived as -3 rendered identically to a
+county measured at zero and the legend labelled it <code>0</code> – the same conflation
+this scale exists to prevent at the other end of the ramp, with an
+arithmetic error concealed inside it. No class represents a negative supply
+honestly, so the map is not built.</p>
+<p>If the intent is to map a <em>change</em> between two periods, this scale is the
+wrong one: zero here is a distinguished floor category, not a midpoint, and
+a diverging scale is what a difference needs.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
