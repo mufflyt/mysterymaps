@@ -143,6 +143,7 @@ test_that("the jitter seed is recorded on the map object", {
   skip_if_not_installed("rnaturalearth")
   skip_if_not_installed("rnaturalearthdata")
   skip_if_not_installed("rnaturalearthhires")
+  skip_if_no_acog_csv()
   local_mocked_bindings(
     webshot = function(url, file, ...) { file.create(file); invisible(file) },
     .package = "webshot")

@@ -35,6 +35,16 @@ mysterymaps_map_acog_districts <- function(acog_districts_file = NULL) {
 
   if (is.null(acog_districts_file)) {
     acog_districts_file <- system.file("extdata", "acog_districts.csv", package = "mysterycall")
+    if (!nzchar(acog_districts_file)) {
+      # system.file() returns "" when the file is absent, and the generic
+      # message below then reads "Could not locate the ACOG districts file
+      # at ''" -- true, and useless. A caller who passed no file needs to know
+      # where the default was supposed to come from.
+      stop("Could not locate the packaged ACOG districts table. It ships in ",
+           "mysterycall (inst/extdata/acog_districts.csv); either that package ",
+           "is unavailable or its extdata was not installed. Pass ",
+           "`acog_districts_file` to use your own table.", call. = FALSE)
+    }
   }
 
   if (!nzchar(acog_districts_file) || !file.exists(acog_districts_file)) {

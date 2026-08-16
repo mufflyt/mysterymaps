@@ -125,3 +125,16 @@ mm_in_tempdir <- function(code) {
   withr::local_dir(dir)
   force(code)
 }
+
+# The default ACOG district table ships inside mysterycall's inst/extdata.
+# mysterymaps_map_acog_districts() falls back to it when no file is given, and
+# anything that draws districts -- mysterymaps_map_physicians() among them --
+# reaches it. It is present in a developer install and absent on a CI runner
+# that resolved mysterycall differently, so tests that rely on it skip rather
+# than fail.
+skip_if_no_acog_csv <- function() {
+  p <- system.file("extdata", "acog_districts.csv", package = "mysterycall")
+  if (!nzchar(p) || !file.exists(p)) {
+    skip("mysterycall's packaged acog_districts.csv is not available")
+  }
+}

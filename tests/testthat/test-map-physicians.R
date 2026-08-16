@@ -11,6 +11,7 @@ skip_unless_dots <- function() {
   skip_if_not_installed("rnaturalearth")
   skip_if_not_installed("rnaturalearthdata")
   skip_if_not_installed("rnaturalearthhires")
+  skip_if_no_acog_csv()
 }
 
 physicians <- function(n = 5) {

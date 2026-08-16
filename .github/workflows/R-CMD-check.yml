@@ -148,7 +148,11 @@ jobs:
           # rnaturalearthdata is not a declared Suggests but several tests need
           # it; without it they skip, and a skipped test covers no code. That
           # alone took measured coverage from 95% to 79%.
-          extra-packages: any::covr, any::xml2, any::rnaturalearthdata, ropensci/rnaturalearthhires
+          # local::. matters: without it the job runs against whatever
+          # mysterymaps the dependency cache happens to hold, not this
+          # branch. That is how the coverage job reported the pre-fix Inf
+          # colour while both check jobs, which build from source, passed.
+          extra-packages: any::covr, any::xml2, any::rnaturalearthdata, ropensci/rnaturalearthhires, local::.
           needs: coverage
 
       # Run the suite plainly first. covr reports a failure only as a path to
