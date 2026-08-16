@@ -1,6 +1,7 @@
 # Hall of shame
 
-Mistakes made while building the scientific CI (2026-08-15/16, PR \#4).
+Mistakes made while building the scientific CI (2026-08-15/16, PR \#4)
+and while closing the science gaps it left open (2026-08-16, PR \#6).
 Kept because the CI exists to catch believable-but-wrong results, and
 the same failure modes that produce a false map produced most of these.
 
@@ -53,6 +54,23 @@ claim about the developer’s laptop. Announce the skip. And `R CMD check`
   median coverage into ~48%. A test that checks a caption cannot tell a
   correct pipeline from an inverted one.
 
+- **Named a mechanism before measuring it.** Reading
+  [`mysterymaps_guard_water_masks()`](https://mufflyt.github.io/mysterymaps/reference/mysterymaps_guard_water_masks.md),
+  the hazard looked obvious: with `sf_use_s2(FALSE)` a lon/lat
+  `st_area()` would return **degrees²**, so `/ 1e6` would collapse every
+  mask ratio to near zero and the guard would approve the inverted masks
+  it exists to catch. That was described to the user as the gap, in
+  those terms, before a single number had been computed.
+
+  Measured, it is false: sf returns m² for lon/lat under **both** s2
+  settings. The real hazard was one layer over — the linear unit of a
+  *projected* CRS (survey feet, 10.76×) and conformality (Web Mercator,
+  ~1.8×) — and it is worse than the version I invented, because unit
+  conversion cannot see it. The conclusion survived; the stated reason
+  for it did not. In a package whose whole thesis is that a plausible
+  mechanism is not a measured one, offering a mechanism as the finding
+  is the same error in the reviewer’s chair.
+
 - **Four coverage failures were about a stale artifact.** The coverage
   job had `dependencies: "all"` but no `local::.`, so it never built the
   package under test. It reported the pre-fix `Inf` colour on a commit
@@ -85,11 +103,14 @@ change the *shape* so it can’t drift — the fix was one
 
 ------------------------------------------------------------------------
 
-## 4. Blaming the package for my own bug
+## 4. Blaming the package for my own fixture
 
-Reported a memory problem in `mysterymaps` — “5 GB”, then “9.78 GB
-cumulative retention across test files” — and added a memory ceiling to
-the CI on that premise.
+Twice, in two different sessions, with the same shape: a geospatial test
+came back wrong, and the wrongness was in the fixture.
+
+**The memory ceiling that measured a test.** Reported a memory problem
+in `mysterymaps` — “5 GB”, then “9.78 GB cumulative retention across
+test files” — and added a memory ceiling to the CI on that premise.
 
 The cause was one line in a test I wrote:
 `st_segmentize(dfMaxLength = 0.05)`. `dfMaxLength` carries **units**,
@@ -99,8 +120,25 @@ suite’s runtime and 94% of its memory. After the fix: 110 s, 0.58 GB.
 
 There was no memory problem in the package. Chasing it did surface real
 geodesy — a lon/lat partition loses 0.26% of its area, flat under
-densification — which is now a documented test. That doesn’t excuse
-announcing a package defect before checking my own fixture.
+densification — which is now a documented test.
+
+**Geometry at null island, projected into Colorado.** Writing the
+area-unit regressions, the fixture was `sq(n)` — a square built at
+longitude 0, latitude 0, off the coast of Africa — reprojected into
+EPSG:2232, NAD83 / Colorado Central. State plane extrapolates thousands
+of kilometres outside its own zone without complaining, so the test
+failed with a number that looked like a finding about
+[`mm_area_in()`](https://mufflyt.github.io/mysterymaps/reference/mm_area_in.md).
+It was a finding about where I had put the polygon. Both fixtures now
+sit inside Colorado, with a comment saying why.
+
+**The rule both of these earn.** *A failing geospatial or scientific
+test is not evidence of a production defect until the fixture itself has
+been independently validated.* The fixture is code too, it is newer than
+the code under test, and it was written by whoever is most convinced the
+bug is elsewhere. Validate it first — otherwise the CI’s own output
+becomes another believable-but-wrong result, which is precisely what it
+exists to prevent.
 
 ------------------------------------------------------------------------
 
