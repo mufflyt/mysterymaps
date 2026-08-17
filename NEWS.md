@@ -53,6 +53,55 @@ Two consequences for existing code:
   entry, alongside `NA` and `NaN`. `Inf` was already excluded from the Jenks
   breaks; only the colour was wrong.
 
+## New: outside the modelled catchment is its own map class
+
+`twostep::compute_e2sfca()` now distinguishes a tract inside a catchment whose
+supply works out to zero from a tract no isochrone reaches, and emits a
+`coverage_status` column saying which. `mysterymaps_jenks_zero_scale()` and
+`mysterymaps_county_access_map()` can now consume it.
+
+Three states arrive at the scale and all three are different:
+
+* **measured zero** — inside a catchment, supply reaching it is zero. Takes
+  `zero_col`, labelled `0`.
+* **outside every catchment** — the model ran and no provider is reachable
+  within the modelled drive time. Also a measurement, and usually the finding
+  the map exists to report. Takes the new `outside_col`, labelled
+  *No provider within the modelled drive time*.
+* **missing** — the value is unknown: a suppressed denominator, a failed join.
+  Takes `na_col`, labelled *No data*.
+
+Pass `coverage` to the scale, or `coverage_col` to the template, as either the
+character `coverage_status` or the logical `reached`. Without it the second and
+third states collapse, because both arrive as `NA` — better than the older
+behaviour, where the second arrived as `0` and was indistinguishable from the
+first, but it still files a finding under "unknown".
+
+On the Colorado subspecialty surface that second state is **190 of 1,447
+tracts, 13% of the state**, and every one of them used to be shaded in the zero
+class under a legend reading `0`.
+
+Coverage cannot be inferred from the value — an outside geography and an
+unmeasured one are both `NA` — so it has to travel as its own column. The scale
+refuses to guess: an unrecognised status errors, a length mismatch errors, and
+`color()` on a differently-sized vector errors rather than silently dropping the
+class.
+
+Nothing changes for callers who pass no coverage.
+
+### Measured, on the frozen Colorado surface
+
+Removing the 190 false zeros did **not** move the Jenks breaks: the six positive
+classes are byte-identical and all 1,257 reached tracts keep exactly the fills
+they had. The scale already excluded zeros from classification, so the false
+zeros never entered the break computation — they only occupied the zero class.
+Class membership changed; class boundaries did not.
+
+One visible consequence: the legend still leads with a `0` entry that now
+describes no tract at all, because the zero class is unconditional while the
+no-data class is added only when needed. Left as-is here rather than widened
+into an unrelated legend change.
+
 ## Breaking: a negative count or rate is refused
 
 `mysterymaps_jenks_zero_scale()` used to absorb a negative value into the zero
