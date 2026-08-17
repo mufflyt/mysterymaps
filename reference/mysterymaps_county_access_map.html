@@ -82,7 +82,8 @@ vintages.</p>
 <span>  point_alpha <span class="op">=</span> <span class="fl">0.55</span>,</span>
 <span>  search <span class="op">=</span> <span class="st">"Search name..."</span>,</span>
 <span>  notes <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  bounds <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">24.5</span>, <span class="op">-</span><span class="fl">125</span>, <span class="fl">49.4</span>, <span class="op">-</span><span class="fl">66.9</span><span class="op">)</span></span>
+<span>  bounds <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">24.5</span>, <span class="op">-</span><span class="fl">125</span>, <span class="fl">49.4</span>, <span class="op">-</span><span class="fl">66.9</span><span class="op">)</span>,</span>
+<span>  coverage_col <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -183,6 +184,18 @@ the choropleth beneath them.</p></dd>
 
 <dt id="arg-bounds">bounds<a class="anchor" aria-label="anchor" href="#arg-bounds"></a></dt>
 <dd><p>numeric length-4 <code>c(lat_min, lng_min, lat_max, lng_max)</code>.</p></dd>
+
+
+<dt id="arg-coverage-col">coverage_col<a class="anchor" aria-label="anchor" href="#arg-coverage-col"></a></dt>
+<dd><p><code>character(1)|NULL</code>: <strong>not</strong> related to <code>coverage</code>, which
+is the named list of drive-time surface layers. This is a column in
+<code>counties</code> carrying the
+per-geography coverage state, as either <code>twostep::compute_e2sfca()</code>'s
+character <code>coverage_status</code> or its logical <code>reached</code>. When supplied,
+geographies outside every modelled catchment get their own colour and
+legend entry rather than the no-data one. See the
+<code>Outside the model is not missing data</code> section of
+<code><a href="mysterymaps_jenks_zero_scale.html">mysterymaps_jenks_zero_scale()</a></code>.</p></dd>
 
 </dl></div>
     <div class="section level2">

@@ -70,6 +70,9 @@ as "low" when the truth was "none".</p>
 <span>  zero_col <span class="op">=</span> <span class="st">"#e0e0e0"</span>,</span>
 <span>  na_col <span class="op">=</span> <span class="st">"#ffffff"</span>,</span>
 <span>  na_label <span class="op">=</span> <span class="st">"No data"</span>,</span>
+<span>  coverage <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  outside_col <span class="op">=</span> <span class="st">"#efe7d5"</span>,</span>
+<span>  outside_label <span class="op">=</span> <span class="st">"No provider within the modelled drive time"</span>,</span>
 <span>  palette <span class="op">=</span> <span class="fu">viridisLite</span><span class="fu">::</span><span class="va"><a href="https://sjmgarnier.github.io/viridisLite/reference/viridis.html" class="external-link">viridis</a></span>,</span>
 <span>  digits <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
@@ -104,6 +107,24 @@ shading unmeasured geographies as if they were zero.</p></dd>
 data actually contains <code>NA</code>, so legends do not gain an empty category.</p></dd>
 
 
+<dt id="arg-coverage">coverage<a class="anchor" aria-label="anchor" href="#arg-coverage"></a></dt>
+<dd><p>Optional per-geography coverage state, parallel to <code>n</code>.
+Accepts either shape <code>twostep::compute_e2sfca()</code> emits: the character
+<code>coverage_status</code> (<code>"within_modeled_catchment"</code> /
+<code>"outside_all_modeled_catchments"</code>) or the logical <code>reached</code>. When
+supplied, geographies outside every catchment get <code>outside_col</code> and their
+own legend entry instead of falling into the no-data class.</p></dd>
+
+
+<dt id="arg-outside-col">outside_col<a class="anchor" aria-label="anchor" href="#arg-outside-col"></a></dt>
+<dd><p>Colour for geographies outside every modelled catchment.</p></dd>
+
+
+<dt id="arg-outside-label">outside_label<a class="anchor" aria-label="anchor" href="#arg-outside-label"></a></dt>
+<dd><p>Legend entry for <code>outside_col</code>, added only when some
+geography is actually outside.</p></dd>
+
+
 <dt id="arg-palette">palette<a class="anchor" aria-label="anchor" href="#arg-palette"></a></dt>
 <dd><p>Palette function taking <code>k</code>. Default <code><a href="https://sjmgarnier.github.io/viridisLite/reference/viridis.html" class="external-link">viridisLite::viridis</a></code>.</p></dd>
 
@@ -115,13 +136,45 @@ count labels.</p></dd>
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>A list with <code>color</code> (a function mapping values to colours),
-<code>leg_cols</code> and <code>leg_labs</code> for <code><a href="https://rstudio.github.io/leaflet/reference/addLegend.html" class="external-link">leaflet::addLegend()</a></code>.</p>
+    <p>A list with <code>color</code> (a function <code>color(x, coverage = NULL)</code> mapping
+values to colours; the coverage given at construction is reused when <code>x</code>
+is the same length), <code>leg_cols</code> and <code>leg_labs</code> for
+<code><a href="https://rstudio.github.io/leaflet/reference/addLegend.html" class="external-link">leaflet::addLegend()</a></code>.</p>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
     <p>Jenks rather than equal intervals because provider rates are heavily
 right-skewed; equal intervals put almost every county in the first bin.</p>
+    </div>
+    <div class="section level2">
+    <h2 id="outside-the-model-is-not-missing-data">Outside the model is not missing data<a class="anchor" aria-label="anchor" href="#outside-the-model-is-not-missing-data"></a></h2>
+
+
+<p>Three states reach this scale and all three are different:</p>
+<dl><dt>measured zero</dt>
+<dd><p>The geography is inside somebody's catchment and the
+supply reaching it works out to zero. A measurement. Takes <code>zero_col</code>.</p></dd>
+
+<dt>outside every catchment</dt>
+<dd><p>The model ran and no provider is reachable
+within the modelled drive time. Also a measurement – usually the finding
+the map exists to report – and emphatically not a gap in the data.
+Takes <code>outside_col</code>, when <code>coverage</code> is supplied.</p></dd>
+
+<dt>missing</dt>
+<dd><p>The value is unknown: a suppressed denominator, a failed
+join. Takes <code>na_col</code>.</p></dd>
+
+
+</dl><p>Without <code>coverage</code> the second and third collapse, because both arrive as
+<code>NA</code>. That is better than the older behaviour, in which the second arrived as
+<code>0</code> and was indistinguishable from the first – 190 of 1,447 Colorado tracts
+on one subspecialty surface, 13% of the state, every one shaded in the zero
+class under a legend reading <code>0</code>. But it still files a finding under
+"unknown", so pass <code>coverage</code> whenever the producer supplies it.</p>
+<p>Coverage cannot be inferred from the value: an outside geography and an
+unmeasured one are both <code>NA</code>, which is precisely why it has to travel
+alongside as its own column.</p>
     </div>
     <div class="section level2">
     <h2 id="negative-values">Negative values<a class="anchor" aria-label="anchor" href="#negative-values"></a></h2>

@@ -17,6 +17,9 @@ mysterymaps_jenks_zero_scale(
   zero_col = "#e0e0e0",
   na_col = "#ffffff",
   na_label = "No data",
+  coverage = NULL,
+  outside_col = "#efe7d5",
+  outside_label = "No provider within the modelled drive time",
   palette = viridisLite::viridis,
   digits = NULL
 )
@@ -49,6 +52,24 @@ mysterymaps_jenks_zero_scale(
   Legend entry for `na_col`. The entry is added only when the data
   actually contains `NA`, so legends do not gain an empty category.
 
+- coverage:
+
+  Optional per-geography coverage state, parallel to `n`. Accepts either
+  shape `twostep::compute_e2sfca()` emits: the character
+  `coverage_status` (`"within_modeled_catchment"` /
+  `"outside_all_modeled_catchments"`) or the logical `reached`. When
+  supplied, geographies outside every catchment get `outside_col` and
+  their own legend entry instead of falling into the no-data class.
+
+- outside_col:
+
+  Colour for geographies outside every modelled catchment.
+
+- outside_label:
+
+  Legend entry for `outside_col`, added only when some geography is
+  actually outside.
+
 - palette:
 
   Palette function taking `k`. Default
@@ -61,14 +82,48 @@ mysterymaps_jenks_zero_scale(
 
 ## Value
 
-A list with `color` (a function mapping values to colours), `leg_cols`
-and `leg_labs` for
+A list with `color` (a function `color(x, coverage = NULL)` mapping
+values to colours; the coverage given at construction is reused when `x`
+is the same length), `leg_cols` and `leg_labs` for
 [`leaflet::addLegend()`](https://rstudio.github.io/leaflet/reference/addLegend.html).
 
 ## Details
 
 Jenks rather than equal intervals because provider rates are heavily
 right-skewed; equal intervals put almost every county in the first bin.
+
+## Outside the model is not missing data
+
+Three states reach this scale and all three are different:
+
+- measured zero:
+
+  The geography is inside somebody's catchment and the supply reaching
+  it works out to zero. A measurement. Takes `zero_col`.
+
+- outside every catchment:
+
+  The model ran and no provider is reachable within the modelled drive
+  time. Also a measurement – usually the finding the map exists to
+  report – and emphatically not a gap in the data. Takes `outside_col`,
+  when `coverage` is supplied.
+
+- missing:
+
+  The value is unknown: a suppressed denominator, a failed join. Takes
+  `na_col`.
+
+Without `coverage` the second and third collapse, because both arrive as
+`NA`. That is better than the older behaviour, in which the second
+arrived as `0` and was indistinguishable from the first – 190 of 1,447
+Colorado tracts on one subspecialty surface, 13% of the state, every one
+shaded in the zero class under a legend reading `0`. But it still files
+a finding under "unknown", so pass `coverage` whenever the producer
+supplies it.
+
+Coverage cannot be inferred from the value: an outside geography and an
+unmeasured one are both `NA`, which is precisely why it has to travel
+alongside as its own column.
 
 ## Negative values
 

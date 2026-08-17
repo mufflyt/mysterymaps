@@ -33,7 +33,8 @@ mysterymaps_county_access_map(
   point_alpha = 0.55,
   search = "Search name...",
   notes = NULL,
-  bounds = c(24.5, -125, 49.4, -66.9)
+  bounds = c(24.5, -125, 49.4, -66.9),
+  coverage_col = NULL
 )
 ```
 
@@ -135,6 +136,18 @@ mysterymaps_county_access_map(
 - bounds:
 
   numeric length-4 `c(lat_min, lng_min, lat_max, lng_max)`.
+
+- coverage_col:
+
+  `character(1)|NULL`: **not** related to `coverage`, which is the named
+  list of drive-time surface layers. This is a column in `counties`
+  carrying the per-geography coverage state, as either
+  `twostep::compute_e2sfca()`'s character `coverage_status` or its
+  logical `reached`. When supplied, geographies outside every modelled
+  catchment get their own colour and legend entry rather than the
+  no-data one. See the `Outside the model is not missing data` section
+  of
+  [`mysterymaps_jenks_zero_scale()`](https://mufflyt.github.io/mysterymaps/reference/mysterymaps_jenks_zero_scale.md).
 
 ## Value
 
