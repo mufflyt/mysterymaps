@@ -158,6 +158,15 @@ mysterymaps_notes_panel <- function(map, title, sections, vintages,
 #'
 #' @param counties `sf`: county polygons.
 #' @param value_col `character(1)`: column in `counties` to shade.
+#' @param coverage_col `character(1)|NULL`: **not** related to `coverage`, which
+#'   is the named list of drive-time surface layers. This is a column in
+#'   `counties` carrying the
+#'   per-geography coverage state, as either `twostep::compute_e2sfca()`'s
+#'   character `coverage_status` or its logical `reached`. When supplied,
+#'   geographies outside every modelled catchment get their own colour and
+#'   legend entry rather than the no-data one. See the
+#'   `Outside the model is not missing data` section of
+#'   [mysterymaps_jenks_zero_scale()].
 #' @param label_col,popup_col `character(1)`: columns holding hover and click HTML.
 #' @param coverage `named list of sf`: dissolved drive-time bands, e.g.
 #'   `list("Within 30 minutes" = iso30, "Within 60 minutes" = iso60)`.
@@ -231,7 +240,8 @@ mysterymaps_county_access_map <- function(counties, value_col,
                                           point_alpha = 0.55,
                                           search = "Search name...",
                                           notes = NULL,
-                                          bounds = c(24.5, -125, 49.4, -66.9)) {
+                                          bounds = c(24.5, -125, 49.4, -66.9),
+                                          coverage_col = NULL) {
   coverage_area_units <- match.arg(coverage_area_units)
   stopifnot(inherits(counties, "sf"))
   for (nm in c(value_col, label_col, popup_col)) {
@@ -240,7 +250,25 @@ mysterymaps_county_access_map <- function(counties, value_col,
            call. = FALSE)
   }
 
+  # Coverage travels alongside the value because it cannot be recovered from
+  # it: a geography outside every modelled catchment and one whose value is
+  # simply unknown are both NA. Producers that distinguish them -- e.g.
+  # twostep::compute_e2sfca(), whose `coverage_status` column this accepts
+  # directly -- let the map say "no provider within the modelled drive time"
+  # instead of "no data".
+  coverage_vals <- NULL
+  if (!is.null(coverage_col)) {
+    if (!coverage_col %in% names(counties)) {
+      stop(sprintf(paste0("mysterymaps_county_access_map: `coverage_col` = '%s' ",
+                          "is not a column in `counties`. Available: %s"),
+                   coverage_col, paste(names(counties), collapse = ", ")),
+           call. = FALSE)
+    }
+    coverage_vals <- counties[[coverage_col]]
+  }
+
   sc <- mysterymaps_jenks_zero_scale(counties[[value_col]], k = jenks_k,
+                                     coverage = coverage_vals,
                                      digits = jenks_digits)
   if (!is.null(legend_labels)) {
     if (length(legend_labels) != length(sc$leg_labs)) {
@@ -259,7 +287,11 @@ mysterymaps_county_access_map <- function(counties, value_col,
     leaflet::addScaleBar(position = "bottomleft",
                          options = leaflet::scaleBarOptions(imperial = TRUE)) |>
     leaflet::addPolygons(
-      data = counties, fillColor = sc$color(counties[[value_col]]),
+      data = counties,
+      # Coverage passed explicitly rather than relying on the scale reusing what
+      # it was built with. Same result here, but the fill is the one place a
+      # dropped outside-class would be invisible.
+      fillColor = sc$color(counties[[value_col]], coverage = coverage_vals),
       fillOpacity = 0.85, color = "#ffffff", weight = 0.4, smoothFactor = 0.5,
       label = lapply(counties[[label_col]], htmltools::HTML),
       popup = lapply(counties[[popup_col]], htmltools::HTML),

@@ -28,6 +28,91 @@ mm_reject_negative <- function(n, arg = "n") {
     call. = FALSE)
 }
 
+#' Normalise a coverage vector to "is this row outside every catchment?"
+#'
+#' Accepts the two shapes `twostep::compute_e2sfca()` emits: the character
+#' `coverage_status` and the logical `reached`. An unrecognised character value
+#' errors rather than defaulting to "inside" -- defaulting would put a tract the
+#' model never reached back into a measured class, which is the whole failure
+#' this exists to stop.
+#'
+#' @param coverage `NULL`, `logical`, or `character`.
+#' @param n `integer(1)`: expected length.
+#' @param arg `character(1)`: argument name for messages.
+#' @return `logical(n)`; all `FALSE` when `coverage` is `NULL`.
+#' @keywords internal
+#' @noRd
+mm_coverage_outside <- function(coverage, n, arg = "coverage") {
+  if (is.null(coverage)) return(rep(FALSE, n))
+  if (length(coverage) != n) {
+    stop(sprintf(paste0("`%s` has %d value%s but the data has %d row%s. ",
+                        "Coverage is a property of each geography, so the two ",
+                        "must line up; a recycled vector would mislabel rows ",
+                        "silently."),
+                 arg, length(coverage), if (length(coverage) == 1L) "" else "s",
+                 n, if (n == 1L) "" else "s"), call. = FALSE)
+  }
+  if (is.logical(coverage)) {
+    if (anyNA(coverage)) {
+      stop(sprintf(paste0("`%s` contains NA. Whether a geography lies inside ",
+                          "the modelled catchment is known or the map cannot ",
+                          "be drawn honestly; it is not itself a missing ",
+                          "value."), arg),
+           call. = FALSE)
+    }
+    return(!coverage)                       # `reached`: FALSE means outside
+  }
+  if (is.character(coverage) || is.factor(coverage)) {
+    v <- as.character(coverage)
+    inside <- "within_modeled_catchment"
+    outside <- "outside_all_modeled_catchments"
+    bad <- setdiff(unique(v[!is.na(v)]), c(inside, outside))
+    if (length(bad) || anyNA(v)) {
+      stop(sprintf(paste0("`%s` must be `%s` or `%s`%s. Unrecognised: %s. ",
+                          "Guessing would put a geography the model never ",
+                          "reached back into a measured class."),
+                   arg, inside, outside,
+                   if (anyNA(v)) ", and must not be NA" else "",
+                   paste(utils::head(c(bad, if (anyNA(v)) "NA"), 4),
+                         collapse = ", ")), call. = FALSE)
+    }
+    return(v == outside)
+  }
+  stop(sprintf("`%s` must be logical (`reached`) or character (`coverage_status`); got %s",
+               arg, class(coverage)[1]), call. = FALSE)
+}
+
+#' Resolve the coverage a `color()` call should use
+#'
+#' `color()` takes a vector, but coverage is per-row metadata that cannot be
+#' derived from the value -- an outside geography and an unmeasured one are both
+#' `NA`. So the scale remembers the coverage it was built with and reuses it
+#' when `color()` is handed a vector of the same length.
+#'
+#' When the lengths differ it ERRORS rather than dropping the class: colouring a
+#' subset with a scale built from the nation is a legitimate thing to do, and
+#' silently losing the outside category there would produce exactly the map this
+#' work exists to prevent, on a subset nobody re-checked.
+#'
+#' @param coverage coverage passed to `color()`, or `NULL`.
+#' @param built logical vector captured at construction.
+#' @param n length of the vector being coloured.
+#' @return `logical(n)`.
+#' @keywords internal
+#' @noRd
+mm_resolve_coverage <- function(coverage, built, n) {
+  if (!is.null(coverage)) return(mm_coverage_outside(coverage, n, "coverage"))
+  if (!any(built)) return(rep(FALSE, n))
+  if (length(built) == n) return(built)
+  stop(sprintf(paste0("this scale was built with coverage for %d geograph%s ",
+                      "but color() was given %d. Pass `coverage` to color() ",
+                      "as well -- without it the outside-catchment class would ",
+                      "be dropped and those geographies would take the ",
+                      "no-data colour instead."),
+               length(built), if (length(built) == 1L) "y" else "ies", n),
+       call. = FALSE)
+}
+
 #' Zero-aware Jenks natural-breaks colour scale
 #'
 #' @description
@@ -42,6 +127,31 @@ mm_reject_negative <- function(n, arg = "n") {
 #' @details
 #' Jenks rather than equal intervals because provider rates are heavily
 #' right-skewed; equal intervals put almost every county in the first bin.
+#'
+#' @section Outside the model is not missing data:
+#' Three states reach this scale and all three are different:
+#'
+#' \describe{
+#'   \item{measured zero}{The geography is inside somebody's catchment and the
+#'     supply reaching it works out to zero. A measurement. Takes `zero_col`.}
+#'   \item{outside every catchment}{The model ran and no provider is reachable
+#'     within the modelled drive time. Also a measurement -- usually the finding
+#'     the map exists to report -- and emphatically not a gap in the data.
+#'     Takes `outside_col`, when `coverage` is supplied.}
+#'   \item{missing}{The value is unknown: a suppressed denominator, a failed
+#'     join. Takes `na_col`.}
+#' }
+#'
+#' Without `coverage` the second and third collapse, because both arrive as
+#' `NA`. That is better than the older behaviour, in which the second arrived as
+#' `0` and was indistinguishable from the first -- 190 of 1,447 Colorado tracts
+#' on one subspecialty surface, 13% of the state, every one shaded in the zero
+#' class under a legend reading `0`. But it still files a finding under
+#' "unknown", so pass `coverage` whenever the producer supplies it.
+#'
+#' Coverage cannot be inferred from the value: an outside geography and an
+#' unmeasured one are both `NA`, which is precisely why it has to travel
+#' alongside as its own column.
 #'
 #' @section Negative values:
 #' A negative count or rate is rejected rather than coloured. It used to take
@@ -65,11 +175,22 @@ mm_reject_negative <- function(n, arg = "n") {
 #'   shading unmeasured geographies as if they were zero.
 #' @param na_label Legend entry for `na_col`. The entry is added only when the
 #'   data actually contains `NA`, so legends do not gain an empty category.
+#' @param coverage Optional per-geography coverage state, parallel to `n`.
+#'   Accepts either shape `twostep::compute_e2sfca()` emits: the character
+#'   `coverage_status` (`"within_modeled_catchment"` /
+#'   `"outside_all_modeled_catchments"`) or the logical `reached`. When
+#'   supplied, geographies outside every catchment get `outside_col` and their
+#'   own legend entry instead of falling into the no-data class.
+#' @param outside_col Colour for geographies outside every modelled catchment.
+#' @param outside_label Legend entry for `outside_col`, added only when some
+#'   geography is actually outside.
 #' @param palette Palette function taking `k`. Default `viridisLite::viridis`.
 #' @param digits Decimal places for continuous labels; `NULL` gives integer
 #'   count labels.
-#' @return A list with `color` (a function mapping values to colours),
-#'   `leg_cols` and `leg_labs` for `leaflet::addLegend()`.
+#' @return A list with `color` (a function `color(x, coverage = NULL)` mapping
+#'   values to colours; the coverage given at construction is reused when `x`
+#'   is the same length), `leg_cols` and `leg_labs` for
+#'   `leaflet::addLegend()`.
 #' @examples
 #' \dontrun{
 #'   sc <- mysterymaps_jenks_zero_scale(counties$rate, k = 6, digits = 1)
@@ -80,9 +201,15 @@ mm_reject_negative <- function(n, arg = "n") {
 #' @export
 mysterymaps_jenks_zero_scale <- function(n, k = 6, zero_col = "#e0e0e0",
                                 na_col = "#ffffff", na_label = "No data",
+                                coverage = NULL,
+                                outside_col = "#efe7d5",
+                                outside_label = "No provider within the modelled drive time",
                                 palette = viridisLite::viridis, digits = NULL) {
   if (!is.numeric(n)) stop("`n` is not numeric; got ", class(n)[1], call. = FALSE)
   mm_reject_negative(n, "n")
+
+  is_outside <- mm_coverage_outside(coverage, length(n), "coverage")
+  has_outside <- any(is_outside)
 
   # A county measured at zero and a county never measured are categorically
   # different, and shading them alike is the error this scale exists to
@@ -97,11 +224,25 @@ mysterymaps_jenks_zero_scale <- function(n, k = 6, zero_col = "#e0e0e0",
   # TRUE) returns the last interval. The county with no denominator therefore
   # rendered as the best-supplied in the country, with no legend entry saying
   # otherwise. Treat every non-finite value as the caller's `na_col`.
-  has_na <- !all(is.finite(n))
+  #
+  # A tract outside every modelled catchment is a THIRD state again, and the
+  # one an access study usually exists to report. It is not a measured zero --
+  # nothing was measured -- and it is not missing data either: the model ran and
+  # the answer is that no provider is reachable. Collapsing it into `na_col`
+  # would file the headline finding under "unknown". It therefore gets its own
+  # colour and legend entry, added only when some row is actually outside.
+  has_na <- !all(is.finite(n[!is_outside]))
   with_na <- function(cols, labs) {
+    if (has_outside) { cols <- c(cols, outside_col); labs <- c(labs, outside_label) }
     if (!has_na) return(list(leg_cols = cols, leg_labs = labs))
     list(leg_cols = c(cols, na_col), leg_labs = c(labs, na_label))
   }
+
+  # Values on outside rows are excluded from classification. With the corrected
+  # twostep contract they are NA and would drop out anyway, but a caller mapping
+  # the algebraic column would otherwise hand a pile of structural zeros to the
+  # zero class -- the very conflation upstream just stopped making.
+  n <- ifelse(is_outside, NA_real_, n)
 
   # Drop NA before comparing: n[n > 0] keeps an NA element for every NA in n,
   # which classInt then warns about and omits. Filtering here is the same
@@ -123,10 +264,11 @@ mysterymaps_jenks_zero_scale <- function(n, k = 6, zero_col = "#e0e0e0",
   }
 
   if (length(upos) == 0)
-    return(c(list(color = function(x) {
+    return(c(list(color = function(x, coverage = NULL) {
                mm_reject_negative(x, "x")
                out <- rep(zero_col, length(x))
                out[!is.finite(x)] <- na_col
+               out[mm_resolve_coverage(coverage, is_outside, length(x))] <- outside_col
                out
              }),
              with_na(zero_col, zlab)))
@@ -136,11 +278,12 @@ mysterymaps_jenks_zero_scale <- function(n, k = 6, zero_col = "#e0e0e0",
   if (length(upos) == 1L) {
     col1 <- palette(1)
     return(c(list(
-      color = function(x) {
+      color = function(x, coverage = NULL) {
         mm_reject_negative(x, "x")
         out <- rep(col1, length(x))
         out[is.finite(x) & x <= 0] <- zero_col
         out[!is.finite(x)] <- na_col
+        out[mm_resolve_coverage(coverage, is_outside, length(x))] <- outside_col
         out
       }),
       with_na(c(zero_col, col1), c(zlab, fmt(upos)))))
@@ -170,7 +313,7 @@ mysterymaps_jenks_zero_scale <- function(n, k = 6, zero_col = "#e0e0e0",
                                   fmt(floor(brks[i + 1L]))))
     if (min(v) == max(v)) fmt(min(v)) else paste0(fmt(min(v)), "\u2013", fmt(max(v)))
   }, character(1))
-  color <- function(x) {
+  color <- function(x, coverage = NULL) {
     mm_reject_negative(x, "x")
     out <- cols[findInterval(x, brks, rightmost.closed = TRUE, all.inside = TRUE)]
     # Order matters: zero first, then NA over the top. findInterval() returns
@@ -178,6 +321,9 @@ mysterymaps_jenks_zero_scale <- function(n, k = 6, zero_col = "#e0e0e0",
     # branch -- which is exactly how they came to share a colour.
     out[is.finite(x) & x <= 0] <- zero_col
     out[!is.finite(x)] <- na_col
+    # Outside last: it is the most specific statement about the row, and it
+    # must win over the NA it necessarily also is.
+    out[mm_resolve_coverage(coverage, is_outside, length(x))] <- outside_col
     out
   }
   c(list(color = color), with_na(c(zero_col, cols), c(zlab, labs)))

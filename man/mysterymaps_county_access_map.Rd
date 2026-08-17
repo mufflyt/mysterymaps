@@ -28,7 +28,8 @@ mysterymaps_county_access_map(
   point_alpha = 0.55,
   search = "Search name...",
   notes = NULL,
-  bounds = c(24.5, -125, 49.4, -66.9)
+  bounds = c(24.5, -125, 49.4, -66.9),
+  coverage_col = NULL
 )
 }
 \arguments{
@@ -88,6 +89,16 @@ the choropleth beneath them.}
 \item{notes}{a list of arguments for \code{\link[=mysterymaps_notes_panel]{mysterymaps_notes_panel()}}, or \code{NULL}.}
 
 \item{bounds}{numeric length-4 \code{c(lat_min, lng_min, lat_max, lng_max)}.}
+
+\item{coverage_col}{\code{character(1)|NULL}: \strong{not} related to \code{coverage}, which
+is the named list of drive-time surface layers. This is a column in
+\code{counties} carrying the
+per-geography coverage state, as either \code{twostep::compute_e2sfca()}'s
+character \code{coverage_status} or its logical \code{reached}. When supplied,
+geographies outside every modelled catchment get their own colour and
+legend entry rather than the no-data one. See the
+\verb{Outside the model is not missing data} section of
+\code{\link[=mysterymaps_jenks_zero_scale]{mysterymaps_jenks_zero_scale()}}.}
 }
 \value{
 a leaflet map.

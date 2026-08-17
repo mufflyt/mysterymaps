@@ -10,6 +10,9 @@ mysterymaps_jenks_zero_scale(
   zero_col = "#e0e0e0",
   na_col = "#ffffff",
   na_label = "No data",
+  coverage = NULL,
+  outside_col = "#efe7d5",
+  outside_label = "No provider within the modelled drive time",
   palette = viridisLite::viridis,
   digits = NULL
 )
@@ -30,14 +33,28 @@ shading unmeasured geographies as if they were zero.}
 \item{na_label}{Legend entry for \code{na_col}. The entry is added only when the
 data actually contains \code{NA}, so legends do not gain an empty category.}
 
+\item{coverage}{Optional per-geography coverage state, parallel to \code{n}.
+Accepts either shape \code{twostep::compute_e2sfca()} emits: the character
+\code{coverage_status} (\code{"within_modeled_catchment"} /
+\code{"outside_all_modeled_catchments"}) or the logical \code{reached}. When
+supplied, geographies outside every catchment get \code{outside_col} and their
+own legend entry instead of falling into the no-data class.}
+
+\item{outside_col}{Colour for geographies outside every modelled catchment.}
+
+\item{outside_label}{Legend entry for \code{outside_col}, added only when some
+geography is actually outside.}
+
 \item{palette}{Palette function taking \code{k}. Default \code{viridisLite::viridis}.}
 
 \item{digits}{Decimal places for continuous labels; \code{NULL} gives integer
 count labels.}
 }
 \value{
-A list with \code{color} (a function mapping values to colours),
-\code{leg_cols} and \code{leg_labs} for \code{leaflet::addLegend()}.
+A list with \code{color} (a function \code{color(x, coverage = NULL)} mapping
+values to colours; the coverage given at construction is reused when \code{x}
+is the same length), \code{leg_cols} and \code{leg_labs} for
+\code{leaflet::addLegend()}.
 }
 \description{
 Classifies POSITIVE values with Jenks natural breaks and gives zero its own
@@ -52,6 +69,33 @@ as "low" when the truth was "none".
 Jenks rather than equal intervals because provider rates are heavily
 right-skewed; equal intervals put almost every county in the first bin.
 }
+\section{Outside the model is not missing data}{
+
+Three states reach this scale and all three are different:
+
+\describe{
+\item{measured zero}{The geography is inside somebody's catchment and the
+supply reaching it works out to zero. A measurement. Takes \code{zero_col}.}
+\item{outside every catchment}{The model ran and no provider is reachable
+within the modelled drive time. Also a measurement -- usually the finding
+the map exists to report -- and emphatically not a gap in the data.
+Takes \code{outside_col}, when \code{coverage} is supplied.}
+\item{missing}{The value is unknown: a suppressed denominator, a failed
+join. Takes \code{na_col}.}
+}
+
+Without \code{coverage} the second and third collapse, because both arrive as
+\code{NA}. That is better than the older behaviour, in which the second arrived as
+\code{0} and was indistinguishable from the first -- 190 of 1,447 Colorado tracts
+on one subspecialty surface, 13\% of the state, every one shaded in the zero
+class under a legend reading \code{0}. But it still files a finding under
+"unknown", so pass \code{coverage} whenever the producer supplies it.
+
+Coverage cannot be inferred from the value: an outside geography and an
+unmeasured one are both \code{NA}, which is precisely why it has to travel
+alongside as its own column.
+}
+
 \section{Negative values}{
 
 A negative count or rate is rejected rather than coloured. It used to take
