@@ -511,6 +511,13 @@ jobs:
         shell: Rscript {0}
         run: source(".github/scripts/pkgdown-coverage.R")
 
+      - name: Built-site integrity
+        # The membership check above asks whether every export is LISTED.
+        # This asks whether the pages it promises actually exist, whether the
+        # links between them resolve, whether the images are there, and whether
+        # every vignette became an article -- none of which pkgdown fails on.
+        run: Rscript .github/scripts/pkgdown-integrity.R docs
+
       - uses: actions/upload-artifact@v4
         if: always()
         with:

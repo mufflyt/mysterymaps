@@ -40,6 +40,14 @@ jobs:
       - name: Build site
         run: Rscript -e 'pkgdown::build_site_github_pages(new_process = FALSE, install = FALSE)'
 
+      - name: Site integrity
+        # The build succeeding is not the same as the site being complete.
+        # pkgdown renders an unresolvable cross-reference as plain text, a
+        # missing image as a broken <img>, and a vignette that failed to knit
+        # as simply absent -- all without failing. This gate runs BEFORE deploy
+        # so a degraded site is never published.
+        run: Rscript .github/scripts/pkgdown-integrity.R docs
+
       - name: Deploy to gh-pages
         if: github.event_name != 'pull_request'
         uses: JamesIves/github-pages-deploy-action@v4.5.0
@@ -47,3 +55,33 @@ jobs:
           clean: false
           branch: gh-pages
           folder: docs
+
+      - name: Verify the deployed site is actually live
+        if: github.event_name != 'pull_request'
+        # A green deploy step means the action pushed to gh-pages. It does not
+        # mean Pages rebuilt, nor that the site answers. The nightly on
+        # 2026-08-16 was green while nobody had fetched a single page. Fetch the
+        # real URL and require content, not just a 200 -- a Pages 404 page also
+        # returns 200 in some configurations.
+        run: |
+          set -euo pipefail
+          URL="https://mufflyt.github.io/mysterymaps/"
+          echo "waiting for GitHub Pages to publish ..."
+          for i in $(seq 1 20); do
+            code=$(curl -s -o /tmp/site.html -w '%{http_code}' "$URL" || echo 000)
+            if [ "$code" = "200" ] && grep -qi "mysterymaps" /tmp/site.html; then
+              echo "live after ${i} attempt(s): HTTP $code, content present"
+              break
+            fi
+            if [ "$i" = "20" ]; then
+              echo "::error::deployed site not live after 20 attempts (last HTTP $code)"
+              head -20 /tmp/site.html || true
+              exit 1
+            fi
+            sleep 15
+          done
+          for page in "reference/index.html" "news/index.html"; do
+            code=$(curl -s -o /dev/null -w '%{http_code}' "${URL}${page}" || echo 000)
+            echo "  ${page} -> HTTP ${code}"
+            [ "$code" = "200" ] || { echo "::error::${page} returned ${code}"; exit 1; }
+          done
