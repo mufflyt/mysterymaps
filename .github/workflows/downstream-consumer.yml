@@ -1,0 +1,63 @@
+name: Downstream Consumer
+
+# Neither R-CMD-check nor Scientific Nightly can catch a function that works
+# for every test this package writes about itself but breaks the moment a
+# real project outside it calls in with arguments this package's own tests
+# never tried. That happened: mysterymaps_geographic_map() shipped for months
+# without a `labels` argument that mufflyt/midwifery's manuscript already
+# called, and every internal check stayed green while the actual caller broke.
+#
+# This workflow installs the package fresh from the commit under test -- the
+# same way a consumer's `remotes::install_github()` would -- and replays real
+# call patterns lifted from actual consumer code (.github/scripts/
+# downstream-smoke.R), not scenarios this package invented about itself.
+#
+# Schedule: 09:37 UTC, between the two existing nightlies (09:17, 09:47) so
+# none of the three queue behind each other on the same runners.
+on:
+  schedule:
+    - cron: '37 9 * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: downstream-consumer-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  # Resolves the GitHub-only mysterycall dependency named in Remotes:.
+  GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+  R_KEEP_PKG_SOURCE: yes
+  _R_CHECK_CRAN_INCOMING_: false
+  NOT_CRAN: true
+
+jobs:
+  smoke:
+    name: downstream-smoke
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: release
+          use-public-rspm: true
+
+      # dependencies: "all" plus local::. installs Imports AND Suggests (this
+      # function's map dependencies -- ggplot2, maps, mapproj -- are Suggests)
+      # from THIS commit, not from whatever the dependency cache holds. That
+      # local::. requirement is the same one the coverage job in R-CMD-check.yml
+      # depends on, and for the same reason: without it, this job would test
+      # the last published version, not the change under review.
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          dependencies: '"all"'
+          extra-packages: local::.
+          needs: check
+
+      - name: Replay real consumer call patterns
+        shell: Rscript {0}
+        run: source(".github/scripts/downstream-smoke.R")
