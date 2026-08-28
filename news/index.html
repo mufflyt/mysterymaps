@@ -42,6 +42,11 @@
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="development version" id="mysterymaps-development-version">mysterymaps (development version)<a class="anchor" aria-label="anchor" href="#mysterymaps-development-version"></a></h2>
 <div class="section level3">
+<h3 id="new-labels-parameter-on-mysterymaps_geographic_map-development-version">New: <code>labels</code> parameter on <code>mysterymaps_geographic_map()</code>
+<a class="anchor" aria-label="anchor" href="#new-labels-parameter-on-mysterymaps_geographic_map-development-version"></a></h3>
+<p>The fill legend always used <code><a href="https://scales.r-lib.org/reference/percent_format.html" class="external-link">scales::percent_format()</a></code>, correct only when <code>outcome_col</code> is a proportion on <code>[0, 1]</code> – an acceptance <em>rate</em>, which is what the function was built for. A caller mapping a rate <em>per</em> something (midwives per 1,000 births, cases per 100,000) got a legend that rendered 10.79 as <code>"1 000%"</code>. <code>labels</code> now takes a formatter function, passed straight through to <code>ggplot2::scale_fill_viridis_c(labels = )</code>, defaulting to the previous <code>scales::percent_format(accuracy = 1)</code> so existing callers are unaffected.</p>
+</div>
+<div class="section level3">
 <h3 id="bug-fixes-mysterymaps_jenks_zero_scale-development-version">Bug fixes: <code>mysterymaps_jenks_zero_scale()</code>
 <a class="anchor" aria-label="anchor" href="#bug-fixes-mysterymaps_jenks_zero_scale-development-version"></a></h3>
 <p>Three defects found by adversarial tests, all reachable from ordinary county data:</p>

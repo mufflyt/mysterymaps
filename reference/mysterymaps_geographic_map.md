@@ -19,7 +19,8 @@ mysterymaps_geographic_map(
   direction = 1L,
   low_states_warn = 5L,
   na_color = "grey80",
-  include_alaska_hawaii = FALSE
+  include_alaska_hawaii = FALSE,
+  labels = scales::percent_format(accuracy = 1)
 )
 ```
 
@@ -78,6 +79,20 @@ mysterymaps_geographic_map(
   Logical. When `FALSE` (default), Alaska (`AK`) and Hawaii (`HI`) are
   dropped before aggregation and mapping, producing a standard CONUS
   choropleth.
+
+- labels:
+
+  `function(1)`. Formatter applied to the fill legend's break labels,
+  passed straight through to
+  [`ggplot2::scale_fill_viridis_c()`](https://ggplot2.tidyverse.org/reference/scale_viridis.html)`(labels = )`.
+  Default
+  [`scales::percent_format()`](https://scales.r-lib.org/reference/percent_format.html)`(accuracy = 1)`,
+  correct only when `outcome_col` is a proportion on `[0, 1]` – an
+  acceptance *rate*, which is what this function was built for. A column
+  that is already a rate *per* something (midwives per 1,000 births,
+  cases per 100,000) is not a proportion, and the percent formatter
+  renders it as nonsense: 10.79 becomes "1 000%". Pass a formatter that
+  matches the column instead, e.g. `function(x) sprintf("%.0f", x)`.
 
 ## Value
 

@@ -66,7 +66,8 @@ already containing rates (0-1) are used directly.</p>
 <span>  direction <span class="op">=</span> <span class="fl">1L</span>,</span>
 <span>  low_states_warn <span class="op">=</span> <span class="fl">5L</span>,</span>
 <span>  na_color <span class="op">=</span> <span class="st">"grey80"</span>,</span>
-<span>  include_alaska_hawaii <span class="op">=</span> <span class="cn">FALSE</span></span>
+<span>  include_alaska_hawaii <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  labels <span class="op">=</span> <span class="fu">scales</span><span class="fu">::</span><span class="fu"><a href="https://scales.r-lib.org/reference/percent_format.html" class="external-link">percent_format</a></span><span class="op">(</span>accuracy <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -126,6 +127,19 @@ Default <code>"grey80"</code>.</p></dd>
 <dd><p>Logical. When <code>FALSE</code> (default), Alaska (<code>AK</code>)
 and Hawaii (<code>HI</code>) are dropped before aggregation and mapping, producing a
 standard CONUS choropleth.</p></dd>
+
+
+<dt id="arg-labels">labels<a class="anchor" aria-label="anchor" href="#arg-labels"></a></dt>
+<dd><p><code>function(1)</code>. Formatter applied to the fill legend's break
+labels, passed straight through to
+<code><a href="https://ggplot2.tidyverse.org/reference/scale_viridis.html" class="external-link">ggplot2::scale_fill_viridis_c()</a></code><code>(labels = )</code>. Default
+<code><a href="https://scales.r-lib.org/reference/percent_format.html" class="external-link">scales::percent_format()</a></code><code>(accuracy = 1)</code>, correct only when
+<code>outcome_col</code> is a proportion on <code>[0, 1]</code> – an acceptance <em>rate</em>, which is
+what this function was built for. A column that is already a rate <em>per</em>
+something (midwives per 1,000 births, cases per 100,000) is not a
+proportion, and the percent formatter renders it as nonsense: 10.79
+becomes "1 000%". Pass a formatter that matches the column instead, e.g.
+<code>function(x) sprintf("%.0f", x)</code>.</p></dd>
 
 </dl></div>
     <div class="section level2">
