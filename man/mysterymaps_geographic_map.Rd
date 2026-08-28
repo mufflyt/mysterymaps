@@ -15,7 +15,8 @@ mysterymaps_geographic_map(
   direction = 1L,
   low_states_warn = 5L,
   na_color = "grey80",
-  include_alaska_hawaii = FALSE
+  include_alaska_hawaii = FALSE,
+  labels = scales::percent_format(accuracy = 1)
 )
 }
 \arguments{
@@ -50,6 +51,17 @@ Default \code{"grey80"}.}
 \item{include_alaska_hawaii}{Logical. When \code{FALSE} (default), Alaska (\code{AK})
 and Hawaii (\code{HI}) are dropped before aggregation and mapping, producing a
 standard CONUS choropleth.}
+
+\item{labels}{\verb{function(1)}. Formatter applied to the fill legend's break
+labels, passed straight through to
+\code{\link[ggplot2:scale_fill_viridis_c]{ggplot2::scale_fill_viridis_c()}}\verb{(labels = )}. Default
+\code{\link[scales:percent_format]{scales::percent_format()}}\code{(accuracy = 1)}, correct only when
+\code{outcome_col} is a proportion on \verb{[0, 1]} -- an acceptance \emph{rate}, which is
+what this function was built for. A column that is already a rate \emph{per}
+something (midwives per 1,000 births, cases per 100,000) is not a
+proportion, and the percent formatter renders it as nonsense: 10.79
+becomes "1 000\%". Pass a formatter that matches the column instead, e.g.
+\code{function(x) sprintf("\%.0f", x)}.}
 }
 \value{
 A \code{ggplot} object of class \code{c("gg", "ggplot")}, returned invisibly.
