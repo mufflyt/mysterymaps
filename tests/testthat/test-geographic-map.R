@@ -178,6 +178,34 @@ test_that("states absent from the data keep the na_color rather than a value", {
   expect_true(any(is.na(p$data$rate)))
 })
 
+test_that("labels defaults to a percent formatter for a [0, 1] rate", {
+  skip_unless_ggplot()
+  df <- data.frame(state = c("CO", "CA"), rate = c(0.5, 0.6))
+  p <- suppressWarnings(mysterymaps_geographic_map(df, outcome_col = "rate"))
+  fmt <- p$scales$scales[[1]]$labels
+  expect_equal(fmt(0.5), "50%")
+})
+
+test_that("labels accepts a custom formatter for a non-proportion column", {
+  # midwives per 1,000 births: a rate PER something, not a proportion on
+  # [0, 1]. The default percent formatter would render 10.79 as "1 000%".
+  skip_unless_ggplot()
+  df <- data.frame(state = c("CO", "CA"), rate = c(3.2, 10.79))
+  p <- suppressWarnings(mysterymaps_geographic_map(
+    df, outcome_col = "rate",
+    labels = function(x) sprintf("%.0f", x)))
+  fmt <- p$scales$scales[[1]]$labels
+  expect_equal(fmt(10.79), "11")
+})
+
+test_that("labels must be a function", {
+  skip_unless_ggplot()
+  expect_error(
+    mysterymaps_geographic_map(data.frame(state = "CO", offered = 1),
+                               labels = "percent"),
+    "`labels` must be a function")
+})
+
 test_that("ggplot2, maps and mapproj are each named in their own error", {
   # mapproj is the one that used to be missing: coord_map() resolves it at
   # RENDER time, so without the guard the failure surfaced inside a caller's

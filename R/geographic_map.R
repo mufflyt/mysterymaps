@@ -45,6 +45,16 @@ NULL
 #' @param include_alaska_hawaii Logical. When `FALSE` (default), Alaska (`AK`)
 #'   and Hawaii (`HI`) are dropped before aggregation and mapping, producing a
 #'   standard CONUS choropleth.
+#' @param labels `function(1)`. Formatter applied to the fill legend's break
+#'   labels, passed straight through to
+#'   [ggplot2::scale_fill_viridis_c()]`(labels = )`. Default
+#'   [scales::percent_format()]`(accuracy = 1)`, correct only when
+#'   `outcome_col` is a proportion on `[0, 1]` -- an acceptance *rate*, which is
+#'   what this function was built for. A column that is already a rate *per*
+#'   something (midwives per 1,000 births, cases per 100,000) is not a
+#'   proportion, and the percent formatter renders it as nonsense: 10.79
+#'   becomes "1 000%". Pass a formatter that matches the column instead, e.g.
+#'   `function(x) sprintf("%.0f", x)`.
 #'
 #' @return A `ggplot` object of class `c("gg", "ggplot")`, returned invisibly.
 #'   Print or assign the return value to display the map.
@@ -97,7 +107,8 @@ mysterymaps_geographic_map <- function(data,
                                         direction             = 1L,
                                         low_states_warn       = 5L,
                                         na_color              = "grey80",
-                                        include_alaska_hawaii = FALSE) {
+                                        include_alaska_hawaii = FALSE,
+                                        labels                = scales::percent_format(accuracy = 1)) {
 
   # ---- Package guards ---------------------------------------------------------
   if (!requireNamespace("ggplot2", quietly = TRUE)) {
@@ -157,6 +168,10 @@ mysterymaps_geographic_map <- function(data,
   }
   if (!is.logical(include_alaska_hawaii) || length(include_alaska_hawaii) != 1L) {
     stop("`include_alaska_hawaii` must be a single logical value.", call. = FALSE)
+  }
+  if (!is.function(labels)) {
+    stop("`labels` must be a function, e.g. scales::percent_format() or ",
+         "function(x) sprintf(\"%.0f\", x).", call. = FALSE)
   }
 
   # ---- Extract working vectors ------------------------------------------------
@@ -268,7 +283,7 @@ mysterymaps_geographic_map <- function(data,
       direction = direction,
       na.value  = na_color,
       name      = fill_label,
-      labels    = scales::percent_format(accuracy = 1)
+      labels    = labels
     ) +
     ggplot2::labs(
       title    = title,

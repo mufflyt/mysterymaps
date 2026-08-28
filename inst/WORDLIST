@@ -25,6 +25,8 @@ downloader
 EPSG
 errored
 erroring
+formatter
+Formatter
 geocode
 Geocode
 geocoded

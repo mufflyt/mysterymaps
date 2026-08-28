@@ -1,5 +1,16 @@
 # mysterymaps (development version)
 
+## New: `labels` parameter on `mysterymaps_geographic_map()`
+
+The fill legend always used `scales::percent_format()`, correct only when
+`outcome_col` is a proportion on `[0, 1]` -- an acceptance *rate*, which is
+what the function was built for. A caller mapping a rate *per* something
+(midwives per 1,000 births, cases per 100,000) got a legend that rendered
+10.79 as `"1 000%"`. `labels` now takes a formatter function, passed straight
+through to `ggplot2::scale_fill_viridis_c(labels = )`, defaulting to the
+previous `scales::percent_format(accuracy = 1)` so existing callers are
+unaffected.
+
 ## Bug fixes: `mysterymaps_jenks_zero_scale()`
 
 Three defects found by adversarial tests, all reachable from ordinary county
