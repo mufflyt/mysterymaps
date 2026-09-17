@@ -1,5 +1,19 @@
 # mysterymaps (development version)
 
+## New: downstream-consumer nightly CI
+
+R-CMD-check, coverage, and Scientific Nightly all test this package against
+itself; none of them could have caught `mysterymaps_geographic_map()`
+shipping for months without the `labels` argument documented above, because
+every existing test used the default percent formatter. A new nightly
+workflow (`.github/workflows/downstream-consumer.yml`) installs the package
+fresh from the commit under test and replays real call patterns lifted from
+actual consumer code (`.github/scripts/downstream-smoke.R`), starting with
+the two `mysterymaps_geographic_map()` calls from
+`mufflyt/midwifery`'s `manuscript/midwife_persistence.qmd`. Verified against
+the pre-`labels` commit: fails with the original "unused argument" error;
+passes clean against the fix.
+
 ## New: `labels` parameter on `mysterymaps_geographic_map()`
 
 The fill legend always used `scales::percent_format()`, correct only when
