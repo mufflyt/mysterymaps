@@ -76,21 +76,38 @@ testthat::test_that("the caller's s2 setting is restored", {
   testthat::expect_identical(sf::sf_use_s2(), before)
 })
 
-testthat::test_that("NEGATIVE CONTROL: no bare `if` sits in a + chain", {
-  # The parse-level hazard that caused the original defect. A bare `if` inside a
-  # ggplot + chain absorbs the remainder of the chain.
-  src <- readLines(testthat::test_path("..", "..", "R", "physician_dot_map.R"),
-                   warn = FALSE)
-  code <- src[!grepl("^\\s*#", src)]
-  offenders <- character(0)
-  for (i in seq_len(length(code) - 1L)) {
-    if (grepl("\\+\\s*$", code[i])) {
-      j <- i + 1L
-      while (j <= length(code) && !nzchar(trimws(code[j]))) j <- j + 1L
-      if (j <= length(code) && grepl("^\\s*if\\s*\\(", code[j])) {
-        offenders <- c(offenders, code[j])
+testthat::test_that("NEGATIVE CONTROL: no bare `if` is an operand of `+`", {
+  # The parse-level hazard that caused the original defect: a bare `if` inside a
+  # ggplot `+` chain extends as far right as possible and swallows the rest of
+  # the chain, so the layer never joins the plot and nothing errors.
+  #
+  # This inspects the AST of the INSTALLED function rather than reading
+  # R/physician_dot_map.R. Two reasons: under R CMD check the sources are not
+  # on disk, and a line-oriented regex cannot see `... + if (x) a else b`
+  # written on a single line, which is the same defect. Comments do not survive
+  # parsing, so a comment mentioning `if` can never trip this.
+  .plus_has_if <- function(e) {
+    if (!is.call(e)) return(FALSE)
+    if (identical(e[[1L]], as.name("+"))) {
+      for (k in seq_along(e)[-1L]) {
+        a <- tryCatch(e[[k]], error = function(err) NULL)
+        if (is.call(a) && identical(a[[1L]], as.name("if"))) return(TRUE)
       }
     }
+    for (k in seq_along(e)) {
+      a <- tryCatch(e[[k]], error = function(err) NULL)
+      if (!is.null(a) && isTRUE(tryCatch(.plus_has_if(a), error = function(err) FALSE)))
+        return(TRUE)
+    }
+    FALSE
   }
-  testthat::expect_identical(offenders, character(0))
+
+  # POSITIVE CONTROL: the detector must actually fire on the real defect shape,
+  # or the assertion below would pass for free on any function at all.
+  testthat::expect_true(.plus_has_if(quote(a + if (z) b else c)))
+  testthat::expect_true(.plus_has_if(quote(ggplot() + geom_sf(d) + if (z) x else y)))
+  testthat::expect_false(.plus_has_if(quote(a + b + c)))
+  testthat::expect_false(.plus_has_if(quote({ lyr <- if (z) x else y; a + lyr })))
+
+  testthat::expect_false(.plus_has_if(body(mysterymaps_physician_dot_map)))
 })
