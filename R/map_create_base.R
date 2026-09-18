@@ -24,11 +24,13 @@ mysterymaps_map_base <- function(title = NULL, lat = 39.8282, lng = -98.5795, zo
     stop("Package 'leaflet' is required for mysterymaps_map_base()", call. = FALSE)
   }
   map <- leaflet::leaflet(options = leaflet::leafletOptions(zoomControl = TRUE)) %>%
-    leaflet::addProviderTiles("CartoDB.Voyager", group = "CartoDB Voyager") %>%
+    # Esri, not CARTO: keyless CARTO tiles watermark "API KEY REQUIRED"
+    # across the whole map (Sept 2026).
+    leaflet::addProviderTiles("Esri.WorldStreetMap", group = "Street Map") %>%
     leaflet::addProviderTiles("Stadia.StamenTonerLite", group = "Toner Lite") %>%
     leaflet::addScaleBar(position = "bottomleft") %>%
     leaflet::addLayersControl(
-      baseGroups = c("CartoDB Voyager", "Toner Lite"),
+      baseGroups = c("Street Map", "Toner Lite"),
       options = leaflet::layersControlOptions(collapsed = FALSE)
     ) %>%
     leaflet::setView(lat = lat, lng = lng, zoom = zoom) %>%
