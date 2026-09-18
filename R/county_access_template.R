@@ -255,7 +255,10 @@ mysterymaps_county_access_map <- function(counties, value_col,
 
   m <- leaflet::leaflet(options = leaflet::leafletOptions(
         minZoom = 3, maxZoom = 14, preferCanvas = TRUE)) |>
-    leaflet::addProviderTiles("CartoDB.PositronNoLabels", group = "base") |>
+    # Esri, not CARTO: CARTO basemaps began rendering an "API KEY REQUIRED"
+    # watermark across every tile for keyless use (Sept 2026), which shipped
+    # maps inherit silently on their next rebuild.
+    leaflet::addProviderTiles("Esri.WorldGrayCanvas", group = "base") |>
     leaflet::addScaleBar(position = "bottomleft",
                          options = leaflet::scaleBarOptions(imperial = TRUE)) |>
     leaflet::addPolygons(
@@ -274,7 +277,9 @@ mysterymaps_county_access_map <- function(counties, value_col,
     m <- leaflet::addPolygons(m, data = sf::st_geometry(counties), fill = FALSE,
                               color = "#c0c0c0", weight = 0.3)
   }
-  m <- leaflet::addProviderTiles(m, "CartoDB.PositronOnlyLabels", group = "base")
+  # The Positron labels-above-polygons layer is gone with CARTO; Esri has no
+  # keyless labels-only equivalent, so place labels now sit in the base canvas
+  # under the choropleth rather than over it.
 
   m <- leaflet::addLegend(m, position = "bottomright", colors = sc$leg_cols,
                           labels = sc$leg_labs, title = legend_title,
