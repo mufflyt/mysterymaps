@@ -75,8 +75,8 @@ MUTANTS <- list(
   list(id = "inf_missing_from_legend", domain = "zero-vs-missing",
        killers = c("test-zero-vs-missing.R", "test-jenks-zero-scale-semantics.R"),
        file = "R/jenks_zero_scale.R",
-       from = "has_na <- !all(is.finite(n))",
-       to   = "has_na <- anyNA(n)",
+       from = "has_na <- !all(is.finite(n[!is_outside]))",
+       to   = "has_na <- anyNA(n[!is_outside])",
        harm = paste("A county with a zero denominator is shaded as no-data but",
                     "the legend never mentions a no-data class, so the reader",
                     "sees a colour with no key.")),
@@ -84,7 +84,7 @@ MUTANTS <- list(
   list(id = "na_legend_suppressed", domain = "zero-vs-missing",
        killers = c("test-zero-vs-missing.R", "test-national-map-fixture.R"),
        file = "R/jenks_zero_scale.R",
-       from = "has_na <- !all(is.finite(n))",
+       from = "has_na <- !all(is.finite(n[!is_outside]))",
        to   = "has_na <- FALSE",
        harm = paste("The map still separates the colours but never tells the",
                     "reader that a no-data class exists.")),
@@ -110,10 +110,16 @@ MUTANTS <- list(
   list(id = "s2_left_off", domain = "spatial",
        killers = c("test-hrr.R", "test-boundary-and-state.R"),
        file = "R/hrr.R",
+       # mysterymaps_hrr_maps() and mm_honeycomb_counts() each own an
+       # identical s2-restore on.exit(); both are covered directly by
+       # test-hrr.R ("s2 is restored after the map is built" and "the count
+       # owns its s2 setting and gives it back"), so mutating every
+       # occurrence keeps the mutant meaningful instead of guessing at one.
        from = "on.exit(suppressMessages(sf::sf_use_s2(old_s2)), add = TRUE)",
        to   = "invisible(old_s2)",
        harm = paste("Spherical geometry stays off for the rest of the session,",
-                    "silently changing every later boundary assignment.")),
+                    "silently changing every later boundary assignment."),
+       all = TRUE),
 
   list(id = "geometry_repair_skipped", domain = "spatial",
        killers = c("test-geometry-assault.R", "test-regressions-named.R"),

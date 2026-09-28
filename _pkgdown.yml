@@ -36,6 +36,7 @@ reference:
     desc: ggplot2 output.
     contents:
       - mysterymaps_geographic_map
+      - mysterymaps_physician_dot_map
       - mysterymaps_map_acceptance_rate
       - mysterymaps_hrr_maps
       - mysterymaps_hrr
