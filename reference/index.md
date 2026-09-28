@@ -50,6 +50,9 @@ ggplot2 output.
 - [`mysterymaps_geographic_map()`](https://mufflyt.github.io/mysterymaps/reference/mysterymaps_geographic_map.md)
   : State-Level Choropleth Map of Acceptance Rates
 
+- [`mysterymaps_physician_dot_map()`](https://mufflyt.github.io/mysterymaps/reference/mysterymaps_physician_dot_map.md)
+  : Dot map of physician practice locations
+
 - [`mysterymaps_map_acceptance_rate()`](https://mufflyt.github.io/mysterymaps/reference/mysterymaps_map_acceptance_rate.md)
   : Choropleth map of appointment acceptance rates by US state
 
