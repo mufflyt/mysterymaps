@@ -6,7 +6,9 @@
 \usage{
 mysterymaps_geocode(
   file_path,
-  google_maps_api_key,
+  google_maps_api_key = NULL,
+  provider = c("census", "google"),
+  census_benchmark = "Public_AR_Current",
   output_file_path = NULL,
   failed_output_path = NULL,
   notify = TRUE,
@@ -19,7 +21,17 @@ mysterymaps_geocode(
 \item{file_path}{Path to a CSV, RDS or XLSX file containing an \code{address}
 column.}
 
-\item{google_maps_api_key}{A valid Google Maps API key.}
+\item{google_maps_api_key}{A valid Google Maps API key. Only required when
+\code{provider = "google"}.}
+
+\item{provider}{Which geocoding service to use: \code{"census"} (default, free,
+no key, US addresses only) or \code{"google"} (requires
+\code{google_maps_api_key}, works worldwide).}
+
+\item{census_benchmark}{Character. The Census Bureau benchmark dataset
+used when \code{provider = "census"}. Defaults to \code{"Public_AR_Current"}, the
+current public address range benchmark. See
+\url{https://geocoding.geo.census.gov/geocoder/benchmarks} for other values.}
 
 \item{output_file_path}{Optional path to save the geocoded dataset as CSV.}
 
@@ -56,15 +68,27 @@ backup if the file already exists).
 }
 \description{
 Reads an input dataset containing an \code{address} column, geocodes the unique
-addresses using the Google Maps API via \code{ggmap::geocode}, and returns the
-data with additional \code{latitude} and \code{longitude} columns. Optionally writes the
-result to \code{output_file_path}.
+addresses, and returns the data with additional \code{latitude} and \code{longitude}
+columns. Optionally writes the result to \code{output_file_path}.
+}
+\details{
+By default, addresses are geocoded with the free, keyless \strong{US Census
+Bureau Geocoding Services API} (\code{provider = "census"}). Pass
+\code{provider = "google"} and a \code{google_maps_api_key} to geocode with
+\code{ggmap::geocode()} instead (useful for non-US addresses, which the Census
+API cannot handle).
 }
 \section{Requirements}{
 
-Geocoding requires the \code{ggmap} package (listed in \code{Suggests}, not
-\code{Imports}) and a Google Maps Platform API key with the \strong{Geocoding API}
-enabled. Steps to obtain a key:
+\strong{\code{provider = "census"} (default):} Requires the \code{httr2} and
+\code{curl} packages (listed in \code{Suggests}). No API key is needed. The Census
+Bureau batch geocoder only covers addresses in the United States; rows
+it cannot match (including non-US addresses) are returned with \code{NA}
+coordinates the same way a failed Google lookup would be.
+
+\strong{\code{provider = "google"}:} Requires the \code{ggmap} package (listed in
+\code{Suggests}, not \code{Imports}) and a Google Maps Platform API key with the
+\strong{Geocoding API} enabled. Steps to obtain a key:
 \enumerate{
 \item Create a project at \url{https://console.cloud.google.com/}.
 \item Enable the \strong{Geocoding API} under APIs & Services > Library.
@@ -82,14 +106,20 @@ Common errors and remedies:
 \code{"INVALID_REQUEST"} \tab Malformed address string in the data.
 }
 
-An invalid or expired key is only detected at the first geocoding
+An invalid or expired Google key is only detected at the first geocoding
 request, not at function entry. Run \code{\link[mysterycall:mysterycall_preflight_check]{mysterycall_preflight_check()}} with
 \code{check_apis = TRUE} before a long workflow to catch key problems early.
 }
 
 \examples{
 \dontshow{if (interactive()) withAutoprint(\{ # examplesIf}
-result <- mysterymaps_geocode("addresses.csv", "my_api_key")
+# Default: free Census Bureau geocoder, no API key required.
+result <- mysterymaps_geocode("addresses.csv")
+
+# Opt into Google's geocoder (e.g. for non-US addresses).
+result <- mysterymaps_geocode("addresses.csv",
+                               google_maps_api_key = "my_api_key",
+                               provider = "google")
 \dontshow{\}) # examplesIf}
 }
 \seealso{
