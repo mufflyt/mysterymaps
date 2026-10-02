@@ -1,17 +1,17 @@
 # Geocode unique addresses from a file
 
 Reads an input dataset containing an `address` column, geocodes the
-unique addresses using the Google Maps API via
-[`ggmap::geocode`](https://rdrr.io/pkg/ggmap/man/geocode.html), and
-returns the data with additional `latitude` and `longitude` columns.
-Optionally writes the result to `output_file_path`.
+unique addresses, and returns the data with additional `latitude` and
+`longitude` columns. Optionally writes the result to `output_file_path`.
 
 ## Usage
 
 ``` r
 mysterymaps_geocode(
   file_path,
-  google_maps_api_key,
+  google_maps_api_key = NULL,
+  provider = c("census", "google"),
+  census_benchmark = "Public_AR_Current",
   output_file_path = NULL,
   failed_output_path = NULL,
   notify = TRUE,
@@ -29,7 +29,21 @@ mysterymaps_geocode(
 
 - google_maps_api_key:
 
-  A valid Google Maps API key.
+  A valid Google Maps API key. Only required when `provider = "google"`.
+
+- provider:
+
+  Which geocoding service to use: `"census"` (default, free, no key, US
+  addresses only) or `"google"` (requires `google_maps_api_key`, works
+  worldwide).
+
+- census_benchmark:
+
+  Character. The Census Bureau benchmark dataset used when
+  `provider = "census"`. Defaults to `"Public_AR_Current"`, the current
+  public address range benchmark. See
+  <https://geocoding.geo.census.gov/geocoder/benchmarks> for other
+  values.
 
 - output_file_path:
 
@@ -84,11 +98,25 @@ frame is written as CSV; when `failed_output_path` is non-`NULL`, rows
 that could not be geocoded are written separately (with a timestamped
 backup if the file already exists).
 
+## Details
+
+By default, addresses are geocoded with the free, keyless **US Census
+Bureau Geocoding Services API** (`provider = "census"`). Pass
+`provider = "google"` and a `google_maps_api_key` to geocode with
+[`ggmap::geocode()`](https://rdrr.io/pkg/ggmap/man/geocode.html) instead
+(useful for non-US addresses, which the Census API cannot handle).
+
 ## Requirements
 
-Geocoding requires the `ggmap` package (listed in `Suggests`, not
-`Imports`) and a Google Maps Platform API key with the **Geocoding API**
-enabled. Steps to obtain a key:
+**`provider = "census"` (default):** Requires the `httr2` and `curl`
+packages (listed in `Suggests`). No API key is needed. The Census Bureau
+batch geocoder only covers addresses in the United States; rows it
+cannot match (including non-US addresses) are returned with `NA`
+coordinates the same way a failed Google lookup would be.
+
+**`provider = "google"`:** Requires the `ggmap` package (listed in
+`Suggests`, not `Imports`) and a Google Maps Platform API key with the
+**Geocoding API** enabled. Steps to obtain a key:
 
 1.  Create a project at <https://console.cloud.google.com/>.
 
@@ -110,7 +138,7 @@ Common errors and remedies:
 | `"OVER_QUERY_LIMIT"`  | Daily free quota (40,000 calls) exceeded. |
 | `"INVALID_REQUEST"`   | Malformed address string in the data.     |
 
-An invalid or expired key is only detected at the first geocoding
+An invalid or expired Google key is only detected at the first geocoding
 request, not at function entry. Run
 [`mysterycall_preflight_check()`](https://mufflyt.github.io/mysterycall/reference/mysterycall_preflight_check.html)
 with `check_apis = TRUE` before a long workflow to catch key problems
@@ -131,6 +159,12 @@ Other geospatial helpers:
 
 ``` r
 if (FALSE) { # interactive()
-result <- mysterymaps_geocode("addresses.csv", "my_api_key")
+# Default: free Census Bureau geocoder, no API key required.
+result <- mysterymaps_geocode("addresses.csv")
+
+# Opt into Google's geocoder (e.g. for non-US addresses).
+result <- mysterymaps_geocode("addresses.csv",
+                               google_maps_api_key = "my_api_key",
+                               provider = "google")
 }
 ```

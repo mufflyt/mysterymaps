@@ -51,11 +51,12 @@ devtools::check()
 Rscript data-raw/make_readme_figures.R   # if you changed map output
 ```
 
-`devtools::check()` builds a PDF manual, so it needs LaTeX. BasicTeX is
-enough but ships without `inconsolata`, which `Rd2pdf` loads by default;
-without it the check fails at `checking PDF version of manual` with a
-LaTeX error that says nothing about fonts. Install it into your own
-tree, no `sudo` required:
+[`devtools::check()`](https://devtools.r-lib.org/reference/check.html)
+builds a PDF manual, so it needs LaTeX. BasicTeX is enough but ships
+without `inconsolata`, which `Rd2pdf` loads by default; without it the
+check fails at `checking PDF version of manual` with a LaTeX error that
+says nothing about fonts. Install it into your own tree, no `sudo`
+required:
 
 ``` sh
 tlmgr init-usertree
