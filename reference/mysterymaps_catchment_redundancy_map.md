@@ -18,6 +18,9 @@ mysterymaps_catchment_redundancy_map(
   subtitle = NULL,
   caption = NULL,
   grid_spacing_miles = 5,
+  k = 6,
+  zero_color = "#e0e0e0",
+  na_color = "#ffffff",
   crs = 5070
 )
 ```
@@ -47,6 +50,20 @@ mysterymaps_catchment_redundancy_map(
 
   `numeric(1)`: sample grid spacing, in miles. Default `5`. Smaller is
   more accurate and slower.
+
+- k:
+
+  `integer(1)`: target number of Jenks classes for the positive
+  (1-or-more) redundancy counts, passed to
+  [`mysterymaps_jenks_zero_scale()`](https://mufflyt.github.io/mysterymaps/reference/mysterymaps_jenks_zero_scale.md).
+  Default `6`.
+
+- zero_color, na_color:
+
+  Colours for a measured-zero (no coverage at all) and an unmeasured
+  polygon, respectively. Defaults match
+  [`mysterymaps_jenks_zero_scale()`](https://mufflyt.github.io/mysterymaps/reference/mysterymaps_jenks_zero_scale.md)'s
+  own.
 
 - crs:
 
@@ -83,8 +100,18 @@ polygon the grid misses entirely is sampled once more directly, at
 (guaranteed to land inside the polygon, unlike a bounding-box centroid,
 which can fall outside an irregular shape).
 
-Fill scale breaks are forced to integers, since a provider count is a
-whole number and the per-polygon summary is a median of whole numbers.
+A redundancy count is classified, not coloured continuously: `0` –
+nothing covers this area at all – is as categorically different from `1`
+as `1` is different from `5`, and a continuous
+[`scale_fill_viridis_c()`](https://ggplot2.tidyverse.org/reference/scale_viridis.html)
+(the original implementation) puts `0` at the dark end of the same
+gradient as every low-but-nonzero value, where it reads as merely "low
+redundancy" rather than the "no option at all" finding it actually is.
+[`mysterymaps_jenks_zero_scale()`](https://mufflyt.github.io/mysterymaps/reference/mysterymaps_jenks_zero_scale.md)
+with `digits = NULL` gives whole-number legend labels appropriate to a
+count and puts `0` in its own class, so it replaces the old
+[`scale_fill_viridis_c()`](https://ggplot2.tidyverse.org/reference/scale_viridis.html)
+plus a hand-written integer-breaks helper.
 
 `catchments` must contain exactly one row per `(provider, band)` you
 want counted. If `catchments` holds multiple drive-time bands per
@@ -95,6 +122,7 @@ reachable within more than one of their bands.
 ## See also
 
 Other mapping:
+[`mysterymaps_accessibility_map()`](https://mufflyt.github.io/mysterymaps/reference/mysterymaps_accessibility_map.md),
 [`mysterymaps_bivariate_choropleth_map()`](https://mufflyt.github.io/mysterymaps/reference/mysterymaps_bivariate_choropleth_map.md),
 [`mysterymaps_cartogram_map()`](https://mufflyt.github.io/mysterymaps/reference/mysterymaps_cartogram_map.md),
 [`mysterymaps_clear_isochrone_cache()`](https://mufflyt.github.io/mysterymaps/reference/mysterymaps_clear_isochrone_cache.md),

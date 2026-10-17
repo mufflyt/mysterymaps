@@ -67,7 +67,11 @@ already containing rates (0-1) are used directly.</p>
 <span>  low_states_warn <span class="op">=</span> <span class="fl">5L</span>,</span>
 <span>  na_color <span class="op">=</span> <span class="st">"grey80"</span>,</span>
 <span>  include_alaska_hawaii <span class="op">=</span> <span class="cn">FALSE</span>,</span>
-<span>  labels <span class="op">=</span> <span class="fu">scales</span><span class="fu">::</span><span class="fu"><a href="https://scales.r-lib.org/reference/percent_format.html" class="external-link">percent_format</a></span><span class="op">(</span>accuracy <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></span>
+<span>  labels <span class="op">=</span> <span class="fu">scales</span><span class="fu">::</span><span class="fu"><a href="https://scales.r-lib.org/reference/percent_format.html" class="external-link">percent_format</a></span><span class="op">(</span>accuracy <span class="op">=</span> <span class="fl">1</span><span class="op">)</span>,</span>
+<span>  zero_aware <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  k <span class="op">=</span> <span class="fl">6L</span>,</span>
+<span>  digits <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  zero_color <span class="op">=</span> <span class="st">"#e0e0e0"</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -139,7 +143,41 @@ what this function was built for. A column that is already a rate <em>per</em>
 something (midwives per 1,000 births, cases per 100,000) is not a
 proportion, and the percent formatter renders it as nonsense: 10.79
 becomes "1 000%". Pass a formatter that matches the column instead, e.g.
-<code>function(x) sprintf("%.0f", x)</code>.</p></dd>
+<code>function(x) sprintf("%.0f", x)</code>. Ignored when <code>zero_aware = TRUE</code>.</p></dd>
+
+
+<dt id="arg-zero-aware">zero_aware<a class="anchor" aria-label="anchor" href="#arg-zero-aware"></a></dt>
+<dd><p><code>logical(1)</code>. Default <code>FALSE</code>, which keeps this
+function's long-standing continuous <code><a href="https://ggplot2.tidyverse.org/reference/scale_viridis.html" class="external-link">scale_fill_viridis_c()</a></code> behaviour
+byte-for-byte – <code>mysterymaps_geographic_map()</code> has a confirmed real
+downstream caller (<code>mufflyt/midwifery</code>'s
+<code>manuscript/midwife_persistence.qmd</code>, replayed by this package's
+downstream-consumer nightly CI), so the default cannot change out from
+under it. Pass <code>TRUE</code> to classify <code>rate</code> with
+<code><a href="mysterymaps_jenks_zero_scale.html">mysterymaps_jenks_zero_scale()</a></code> instead: a state whose aggregated rate
+is a measured <code>0</code> gets <code>zero_color</code> rather than the same dark end of the
+gradient as a merely low rate – the same fix already applied to
+<code><a href="mysterymaps_rate_choropleth_map.html">mysterymaps_rate_choropleth_map()</a></code> and
+<code><a href="mysterymaps_catchment_redundancy_map.html">mysterymaps_catchment_redundancy_map()</a></code>. <code>labels</code> is ignored in this
+mode; use <code>digits</code> instead.</p></dd>
+
+
+<dt id="arg-k">k<a class="anchor" aria-label="anchor" href="#arg-k"></a></dt>
+<dd><p><code>integer(1)</code>: target number of Jenks classes for the positive
+rates when <code>zero_aware = TRUE</code>. Default <code>6</code>.</p></dd>
+
+
+<dt id="arg-digits">digits<a class="anchor" aria-label="anchor" href="#arg-digits"></a></dt>
+<dd><p><code>integer(1)</code> or <code>NULL</code>: decimal places in the legend's rate
+labels when <code>zero_aware = TRUE</code>. Default <code>NULL</code> (whole-number labels
+when the values are whole numbers, else significant-digit formatting –
+see <code><a href="mysterymaps_jenks_zero_scale.html">mysterymaps_jenks_zero_scale()</a></code>).</p></dd>
+
+
+<dt id="arg-zero-color">zero_color<a class="anchor" aria-label="anchor" href="#arg-zero-color"></a></dt>
+<dd><p>Fill colour for a measured-zero rate when
+<code>zero_aware = TRUE</code>. Default matches <code><a href="mysterymaps_jenks_zero_scale.html">mysterymaps_jenks_zero_scale()</a></code>'s
+own.</p></dd>
 
 </dl></div>
     <div class="section level2">
@@ -203,6 +241,19 @@ choropleth; <code><a href="https://mufflyt.github.io/mysterycall/reference/myste
 <span class="r-in"><span>  outcome_col <span class="op">=</span> <span class="st">"rate"</span>,</span></span>
 <span class="r-in"><span>  palette     <span class="op">=</span> <span class="st">"plasma"</span>,</span></span>
 <span class="r-in"><span>  direction   <span class="op">=</span> <span class="op">-</span><span class="fl">1L</span>,</span></span>
+<span class="r-in"><span>  fill_label  <span class="op">=</span> <span class="st">"Acceptance\nrate"</span></span></span>
+<span class="r-in"><span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># --- zero_aware = TRUE: a measured-zero state gets its own colour ----------</span></span></span>
+<span class="r-in"><span><span class="va">zero_df</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span></span>
+<span class="r-in"><span>  state <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"CO"</span>, <span class="st">"CA"</span>, <span class="st">"TX"</span>, <span class="st">"NY"</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>  rate  <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">0.72</span>, <span class="fl">0.48</span>, <span class="fl">0.63</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu">mysterymaps_geographic_map</span><span class="op">(</span></span></span>
+<span class="r-in"><span>  <span class="va">zero_df</span>,</span></span>
+<span class="r-in"><span>  outcome_col <span class="op">=</span> <span class="st">"rate"</span>,</span></span>
+<span class="r-in"><span>  zero_aware  <span class="op">=</span> <span class="cn">TRUE</span>,</span></span>
+<span class="r-in"><span>  digits      <span class="op">=</span> <span class="fl">2</span>,</span></span>
 <span class="r-in"><span>  fill_label  <span class="op">=</span> <span class="st">"Acceptance\nrate"</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="op">}</span> <span class="co"># }</span></span></span>

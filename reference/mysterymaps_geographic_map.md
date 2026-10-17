@@ -20,7 +20,11 @@ mysterymaps_geographic_map(
   low_states_warn = 5L,
   na_color = "grey80",
   include_alaska_hawaii = FALSE,
-  labels = scales::percent_format(accuracy = 1)
+  labels = scales::percent_format(accuracy = 1),
+  zero_aware = FALSE,
+  k = 6L,
+  digits = NULL,
+  zero_color = "#e0e0e0"
 )
 ```
 
@@ -93,6 +97,45 @@ mysterymaps_geographic_map(
   cases per 100,000) is not a proportion, and the percent formatter
   renders it as nonsense: 10.79 becomes "1 000%". Pass a formatter that
   matches the column instead, e.g. `function(x) sprintf("%.0f", x)`.
+  Ignored when `zero_aware = TRUE`.
+
+- zero_aware:
+
+  `logical(1)`. Default `FALSE`, which keeps this function's
+  long-standing continuous
+  [`scale_fill_viridis_c()`](https://ggplot2.tidyverse.org/reference/scale_viridis.html)
+  behaviour byte-for-byte – `mysterymaps_geographic_map()` has a
+  confirmed real downstream caller (`mufflyt/midwifery`'s
+  `manuscript/midwife_persistence.qmd`, replayed by this package's
+  downstream-consumer nightly CI), so the default cannot change out from
+  under it. Pass `TRUE` to classify `rate` with
+  [`mysterymaps_jenks_zero_scale()`](https://mufflyt.github.io/mysterymaps/reference/mysterymaps_jenks_zero_scale.md)
+  instead: a state whose aggregated rate is a measured `0` gets
+  `zero_color` rather than the same dark end of the gradient as a merely
+  low rate – the same fix already applied to
+  [`mysterymaps_rate_choropleth_map()`](https://mufflyt.github.io/mysterymaps/reference/mysterymaps_rate_choropleth_map.md)
+  and
+  [`mysterymaps_catchment_redundancy_map()`](https://mufflyt.github.io/mysterymaps/reference/mysterymaps_catchment_redundancy_map.md).
+  `labels` is ignored in this mode; use `digits` instead.
+
+- k:
+
+  `integer(1)`: target number of Jenks classes for the positive rates
+  when `zero_aware = TRUE`. Default `6`.
+
+- digits:
+
+  `integer(1)` or `NULL`: decimal places in the legend's rate labels
+  when `zero_aware = TRUE`. Default `NULL` (whole-number labels when the
+  values are whole numbers, else significant-digit formatting – see
+  [`mysterymaps_jenks_zero_scale()`](https://mufflyt.github.io/mysterymaps/reference/mysterymaps_jenks_zero_scale.md)).
+
+- zero_color:
+
+  Fill colour for a measured-zero rate when `zero_aware = TRUE`. Default
+  matches
+  [`mysterymaps_jenks_zero_scale()`](https://mufflyt.github.io/mysterymaps/reference/mysterymaps_jenks_zero_scale.md)'s
+  own.
 
 ## Value
 
@@ -156,6 +199,19 @@ mysterymaps_geographic_map(
   outcome_col = "rate",
   palette     = "plasma",
   direction   = -1L,
+  fill_label  = "Acceptance\nrate"
+)
+
+# --- zero_aware = TRUE: a measured-zero state gets its own colour ----------
+zero_df <- data.frame(
+  state = c("CO", "CA", "TX", "NY"),
+  rate  = c(0, 0.72, 0.48, 0.63)
+)
+mysterymaps_geographic_map(
+  zero_df,
+  outcome_col = "rate",
+  zero_aware  = TRUE,
+  digits      = 2,
   fill_label  = "Acceptance\nrate"
 )
 } # }

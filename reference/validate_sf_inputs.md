@@ -56,4 +56,5 @@ A named list of validated sf objects.
 Other geospatial:
 [`mm_area_in()`](https://mufflyt.github.io/mysterymaps/reference/mm_area_in.md),
 [`mm_honeycomb_counts()`](https://mufflyt.github.io/mysterymaps/reference/mm_honeycomb_counts.md),
-[`mysterymaps_hex_bin_counts()`](https://mufflyt.github.io/mysterymaps/reference/mysterymaps_hex_bin_counts.md)
+[`mysterymaps_hex_bin_counts()`](https://mufflyt.github.io/mysterymaps/reference/mysterymaps_hex_bin_counts.md),
+[`mysterymaps_hex_bin_rate()`](https://mufflyt.github.io/mysterymaps/reference/mysterymaps_hex_bin_rate.md)

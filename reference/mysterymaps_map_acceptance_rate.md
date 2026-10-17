@@ -19,7 +19,11 @@ mysterymaps_map_acceptance_rate(
   save_path = NULL,
   width = 10,
   height = 7,
-  dpi = 300L
+  dpi = 300L,
+  zero_aware = FALSE,
+  k = 6L,
+  digits = 0L,
+  zero_color = "#e0e0e0"
 )
 ```
 
@@ -95,6 +99,37 @@ mysterymaps_map_acceptance_rate(
   [`mysterycall_save_plot()`](https://mufflyt.github.io/mysterycall/reference/mysterycall_save_plot.html).
   Default `300L`.
 
+- zero_aware:
+
+  Logical scalar. Default `FALSE`, which keeps this function's existing
+  continuous
+  [`scale_fill_viridis_c()`](https://ggplot2.tidyverse.org/reference/scale_viridis.html)
+  behaviour unchanged. Pass `TRUE` to classify the percentage with
+  [`mysterymaps_jenks_zero_scale()`](https://mufflyt.github.io/mysterymaps/reference/mysterymaps_jenks_zero_scale.md)
+  instead, so a state with a measured 0% acceptance rate gets
+  `zero_color` rather than the same dark end of the gradient as a merely
+  low rate – the same fix already applied to
+  [`mysterymaps_rate_choropleth_map()`](https://mufflyt.github.io/mysterymaps/reference/mysterymaps_rate_choropleth_map.md).
+  `limits` is ignored in this mode.
+
+- k:
+
+  Integer scalar. Target number of Jenks classes for the positive rates
+  when `zero_aware = TRUE`. Default `6`.
+
+- digits:
+
+  Integer scalar or `NULL`. Decimal places in the legend's percentage
+  labels when `zero_aware = TRUE`. Default `0` (whole percentage
+  points).
+
+- zero_color:
+
+  Character scalar. Fill color for a measured-0% rate when
+  `zero_aware = TRUE`. Default matches
+  [`mysterymaps_jenks_zero_scale()`](https://mufflyt.github.io/mysterymaps/reference/mysterymaps_jenks_zero_scale.md)'s
+  own.
+
 ## Value
 
 A `ggplot` object of class `c("gg", "ggplot")`, returned invisibly. When
@@ -109,6 +144,7 @@ to write the result to disk;
 for HRR-level choropleth maps.
 
 Other mapping:
+[`mysterymaps_accessibility_map()`](https://mufflyt.github.io/mysterymaps/reference/mysterymaps_accessibility_map.md),
 [`mysterymaps_bivariate_choropleth_map()`](https://mufflyt.github.io/mysterymaps/reference/mysterymaps_bivariate_choropleth_map.md),
 [`mysterymaps_cartogram_map()`](https://mufflyt.github.io/mysterymaps/reference/mysterymaps_cartogram_map.md),
 [`mysterymaps_catchment_redundancy_map()`](https://mufflyt.github.io/mysterymaps/reference/mysterymaps_catchment_redundancy_map.md),
@@ -137,4 +173,12 @@ df <- data.frame(
   rate  = c(0.55, 0.72, 0.48, 0.63, 0.81)
 )
 mysterymaps_map_acceptance_rate(df, region_col = "state", rate_col = "rate")
+
+# zero_aware = TRUE: a measured-0% state gets its own colour, not the dark
+# end of the same gradient as a merely low rate.
+zero_df <- data.frame(state = c("Colorado", "California", "Texas"),
+                      rate = c(0, 0.72, 0.48))
+mysterymaps_map_acceptance_rate(zero_df, region_col = "state", rate_col = "rate",
+                                zero_aware = TRUE)
+#> Warning: n same as number of different finite values\neach different finite value is a separate class
 ```

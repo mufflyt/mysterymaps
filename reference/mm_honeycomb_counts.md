@@ -79,4 +79,5 @@ at 18.9N; `southern_limit` sits well below it and well above Palmyra.
 Other geospatial:
 [`mm_area_in()`](https://mufflyt.github.io/mysterymaps/reference/mm_area_in.md),
 [`mysterymaps_hex_bin_counts()`](https://mufflyt.github.io/mysterymaps/reference/mysterymaps_hex_bin_counts.md),
+[`mysterymaps_hex_bin_rate()`](https://mufflyt.github.io/mysterymaps/reference/mysterymaps_hex_bin_rate.md),
 [`validate_sf_inputs()`](https://mufflyt.github.io/mysterymaps/reference/validate_sf_inputs.md)

@@ -124,7 +124,7 @@ there, instead of silently omitting them. Default <code>FALSE</code>, matching
 <code><a href="mm_honeycomb_counts.html">mm_honeycomb_counts()</a></code>'s original point-counting behaviour. A reader
 cannot tell "zero, measured" from "not drawn" on a map with gaps in the
 grid – the distinction <code><a href="mysterymaps_jenks_zero_scale.html">mysterymaps_jenks_zero_scale()</a></code> and
-<code>mysterymaps_hex_bin_rate()</code> both exist to preserve. <code>min_count</code> does
+<code><a href="mysterymaps_hex_bin_rate.html">mysterymaps_hex_bin_rate()</a></code> both exist to preserve. <code>min_count</code> does
 not apply in this mode: suppressing small counts and asserting that a
 cell is a true zero are different, incompatible claims about the same
 cell.</p></dd>
@@ -141,12 +141,12 @@ cell in <code>boundary_sf</code> is returned, zero-count ones included.</p>
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
     <div class="dont-index"><p><code><a href="mysterymaps_hrr_maps.html">mysterymaps_hrr_maps()</a></code>, which wraps <code><a href="mm_honeycomb_counts.html">mm_honeycomb_counts()</a></code> for
 the HRR/physician use case with AK/HI/PR insets baked in;
-<code>mysterymaps_hex_bin_rate()</code>, which always returns the full grid because
+<code><a href="mysterymaps_hex_bin_rate.html">mysterymaps_hex_bin_rate()</a></code>, which always returns the full grid because
 a rate needs to distinguish zero from missing.</p>
 <p>Other geospatial:
 <code><a href="mm_area_in.html">mm_area_in()</a></code>,
 <code><a href="mm_honeycomb_counts.html">mm_honeycomb_counts()</a></code>,
-<code>mysterymaps_hex_bin_rate()</code>,
+<code><a href="mysterymaps_hex_bin_rate.html">mysterymaps_hex_bin_rate()</a></code>,
 <code><a href="validate_sf_inputs.html">validate_sf_inputs()</a></code></p></div>
     </div>
 

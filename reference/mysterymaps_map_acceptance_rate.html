@@ -62,7 +62,11 @@ data (no external spatial packages required for state-level maps).</p>
 <span>  save_path <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  width <span class="op">=</span> <span class="fl">10</span>,</span>
 <span>  height <span class="op">=</span> <span class="fl">7</span>,</span>
-<span>  dpi <span class="op">=</span> <span class="fl">300L</span></span>
+<span>  dpi <span class="op">=</span> <span class="fl">300L</span>,</span>
+<span>  zero_aware <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  k <span class="op">=</span> <span class="fl">6L</span>,</span>
+<span>  digits <span class="op">=</span> <span class="fl">0L</span>,</span>
+<span>  zero_color <span class="op">=</span> <span class="st">"#e0e0e0"</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -136,6 +140,33 @@ Default <code>7</code>.</p></dd>
 <dd><p>Integer. Resolution passed to <code><a href="https://mufflyt.github.io/mysterycall/reference/mysterycall_save_plot.html" class="external-link">mysterycall_save_plot()</a></code>.
 Default <code>300L</code>.</p></dd>
 
+
+<dt id="arg-zero-aware">zero_aware<a class="anchor" aria-label="anchor" href="#arg-zero-aware"></a></dt>
+<dd><p>Logical scalar. Default <code>FALSE</code>, which keeps this
+function's existing continuous <code><a href="https://ggplot2.tidyverse.org/reference/scale_viridis.html" class="external-link">scale_fill_viridis_c()</a></code> behaviour
+unchanged. Pass <code>TRUE</code> to classify the percentage with
+<code><a href="mysterymaps_jenks_zero_scale.html">mysterymaps_jenks_zero_scale()</a></code> instead, so a state with a measured 0%
+acceptance rate gets <code>zero_color</code> rather than the same dark end of the
+gradient as a merely low rate – the same fix already applied to
+<code><a href="mysterymaps_rate_choropleth_map.html">mysterymaps_rate_choropleth_map()</a></code>. <code>limits</code> is ignored in this mode.</p></dd>
+
+
+<dt id="arg-k">k<a class="anchor" aria-label="anchor" href="#arg-k"></a></dt>
+<dd><p>Integer scalar. Target number of Jenks classes for the positive
+rates when <code>zero_aware = TRUE</code>. Default <code>6</code>.</p></dd>
+
+
+<dt id="arg-digits">digits<a class="anchor" aria-label="anchor" href="#arg-digits"></a></dt>
+<dd><p>Integer scalar or <code>NULL</code>. Decimal places in the legend's
+percentage labels when <code>zero_aware = TRUE</code>. Default <code>0</code> (whole
+percentage points).</p></dd>
+
+
+<dt id="arg-zero-color">zero_color<a class="anchor" aria-label="anchor" href="#arg-zero-color"></a></dt>
+<dd><p>Character scalar. Fill color for a measured-0% rate
+when <code>zero_aware = TRUE</code>. Default matches
+<code><a href="mysterymaps_jenks_zero_scale.html">mysterymaps_jenks_zero_scale()</a></code>'s own.</p></dd>
+
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
@@ -148,6 +179,7 @@ When <code>save_path</code> is not <code>NULL</code>, also writes the plot to di
     <div class="dont-index"><p><code><a href="https://mufflyt.github.io/mysterycall/reference/mysterycall_save_plot.html" class="external-link">mysterycall_save_plot()</a></code> to write the result to disk;
 <code><a href="mysterymaps_hrr_maps.html">mysterymaps_hrr_maps()</a></code> for HRR-level choropleth maps.</p>
 <p>Other mapping:
+<code><a href="mysterymaps_accessibility_map.html">mysterymaps_accessibility_map()</a></code>,
 <code><a href="mysterymaps_bivariate_choropleth_map.html">mysterymaps_bivariate_choropleth_map()</a></code>,
 <code><a href="mysterymaps_cartogram_map.html">mysterymaps_cartogram_map()</a></code>,
 <code><a href="mysterymaps_catchment_redundancy_map.html">mysterymaps_catchment_redundancy_map()</a></code>,
@@ -176,6 +208,14 @@ When <code>save_path</code> is not <code>NULL</code>, also writes the plot to di
 <span class="r-in"><span>  rate  <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.55</span>, <span class="fl">0.72</span>, <span class="fl">0.48</span>, <span class="fl">0.63</span>, <span class="fl">0.81</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu">mysterymaps_map_acceptance_rate</span><span class="op">(</span><span class="va">df</span>, region_col <span class="op">=</span> <span class="st">"state"</span>, rate_col <span class="op">=</span> <span class="st">"rate"</span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># zero_aware = TRUE: a measured-0% state gets its own colour, not the dark</span></span></span>
+<span class="r-in"><span><span class="co"># end of the same gradient as a merely low rate.</span></span></span>
+<span class="r-in"><span><span class="va">zero_df</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>state <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Colorado"</span>, <span class="st">"California"</span>, <span class="st">"Texas"</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>                      rate <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">0.72</span>, <span class="fl">0.48</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu">mysterymaps_map_acceptance_rate</span><span class="op">(</span><span class="va">zero_df</span>, region_col <span class="op">=</span> <span class="st">"state"</span>, rate_col <span class="op">=</span> <span class="st">"rate"</span>,</span></span>
+<span class="r-in"><span>                                zero_aware <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>n same as number of different finite values\neach different finite value is a separate class</span>
 </code></pre></div>
     </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

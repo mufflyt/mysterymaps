@@ -98,12 +98,17 @@ ggplot2 output.
 - [`mysterymaps_pathway_small_multiples_map()`](https://mufflyt.github.io/mysterymaps/reference/mysterymaps_pathway_small_multiples_map.md)
   : Small-multiple dot map, one panel per pathway
 
+- [`mysterymaps_accessibility_map()`](https://mufflyt.github.io/mysterymaps/reference/mysterymaps_accessibility_map.md)
+  : One-call E2SFCA accessibility map
+
 ## Geospatial aggregation
 
 Binning points onto a grid, areal interpolation.
 
 - [`mysterymaps_hex_bin_counts()`](https://mufflyt.github.io/mysterymaps/reference/mysterymaps_hex_bin_counts.md)
   : Hex-bin point counts over any study-area boundary
+- [`mysterymaps_hex_bin_rate()`](https://mufflyt.github.io/mysterymaps/reference/mysterymaps_hex_bin_rate.md)
+  : Hex-bin a rate (point count per areal-interpolated denominator)
 
 ## Isochrones, geocoding and overlap
 

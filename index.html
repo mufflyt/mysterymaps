@@ -172,7 +172,8 @@
 </tr>
 <tr>
 <td><code><a href="reference/mysterymaps_rate_choropleth_map.html">mysterymaps_rate_choropleth_map()</a></code></td>
-<td>numerator/denominator rate choropleth, log-scaled by default</td>
+<td>numerator/denominator rate choropleth, zero its own colour class via <code><a href="reference/mysterymaps_jenks_zero_scale.html">mysterymaps_jenks_zero_scale()</a></code>
+</td>
 </tr>
 <tr>
 <td><code><a href="reference/mysterymaps_bivariate_choropleth_map.html">mysterymaps_bivariate_choropleth_map()</a></code></td>
@@ -193,6 +194,10 @@
 <tr>
 <td><code><a href="reference/mysterymaps_pathway_small_multiples_map.html">mysterymaps_pathway_small_multiples_map()</a></code></td>
 <td>one facet per pathway/certification group, plus a combined panel</td>
+</tr>
+<tr>
+<td><code><a href="reference/mysterymaps_accessibility_map.html">mysterymaps_accessibility_map()</a></code></td>
+<td>one-call <code>twostep::compute_e2sfca()</code> map, zero vs. outside-catchment vs. missing kept distinct</td>
 </tr>
 </tbody>
 </table>
@@ -267,6 +272,10 @@
 <tr>
 <td><code><a href="reference/mysterymaps_hex_bin_counts.html">mysterymaps_hex_bin_counts()</a></code></td>
 <td>hex-bin point counts over any boundary, not just HRR/physician maps</td>
+</tr>
+<tr>
+<td><code><a href="reference/mysterymaps_hex_bin_rate.html">mysterymaps_hex_bin_rate()</a></code></td>
+<td>hex-bin a rate: point count over an areal-interpolated denominator (e.g. per 100k population), zero/undefined kept distinct</td>
 </tr>
 </tbody>
 </table>

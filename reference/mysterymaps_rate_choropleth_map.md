@@ -17,7 +17,10 @@ mysterymaps_rate_choropleth_map(
   title = NULL,
   subtitle = NULL,
   caption = NULL,
-  log_scale = TRUE,
+  k = 6,
+  digits = 1,
+  zero_color = "#e0e0e0",
+  na_color = "#ffffff",
   viridis_option = "viridis",
   crs = 5070
 )
@@ -46,18 +49,31 @@ mysterymaps_rate_choropleth_map(
 
   Character labels. `NULL` omits.
 
-- log_scale:
+- k:
 
-  `logical(1)`: colour on a log1p scale. Default `TRUE`; rates in this
-  kind of map are typically right-skewed (many near-zero areas, a few
-  much higher), and a linear scale would wash out all the low end into
-  one colour.
+  `integer(1)`: target number of Jenks classes for the positive rates,
+  passed to
+  [`mysterymaps_jenks_zero_scale()`](https://mufflyt.github.io/mysterymaps/reference/mysterymaps_jenks_zero_scale.md).
+  Default `6`.
+
+- digits:
+
+  `integer(1)`: decimal places in the legend's rate labels. Default `1`;
+  pass `0` when the rate reads more naturally as a whole number (e.g.
+  "per 1,000" counts that are rarely fractional in practice).
+
+- zero_color, na_color:
+
+  Colours for a measured-zero rate and for an undefined
+  (zero-denominator) rate, respectively. Defaults match
+  [`mysterymaps_jenks_zero_scale()`](https://mufflyt.github.io/mysterymaps/reference/mysterymaps_jenks_zero_scale.md)'s
+  own.
 
 - viridis_option:
 
-  `character(1)`: passed to
-  [`ggplot2::scale_fill_viridis_c()`](https://ggplot2.tidyverse.org/reference/scale_viridis.html)'s
-  `option`.
+  `character(1)`: passed to the `option` argument of the
+  [`viridisLite::viridis()`](https://sjmgarnier.github.io/viridisLite/reference/viridis.html)
+  palette used for the positive classes.
 
 - crs:
 
@@ -84,9 +100,32 @@ The legend title is always built from `numerator_label` and
 title is the one place in the map an abbreviation would otherwise land
 by default.
 
+## Zero is a category, not the bottom of a gradient
+
+An earlier version of this function coloured the rate with a plain
+continuous
+[`scale_fill_viridis_c()`](https://ggplot2.tidyverse.org/reference/scale_viridis.html)
+(optionally log1p-transformed for skew). That repeats, on a brand-new
+function, the exact mistake
+[`mysterymaps_jenks_zero_scale()`](https://mufflyt.github.io/mysterymaps/reference/mysterymaps_jenks_zero_scale.md)
+exists to prevent: a polygon with a **measured rate of zero** (real
+population, no provider) rendered identically to one just barely above
+zero, both near the dark end of the gradient – on a prior national map
+this put over half the counties in the country into one
+indistinguishable "low" class when the honest answer for most of them
+was "none". This function now classifies `.mm_rate` with
+[`mysterymaps_jenks_zero_scale()`](https://mufflyt.github.io/mysterymaps/reference/mysterymaps_jenks_zero_scale.md)
+instead: zero gets its own colour and legend entry, positive rates are
+Jenks-classified (which is also why there is no `log_scale` argument any
+more – natural breaks already handle the right-skewed distribution a log
+transform was compensating for), and a polygon with a zero *denominator*
+(`.mm_rate` is `NA`, an undefined rate, not a measured one) gets
+`na_color` rather than being folded into the zero class.
+
 ## See also
 
 Other mapping:
+[`mysterymaps_accessibility_map()`](https://mufflyt.github.io/mysterymaps/reference/mysterymaps_accessibility_map.md),
 [`mysterymaps_bivariate_choropleth_map()`](https://mufflyt.github.io/mysterymaps/reference/mysterymaps_bivariate_choropleth_map.md),
 [`mysterymaps_cartogram_map()`](https://mufflyt.github.io/mysterymaps/reference/mysterymaps_cartogram_map.md),
 [`mysterymaps_catchment_redundancy_map()`](https://mufflyt.github.io/mysterymaps/reference/mysterymaps_catchment_redundancy_map.md),

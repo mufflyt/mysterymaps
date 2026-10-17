@@ -73,10 +73,11 @@ mysterymaps_hex_bin_counts(
   measured" from "not drawn" on a map with gaps in the grid – the
   distinction
   [`mysterymaps_jenks_zero_scale()`](https://mufflyt.github.io/mysterymaps/reference/mysterymaps_jenks_zero_scale.md)
-  and `mysterymaps_hex_bin_rate()` both exist to preserve. `min_count`
-  does not apply in this mode: suppressing small counts and asserting
-  that a cell is a true zero are different, incompatible claims about
-  the same cell.
+  and
+  [`mysterymaps_hex_bin_rate()`](https://mufflyt.github.io/mysterymaps/reference/mysterymaps_hex_bin_rate.md)
+  both exist to preserve. `min_count` does not apply in this mode:
+  suppressing small counts and asserting that a cell is a true zero are
+  different, incompatible claims about the same cell.
 
 ## Value
 
@@ -91,13 +92,14 @@ cell in `boundary_sf` is returned, zero-count ones included.
 which wraps
 [`mm_honeycomb_counts()`](https://mufflyt.github.io/mysterymaps/reference/mm_honeycomb_counts.md)
 for the HRR/physician use case with AK/HI/PR insets baked in;
-`mysterymaps_hex_bin_rate()`, which always returns the full grid because
-a rate needs to distinguish zero from missing.
+[`mysterymaps_hex_bin_rate()`](https://mufflyt.github.io/mysterymaps/reference/mysterymaps_hex_bin_rate.md),
+which always returns the full grid because a rate needs to distinguish
+zero from missing.
 
 Other geospatial:
 [`mm_area_in()`](https://mufflyt.github.io/mysterymaps/reference/mm_area_in.md),
 [`mm_honeycomb_counts()`](https://mufflyt.github.io/mysterymaps/reference/mm_honeycomb_counts.md),
-`mysterymaps_hex_bin_rate()`,
+[`mysterymaps_hex_bin_rate()`](https://mufflyt.github.io/mysterymaps/reference/mysterymaps_hex_bin_rate.md),
 [`validate_sf_inputs()`](https://mufflyt.github.io/mysterymaps/reference/validate_sf_inputs.md)
 
 ## Examples
