@@ -6,7 +6,15 @@ with isochrones. The map is exported as an HTML file and a PNG image.
 ## Usage
 
 ``` r
-mysterymaps_map_block_group(bg_data, isochrones_data, output_dir = "figures/")
+mysterymaps_map_block_group(
+  bg_data,
+  isochrones_data,
+  output_dir = "figures/",
+  k = 6,
+  digits = 2,
+  zero_color = "#e0e0e0",
+  na_color = "#ffffff"
+)
 ```
 
 ## Arguments
@@ -23,10 +31,48 @@ mysterymaps_map_block_group(bg_data, isochrones_data, output_dir = "figures/")
 
   Directory path for exporting the map files. Default is "figures/".
 
+- k:
+
+  `integer(1)`: target number of Jenks classes for the positive
+  (nonzero) overlap values, passed to
+  [`mysterymaps_jenks_zero_scale()`](https://mufflyt.github.io/mysterymaps/reference/mysterymaps_jenks_zero_scale.md).
+  Default `6`.
+
+- digits:
+
+  `integer(1)`: decimal places in the legend's overlap labels. Default
+  `2` (overlap is a proportion, typically fractional).
+
+- zero_color, na_color:
+
+  Colours for a block group with zero measured overlap and one whose
+  overlap is unmeasurable (a degenerate polygon area – see Details),
+  respectively. Defaults match
+  [`mysterymaps_jenks_zero_scale()`](https://mufflyt.github.io/mysterymaps/reference/mysterymaps_jenks_zero_scale.md)'s
+  own.
+
 ## Value
 
 `invisible(NULL)`. Side effects: writes the block group overlap map as
 an HTML file and a PNG image to `output_dir`.
+
+## Details
+
+`bg_data$overlap` carries two different kinds of absence that a plain
+continuous
+[`leaflet::colorNumeric()`](https://rstudio.github.io/leaflet/reference/colorNumeric.html)
+scale (the original implementation) could not tell apart.
+[`mysterymaps_calculate_overlap()`](https://mufflyt.github.io/mysterymaps/reference/mysterymaps_calculate_overlap.md)
+coalesces a block group's intersection area to `0` when it does not
+intersect any isochrone at all – a measured zero, and the coverage gap
+this map exists to show – but leaves `overlap` as `NA` when the block
+group's own area is degenerate (zero or negative, an invalid polygon).
+Putting a measured zero at the lightest end of the same purple gradient
+as a 2% overlap reads as "barely covered" rather than "not covered at
+all". This function now classifies `overlap` with
+[`mysterymaps_jenks_zero_scale()`](https://mufflyt.github.io/mysterymaps/reference/mysterymaps_jenks_zero_scale.md)
+instead: a measured zero gets `zero_color`, a degenerate-area `NA` gets
+`na_color`, and the positive values are Jenks-classified.
 
 ## See also
 

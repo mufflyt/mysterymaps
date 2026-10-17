@@ -62,7 +62,11 @@ both <code>.tiff</code> and <code>.png</code> to <code>output_dir</code>.</p>
 <span>  output_dir <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  dpi <span class="op">=</span> <span class="fl">600</span>,</span>
 <span>  width <span class="op">=</span> <span class="fl">7</span>,</span>
-<span>  height <span class="op">=</span> <span class="fl">5</span></span>
+<span>  height <span class="op">=</span> <span class="fl">5</span>,</span>
+<span>  min_count <span class="op">=</span> <span class="fl">2L</span>,</span>
+<span>  k <span class="op">=</span> <span class="fl">6</span>,</span>
+<span>  zero_color <span class="op">=</span> <span class="st">"#e0e0e0"</span>,</span>
+<span>  na_color <span class="op">=</span> <span class="st">"#ffffff"</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -102,6 +106,27 @@ session-specific folder inside <code><a href="https://rdrr.io/r/base/tempfile.ht
 <dt id="arg-height">height<a class="anchor" aria-label="anchor" href="#arg-height"></a></dt>
 <dd><p>Numeric.  Figure height in inches.  Default <code>5</code>.</p></dd>
 
+
+<dt id="arg-min-count">min_count<a class="anchor" aria-label="anchor" href="#arg-min-count"></a></dt>
+<dd><p>Integer.  Cells holding fewer than this many providers are
+coloured as suppressed (<code>na_color</code>) rather than drawn with their true
+count.  Default <code>2L</code>, the long-standing behaviour: a cell with exactly
+one provider is small-cell-suppressed rather than potentially
+identifying.  A cell with <em>zero</em> providers is a different, measured
+finding and is never suppressed by this argument – see Details.</p></dd>
+
+
+<dt id="arg-k">k<a class="anchor" aria-label="anchor" href="#arg-k"></a></dt>
+<dd><p>Integer.  Target number of Jenks classes for the positive
+(at-or-above-<code>min_count</code>) cell counts, passed to
+<code><a href="mysterymaps_jenks_zero_scale.html">mysterymaps_jenks_zero_scale()</a></code>.  Default <code>6</code>.</p></dd>
+
+
+<dt id="arg-zero-color-na-color">zero_color, na_color<a class="anchor" aria-label="anchor" href="#arg-zero-color-na-color"></a></dt>
+<dd><p>Colours for a cell with a measured zero count
+and a small-cell-suppressed cell, respectively.  Defaults match
+<code><a href="mysterymaps_jenks_zero_scale.html">mysterymaps_jenks_zero_scale()</a></code>'s own.</p></dd>
+
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
@@ -110,6 +135,29 @@ session-specific folder inside <code><a href="https://rdrr.io/r/base/tempfile.ht
 Side effects: writes two files to <code>output_dir</code> -
 <code>&lt;trait_map&gt;_&lt;honey_map&gt;_honey.tiff</code> and
 <code>&lt;trait_map&gt;_&lt;honey_map&gt;_honey.png</code>.</p>
+    </div>
+    <div class="section level2">
+    <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
+    <p>Earlier versions of this function called <code><a href="mm_honeycomb_counts.html">mm_honeycomb_counts()</a></code>, which
+drops every cell below <code>min_count</code> – including genuine zero-count cells
+– so a region with no providers at all had no hexagon drawn rather than
+one visibly shaded as zero. That is the same "zero is a category, not an
+absence" problem this package's other choropleth builders have been fixed
+for one at a time; this function was the one <code><a href="mm_honeycomb_counts.html">mm_honeycomb_counts()</a></code> and
+<code><a href="mysterymaps_hex_bin_counts.html">mysterymaps_hex_bin_counts()</a></code> were originally extracted from, and had not
+itself been updated to use either.</p>
+<p>This function now calls the internal full-grid counter (every cell in
+<code>usa</code>, zero-count ones included) and classifies the result with
+<code><a href="mysterymaps_jenks_zero_scale.html">mysterymaps_jenks_zero_scale()</a></code> instead of a continuous
+<code><a href="https://ggplot2.tidyverse.org/reference/scale_viridis.html" class="external-link">scale_fill_viridis_c()</a></code>: a true zero gets <code>zero_color</code> and its own
+legend entry, a cell below <code>min_count</code> is suppressed to <code>na_color</code> with a
+"Suppressed" legend entry (a measurement that exists but is not
+separately reportable, not an unmeasured cell – the two are different
+claims, the same distinction <code><a href="mysterymaps_hex_bin_rate.html">mysterymaps_hex_bin_rate()</a></code> makes for a
+zero denominator), and cells at or above <code>min_count</code> are Jenks-classified.
+The same scale – computed once, before the contiguous/Alaska/Hawaii/
+Puerto Rico split – colours every panel, so the legend shown on the main
+map is valid for the insets too.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
