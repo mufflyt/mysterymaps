@@ -54,6 +54,57 @@ testthat::test_that("zero_color is overridable", {
   testthat::expect_true(any(ld$.mm_fill_color == "pink"))
 })
 
+testthat::test_that("each needed package is named in its own error", {
+  f <- fixture()
+  for (pkg in c("sf", "ggplot2")) {
+    testthat::local_mocked_bindings(
+      requireNamespace = function(package, ...) !identical(package, pkg),
+      .package = "base")
+    testthat::expect_error(
+      mysterymaps_catchment_redundancy_map(f$catchments, f$counties, provider_id_var = "provider"),
+      sprintf("needs the '%s' package", pkg))
+  }
+})
+
+testthat::test_that("invalid catchment or polygon geometry is repaired rather than erroring", {
+  # A self-intersecting ("bowtie") polygon is invalid per se; st_is_valid()
+  # returns FALSE and most sf set operations downstream refuse to run on it
+  # unless repaired first.
+  skip_unless_spatial()
+  bowtie <- sf::st_polygon(list(cbind(c(-99, -97, -99, -97, -99), c(40, 40, 42, 42, 40))))
+  bad_catchments <- sf::st_sf(provider = "A",
+                              geometry = sf::st_sfc(bowtie, crs = 4326))
+  counties <- mm_counties(n = 2, rate = c(0, 0))
+  expect_true(any(!sf::st_is_valid(bad_catchments)))
+
+  p <- mysterymaps_catchment_redundancy_map(
+    bad_catchments, counties, provider_id_var = "provider", grid_spacing_miles = 10)
+  testthat::expect_s3_class(p, "ggplot")
+})
+
+testthat::test_that("a polygon narrower than the grid spacing is still scored, via the fallback sample", {
+  # The documented real-world case: an independent city too small for any
+  # sample grid point to land inside it at the chosen spacing, alongside an
+  # ordinary-sized county the grid samples normally. Only the tiny polygon
+  # should need the fallback; starving the WHOLE grid (every polygon missed)
+  # is a different, further edge case this test does not exercise.
+  skip_unless_spatial()
+  normal_county <- sf::st_sf(
+    GEOID = "normal", NAMELSAD = "Normal County", rate = 0,
+    geometry = mm_square(-99, 40, w = 1))
+  tiny_city <- sf::st_sf(
+    GEOID = "tiny", NAMELSAD = "Tiny Independent City", rate = 0,
+    geometry = mm_square(-97.5, 40, w = 0.01))
+  counties <- rbind(normal_county, tiny_city)
+  catch_a <- sf::st_sf(provider = "A",
+                       geometry = mm_square(-99.5, 39.5, w = 3))
+
+  p <- mysterymaps_catchment_redundancy_map(
+    catch_a, counties, provider_id_var = "provider", grid_spacing_miles = 20)
+  vals <- p$layers[[1]]$data$.mm_redundancy
+  testthat::expect_false(any(is.na(vals)))
+})
+
 testthat::test_that("errors on zero-row catchments or polygons", {
   skip_unless_spatial()
   f <- fixture()

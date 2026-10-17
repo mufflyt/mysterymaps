@@ -452,3 +452,99 @@ test_that("REGRESSION: include_zero_cells matches via spatial join, not grid_id"
   expect_true(grepl("st_join", body_text, fixed = TRUE))
   expect_false(grepl("left_join", body_text, fixed = TRUE))
 })
+
+# --------------------------------------------------------------------------
+# mm_suppress_small_cells: the suppression step mysterymaps_hrr_maps() now
+# applies to the full-grid count. Split out directly testable for the same
+# reason mm_honeycomb_counts() was (see its own doc comment): the caller
+# returns a gtable, so a suppression bug would be invisible to any assertion
+# about mysterymaps_hrr_maps()'s output.
+# --------------------------------------------------------------------------
+
+test_that("a true zero passes through unsuppressed", {
+  expect_equal(mm_suppress_small_cells(c(0, 0, 0), min_count = 2L), c(0, 0, 0))
+})
+
+test_that("a count below min_count becomes NA, not zero and not itself", {
+  expect_equal(mm_suppress_small_cells(c(1), min_count = 2L), NA_real_)
+})
+
+test_that("a count at or above min_count passes through unchanged", {
+  expect_equal(mm_suppress_small_cells(c(2, 5, 100), min_count = 2L), c(2, 5, 100))
+})
+
+test_that("min_count = 1 suppresses nothing (every nonzero count already clears it)", {
+  expect_equal(mm_suppress_small_cells(c(0, 1, 2, 5), min_count = 1L), c(0, 1, 2, 5))
+})
+
+test_that("REGRESSION: zero and suppressed are never the same value after this step", {
+  # The defect this guards: folding 1-provider cells into 0 would make a
+  # true "no providers at all" indistinguishable from "we are hiding a small
+  # number" -- opposite failure modes, both wrong.
+  out <- mm_suppress_small_cells(c(0, 1, 2), min_count = 2L)
+  expect_equal(out[1], 0)
+  expect_true(is.na(out[2]))
+  expect_false(isTRUE(out[1] == out[2]))
+})
+
+# --------------------------------------------------------------------------
+# mysterymaps_hrr_maps: zero-aware colouring (REGRESSION for the original
+# bug -- mm_honeycomb_counts() dropped every cell below min_count, including
+# true zeros, so a region with no providers drew no hexagon at all)
+# --------------------------------------------------------------------------
+
+test_that("REGRESSION: a true zero and a suppressed cell get different colours", {
+  skip_if_not_installed("sf")
+  area <- hex_area(lon = c(-105, -100), lat = c(38, 42))
+  # One lone provider (will be suppressed at the default min_count = 2);
+  # nothing anywhere else in the study area (true, measured zero).
+  lone <- hex_points(-102.5, 40.0)
+
+  full <- suppressWarnings(suppressMessages(
+    mm_honeycomb_counts_full_grid(area, lone, value_col = "physician_count", cellsize = 0.5)))
+  full$physician_count <- mm_suppress_small_cells(full$physician_count, min_count = 2L)
+
+  sc <- mysterymaps_jenks_zero_scale(
+    full$physician_count, k = 6, zero_col = "#e0e0e0", na_col = "#ffffff",
+    na_label = "Suppressed (<2 providers)",
+    palette = function(kk) viridisLite::viridis(kk, option = "viridis"))
+  colors <- sc$color(full$physician_count)
+
+  expect_true(any(colors == "#e0e0e0"))   # true zeros present
+  expect_true(any(colors == "#ffffff"))   # the suppressed lone-provider cell
+  expect_true(any(grepl("Suppressed", sc$leg_labs)))
+})
+
+test_that("the figure still builds with every cell suppressed or zero (no positive class at all)", {
+  skip_if_not_installed("sf")
+  skip_if_not_installed("ggplot2")
+  skip_if_not_installed("ggspatial")
+  skip_if_not_installed("gridExtra")
+  skip_if_not_installed("rnaturalearth")
+
+  stub_usa()
+  local_stub_hrr_shapefile()
+
+  grob <- suppressWarnings(suppressMessages(
+    mysterymaps_hrr_maps(mm_points(1, lon = -108, lat = 35),
+                         output_dir = withr::local_tempdir(), dpi = 72, width = 4, height = 3)))
+  expect_s3_class(grob, "gtable")
+})
+
+test_that("min_count, k, zero_color and na_color are validated", {
+  skip_if_not_installed("sf")
+  skip_if_not_installed("ggplot2")
+  skip_if_not_installed("ggspatial")
+  skip_if_not_installed("gridExtra")
+  skip_if_not_installed("rnaturalearth")
+
+  stub_usa()
+  local_stub_hrr_shapefile()
+  pts <- mm_points(1, lon = -108, lat = 35)
+  out <- withr::local_tempdir()
+
+  expect_error(mysterymaps_hrr_maps(pts, output_dir = out, min_count = -1L))
+  expect_error(mysterymaps_hrr_maps(pts, output_dir = out, k = 0L))
+  expect_error(mysterymaps_hrr_maps(pts, output_dir = out, zero_color = 1))
+  expect_error(mysterymaps_hrr_maps(pts, output_dir = out, na_color = 1))
+})

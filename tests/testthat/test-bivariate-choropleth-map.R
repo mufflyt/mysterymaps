@@ -57,3 +57,16 @@ testthat::test_that("REGRESSION: skewed data with collapsing quantile breaks sti
     counties, x_var = "rate", y_var = "need", x_label = "X", y_label = "Y")
   testthat::expect_s3_class(p, "ggplot")
 })
+
+testthat::test_that("MYSTERYMAPS_BIVARIATE_PALETTE has all 9 tercile-pair keys, each a valid hex colour", {
+  testthat::expect_length(MYSTERYMAPS_BIVARIATE_PALETTE, 9L)
+  expected_keys <- paste(rep(1:3, each = 3), rep(1:3, 3), sep = "-")
+  testthat::expect_setequal(names(MYSTERYMAPS_BIVARIATE_PALETTE), expected_keys)
+  testthat::expect_true(all(grepl("^#[0-9A-Fa-f]{6}$", MYSTERYMAPS_BIVARIATE_PALETTE)))
+})
+
+testthat::test_that("MYSTERYMAPS_BIVARIATE_PALETTE is the default palette argument", {
+  testthat::expect_identical(
+    formals(mysterymaps_bivariate_choropleth_map)$palette,
+    quote(MYSTERYMAPS_BIVARIATE_PALETTE))
+})

@@ -11,7 +11,11 @@ mysterymaps_hrr_maps(
   output_dir = NULL,
   dpi = 600,
   width = 7,
-  height = 5
+  height = 5,
+  min_count = 2L,
+  k = 6,
+  zero_color = "#e0e0e0",
+  na_color = "#ffffff"
 )
 }
 \arguments{
@@ -33,6 +37,21 @@ session-specific folder inside \code{\link[=tempdir]{tempdir()}}.}
 \item{width}{Numeric.  Figure width in inches.  Default \code{7}.}
 
 \item{height}{Numeric.  Figure height in inches.  Default \code{5}.}
+
+\item{min_count}{Integer.  Cells holding fewer than this many providers are
+coloured as suppressed (\code{na_color}) rather than drawn with their true
+count.  Default \code{2L}, the long-standing behaviour: a cell with exactly
+one provider is small-cell-suppressed rather than potentially
+identifying.  A cell with \emph{zero} providers is a different, measured
+finding and is never suppressed by this argument -- see Details.}
+
+\item{k}{Integer.  Target number of Jenks classes for the positive
+(at-or-above-\code{min_count}) cell counts, passed to
+\code{\link[=mysterymaps_jenks_zero_scale]{mysterymaps_jenks_zero_scale()}}.  Default \code{6}.}
+
+\item{zero_color, na_color}{Colours for a cell with a measured zero count
+and a small-cell-suppressed cell, respectively.  Defaults match
+\code{\link[=mysterymaps_jenks_zero_scale]{mysterymaps_jenks_zero_scale()}}'s own.}
 }
 \value{
 Invisibly returns a \code{grob} object (from
@@ -46,6 +65,29 @@ Joins physician point data to HRR polygons, computes per-HRR physician
 counts, and renders a honeycomb choropleth of the contiguous US with
 Alaska, Hawaii, and Puerto Rico as inset maps.  The figure is saved as
 both \code{.tiff} and \code{.png} to \code{output_dir}.
+}
+\details{
+Earlier versions of this function called \code{\link[=mm_honeycomb_counts]{mm_honeycomb_counts()}}, which
+drops every cell below \code{min_count} -- including genuine zero-count cells
+-- so a region with no providers at all had no hexagon drawn rather than
+one visibly shaded as zero. That is the same "zero is a category, not an
+absence" problem this package's other choropleth builders have been fixed
+for one at a time; this function was the one \code{\link[=mm_honeycomb_counts]{mm_honeycomb_counts()}} and
+\code{\link[=mysterymaps_hex_bin_counts]{mysterymaps_hex_bin_counts()}} were originally extracted from, and had not
+itself been updated to use either.
+
+This function now calls the internal full-grid counter (every cell in
+\code{usa}, zero-count ones included) and classifies the result with
+\code{\link[=mysterymaps_jenks_zero_scale]{mysterymaps_jenks_zero_scale()}} instead of a continuous
+\code{scale_fill_viridis_c()}: a true zero gets \code{zero_color} and its own
+legend entry, a cell below \code{min_count} is suppressed to \code{na_color} with a
+"Suppressed" legend entry (a measurement that exists but is not
+separately reportable, not an unmeasured cell -- the two are different
+claims, the same distinction \code{\link[=mysterymaps_hex_bin_rate]{mysterymaps_hex_bin_rate()}} makes for a
+zero denominator), and cells at or above \code{min_count} are Jenks-classified.
+The same scale -- computed once, before the contiguous/Alaska/Hawaii/
+Puerto Rico split -- colours every panel, so the legend shown on the main
+map is valid for the insets too.
 }
 \examples{
 \dontshow{if (interactive()) withAutoprint(\{ # examplesIf}

@@ -4,7 +4,15 @@
 \alias{mysterymaps_map_block_group}
 \title{Function to create and export a map showing block group overlap with isochrones}
 \usage{
-mysterymaps_map_block_group(bg_data, isochrones_data, output_dir = "figures/")
+mysterymaps_map_block_group(
+  bg_data,
+  isochrones_data,
+  output_dir = "figures/",
+  k = 6,
+  digits = 2,
+  zero_color = "#e0e0e0",
+  na_color = "#ffffff"
+)
 }
 \arguments{
 \item{bg_data}{A SpatialPolygonsDataFrame representing block group data.}
@@ -12,6 +20,18 @@ mysterymaps_map_block_group(bg_data, isochrones_data, output_dir = "figures/")
 \item{isochrones_data}{A SpatialPolygonsDataFrame representing isochrone data.}
 
 \item{output_dir}{Directory path for exporting the map files. Default is "figures/".}
+
+\item{k}{\code{integer(1)}: target number of Jenks classes for the positive
+(nonzero) overlap values, passed to \code{\link[=mysterymaps_jenks_zero_scale]{mysterymaps_jenks_zero_scale()}}.
+Default \code{6}.}
+
+\item{digits}{\code{integer(1)}: decimal places in the legend's overlap labels.
+Default \code{2} (overlap is a proportion, typically fractional).}
+
+\item{zero_color, na_color}{Colours for a block group with zero measured
+overlap and one whose overlap is unmeasurable (a degenerate polygon area
+-- see Details), respectively. Defaults match
+\code{\link[=mysterymaps_jenks_zero_scale]{mysterymaps_jenks_zero_scale()}}'s own.}
 }
 \value{
 \code{invisible(NULL)}. Side effects: writes the block group overlap map
@@ -20,6 +40,20 @@ as an HTML file and a PNG image to \code{output_dir}.
 \description{
 This function creates a map that displays block groups and their overlap with isochrones.
 The map is exported as an HTML file and a PNG image.
+}
+\details{
+\code{bg_data$overlap} carries two different kinds of absence that a plain
+continuous \code{leaflet::colorNumeric()} scale (the original implementation)
+could not tell apart. \code{\link[=mysterymaps_calculate_overlap]{mysterymaps_calculate_overlap()}} coalesces a block
+group's intersection area to \code{0} when it does not intersect any isochrone
+at all -- a measured zero, and the coverage gap this map exists to show --
+but leaves \code{overlap} as \code{NA} when the block group's own area is degenerate
+(zero or negative, an invalid polygon). Putting a measured zero at the
+lightest end of the same purple gradient as a 2\% overlap reads as "barely
+covered" rather than "not covered at all". This function now classifies
+\code{overlap} with \code{\link[=mysterymaps_jenks_zero_scale]{mysterymaps_jenks_zero_scale()}} instead: a measured zero
+gets \code{zero_color}, a degenerate-area \code{NA} gets \code{na_color}, and the
+positive values are Jenks-classified.
 }
 \examples{
 \dontshow{if (interactive()) withAutoprint(\{ # examplesIf}

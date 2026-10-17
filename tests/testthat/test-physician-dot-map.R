@@ -55,6 +55,43 @@ testthat::test_that("the coloured path builds, with and without a palette", {
                                   palette = c(a = "red", b = "blue")), "ggplot")
 })
 
+testthat::test_that("outline = FALSE builds for every colour-path combination", {
+  skip_unless_spatial()
+  f <- fixture()
+  testthat::expect_s3_class(
+    mysterymaps_physician_dot_map(f$pts, f$poly, outline = FALSE), "ggplot")
+  testthat::expect_s3_class(
+    mysterymaps_physician_dot_map(f$pts, f$poly, outline = FALSE, color_var = "grp"),
+    "ggplot")
+  testthat::expect_s3_class(
+    mysterymaps_physician_dot_map(f$pts, f$poly, outline = FALSE, color_var = "grp",
+                                  palette = c(a = "red", b = "blue")),
+    "ggplot")
+})
+
+testthat::test_that("invalid basemap or physician geometry is repaired rather than erroring", {
+  skip_unless_spatial()
+  f <- fixture()
+  bowtie <- sf::st_polygon(list(cbind(c(-100, -80, -100, -80, -100), c(30, 30, 45, 45, 30))))
+  bad_poly <- sf::st_as_sf(sf::st_sfc(bowtie, crs = 4326))
+  testthat::expect_true(any(!sf::st_is_valid(bad_poly)))
+
+  testthat::expect_s3_class(
+    mysterymaps_physician_dot_map(f$pts, bad_poly), "ggplot")
+})
+
+testthat::test_that("each needed package is named in its own error", {
+  f <- fixture()
+  for (pkg in c("sf", "ggplot2")) {
+    testthat::local_mocked_bindings(
+      requireNamespace = function(package, ...) !identical(package, pkg),
+      .package = "base")
+    testthat::expect_error(
+      mysterymaps_physician_dot_map(f$pts, f$poly),
+      sprintf("needs the '%s' package", pkg))
+  }
+})
+
 testthat::test_that("a zero-row input names the likely cause", {
   # "no physicians found" reads as an empty population. It is almost always a
   # label mismatch upstream, and the message must say so.
