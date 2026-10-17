@@ -29,6 +29,10 @@ Pieces for maps that are not the template.
   : Add a name-search box over a point layer
 - [`mysterymaps_map_physicians()`](https://mufflyt.github.io/mysterymaps/reference/mysterymaps_map_physicians.md)
   : Create and Save a Leaflet Dot Map of Physicians
+- [`mysterymaps_scale_bar()`](https://mufflyt.github.io/mysterymaps/reference/mysterymaps_scale_bar.md)
+  : Add an imperial-unit scale bar to a ggplot map
+- [`mysterymaps_jitter_points()`](https://mufflyt.github.io/mysterymaps/reference/mysterymaps_jitter_points.md)
+  : Jitter sf points by a fixed real-world radius, deterministically
 
 ## Scales and labels
 
@@ -42,6 +46,8 @@ Colour classes and the text that goes beside them.
   : Format provider credentials for display after a name
 - [`mysterymaps_place_title_case()`](https://mufflyt.github.io/mysterymaps/reference/mysterymaps_place_title_case.md)
   : Title-case a place name without mangling it
+- [`MYSTERYMAPS_BIVARIATE_PALETTE`](https://mufflyt.github.io/mysterymaps/reference/MYSTERYMAPS_BIVARIATE_PALETTE.md)
+  : Default bivariate choropleth palette (3x3 classes)
 
 ## Static maps
 
@@ -74,6 +80,31 @@ ggplot2 output.
 - [`mysterymaps_plot_isochrones()`](https://mufflyt.github.io/mysterymaps/reference/mysterymaps_plot_isochrones.md)
   : Create Individual Isochrone Maps and Shapefiles
 
+- [`mysterymaps_bivariate_choropleth_map()`](https://mufflyt.github.io/mysterymaps/reference/mysterymaps_bivariate_choropleth_map.md)
+  : Two-variable (bivariate) choropleth map
+
+- [`mysterymaps_cartogram_map()`](https://mufflyt.github.io/mysterymaps/reference/mysterymaps_cartogram_map.md)
+  : Drive-time cartogram map
+
+- [`mysterymaps_catchment_redundancy_map()`](https://mufflyt.github.io/mysterymaps/reference/mysterymaps_catchment_redundancy_map.md)
+  : Catchment-redundancy choropleth map
+
+- [`mysterymaps_flow_map()`](https://mufflyt.github.io/mysterymaps/reference/mysterymaps_flow_map.md)
+  : Routed drive-time flow map
+
+- [`mysterymaps_rate_choropleth_map()`](https://mufflyt.github.io/mysterymaps/reference/mysterymaps_rate_choropleth_map.md)
+  : Rate choropleth map (numerator per denominator)
+
+- [`mysterymaps_pathway_small_multiples_map()`](https://mufflyt.github.io/mysterymaps/reference/mysterymaps_pathway_small_multiples_map.md)
+  : Small-multiple dot map, one panel per pathway
+
+## Geospatial aggregation
+
+Binning points onto a grid, areal interpolation.
+
+- [`mysterymaps_hex_bin_counts()`](https://mufflyt.github.io/mysterymaps/reference/mysterymaps_hex_bin_counts.md)
+  : Hex-bin point counts over any study-area boundary
+
 ## Isochrones, geocoding and overlap
 
 - [`mysterymaps_create_isochrones()`](https://mufflyt.github.io/mysterymaps/reference/mysterymaps_create_isochrones.md)
@@ -91,3 +122,5 @@ ggplot2 output.
   : Clear the isochrone memoization cache
 - [`mysterymaps_geocode()`](https://mufflyt.github.io/mysterymaps/reference/mysterymaps_geocode.md)
   : Geocode unique addresses from a file
+- [`MYSTERYMAPS_ISOCHRONE_BANDS_MINUTES`](https://mufflyt.github.io/mysterymaps/reference/MYSTERYMAPS_ISOCHRONE_BANDS_MINUTES.md)
+  : Default isochrone drive-time bands, in minutes

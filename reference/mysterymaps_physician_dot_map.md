@@ -20,7 +20,11 @@ mysterymaps_physician_dot_map(
   point_alpha = 0.75,
   color_var = NULL,
   palette = NULL,
-  crs = 5070
+  crs = 5070,
+  jitter_miles = 1.5,
+  jitter_seed = 42,
+  outline = TRUE,
+  point_outline_color = "black"
 )
 ```
 
@@ -63,6 +67,33 @@ mysterymaps_physician_dot_map(
   Projection for display. Default EPSG:5070, Albers Equal Area,
   appropriate for the contiguous United States.
 
+- jitter_miles:
+
+  `numeric(1)`: maximum deterministic jitter radius, in miles, applied
+  via
+  [`mysterymaps_jitter_points()`](https://mufflyt.github.io/mysterymaps/reference/mysterymaps_jitter_points.md)
+  before plotting. Default `1.5` (under the 2-mile ceiling), so
+  physicians stacked on the same building or block separate visually
+  without a run-to-run-unstable map. `0` disables jitter.
+
+- jitter_seed:
+
+  `numeric(1)` or `NULL`: seed for `jitter_miles`. Default `42`, so the
+  jitter – and therefore the published figure – is reproducible. Passed
+  to
+  [`mysterymaps_jitter_points()`](https://mufflyt.github.io/mysterymaps/reference/mysterymaps_jitter_points.md).
+
+- outline:
+
+  `logical(1)`: draw points as a filled, outlined shape (`shape = 21`)
+  rather than a solid dot (`shape = 16`). Default `TRUE`; an outline
+  reads more clearly against a busy basemap or a `color_var` fill that
+  is close in hue to the basemap.
+
+- point_outline_color:
+
+  Outline colour used when `outline = TRUE`.
+
 ## Value
 
 A `ggplot` object. The caller saves it; this function writes nothing.
@@ -95,3 +126,17 @@ says `MIG`) yields zero rows, and the original stopped with "no
 physicians found", which reads as a real absence rather than a label
 mismatch. This function refuses a zero-row input with a message that
 says so.
+
+## Examples
+
+``` r
+if (FALSE) { # interactive()
+physicians <- sf::st_as_sf(
+  data.frame(lon = -99.5 + 0:2, lat = 40.2 + (0:2) * 0.2),
+  coords = c("lon", "lat"), crs = 4326)
+basemap <- sf::st_sf(geometry = sf::st_sfc(
+  sf::st_polygon(list(cbind(c(-100, -97, -97, -100, -100), c(39, 39, 42, 42, 39)))),
+  crs = 4326))
+mysterymaps_physician_dot_map(physicians, basemap)
+}
+```

@@ -129,6 +129,12 @@ Other static (ggplot2) maps:
 | [`mysterymaps_geographic_map()`](https://mufflyt.github.io/mysterymaps/reference/mysterymaps_geographic_map.md) | state choropleth of an outcome rate |
 | [`mysterymaps_map_acceptance_rate()`](https://mufflyt.github.io/mysterymaps/reference/mysterymaps_map_acceptance_rate.md) | state or HRR acceptance-rate choropleth |
 | [`mysterymaps_hrr_maps()`](https://mufflyt.github.io/mysterymaps/reference/mysterymaps_hrr_maps.md) | Hospital Referral Region maps, by trait |
+| [`mysterymaps_rate_choropleth_map()`](https://mufflyt.github.io/mysterymaps/reference/mysterymaps_rate_choropleth_map.md) | numerator/denominator rate choropleth, log-scaled by default |
+| [`mysterymaps_bivariate_choropleth_map()`](https://mufflyt.github.io/mysterymaps/reference/mysterymaps_bivariate_choropleth_map.md) | joint tercile class of two variables (e.g. need vs. scarcity), one map |
+| [`mysterymaps_catchment_redundancy_map()`](https://mufflyt.github.io/mysterymaps/reference/mysterymaps_catchment_redundancy_map.md) | how many providers’ catchments overlap each area, not just whether one does |
+| [`mysterymaps_cartogram_map()`](https://mufflyt.github.io/mysterymaps/reference/mysterymaps_cartogram_map.md) | polygons warped by drive time instead of true area |
+| [`mysterymaps_flow_map()`](https://mufflyt.github.io/mysterymaps/reference/mysterymaps_flow_map.md) | pre-routed paths coloured by travel time, over a basemap |
+| [`mysterymaps_pathway_small_multiples_map()`](https://mufflyt.github.io/mysterymaps/reference/mysterymaps_pathway_small_multiples_map.md) | one facet per pathway/certification group, plus a combined panel |
 
 ------------------------------------------------------------------------
 
@@ -214,6 +220,7 @@ instead of repeating caveats in every popup.
 | [`mysterymaps_gate_provider_coverage()`](https://mufflyt.github.io/mysterymaps/reference/mysterymaps_gate_provider_coverage.md) | fail loudly when providers fall outside a surface |
 | [`mysterymaps_clear_isochrone_cache()`](https://mufflyt.github.io/mysterymaps/reference/mysterymaps_clear_isochrone_cache.md) | drop the cached routing results |
 | [`mysterymaps_geocode()`](https://mufflyt.github.io/mysterymaps/reference/mysterymaps_geocode.md) | geocode an address file |
+| [`mysterymaps_hex_bin_counts()`](https://mufflyt.github.io/mysterymaps/reference/mysterymaps_hex_bin_counts.md) | hex-bin point counts over any boundary, not just HRR/physician maps |
 
 ------------------------------------------------------------------------
 

@@ -72,3 +72,14 @@ Other county-access-template:
 [`mysterymaps_gate_provider_coverage()`](https://mufflyt.github.io/mysterymaps/reference/mysterymaps_gate_provider_coverage.md),
 [`mysterymaps_guard_water_masks()`](https://mufflyt.github.io/mysterymaps/reference/mysterymaps_guard_water_masks.md),
 [`mysterymaps_notes_panel()`](https://mufflyt.github.io/mysterymaps/reference/mysterymaps_notes_panel.md)
+
+## Examples
+
+``` r
+if (FALSE) { # interactive() && requireNamespace("leaflet.extras", quietly = TRUE)
+m <- leaflet::leaflet() |> leaflet::addTiles() |>
+  leaflet::addCircleMarkers(lng = -104.99, lat = 39.74, label = "Denver Clinic",
+                           group = "Providers")
+mysterymaps_name_search(m, group = "Providers", placeholder = "Search provider name...")
+}
+```

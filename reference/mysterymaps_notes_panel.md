@@ -75,3 +75,17 @@ Other county-access-template:
 [`mysterymaps_gate_provider_coverage()`](https://mufflyt.github.io/mysterymaps/reference/mysterymaps_gate_provider_coverage.md),
 [`mysterymaps_guard_water_masks()`](https://mufflyt.github.io/mysterymaps/reference/mysterymaps_guard_water_masks.md),
 [`mysterymaps_name_search()`](https://mufflyt.github.io/mysterymaps/reference/mysterymaps_name_search.md)
+
+## Examples
+
+``` r
+if (FALSE) { # interactive() && requireNamespace("leaflet", quietly = TRUE)
+m <- leaflet::leaflet() |> leaflet::addTiles()
+mysterymaps_notes_panel(
+  m, title = "About This Map (2023)",
+  sections = list("Shading" = "Providers per 1,000 births, by county."),
+  vintages = data.frame(source = c("NPPES", "NCHS Births"),
+                        vintage = c("2023", "2021-2023")),
+  as_of = "2023")
+}
+```

@@ -70,3 +70,21 @@ Other county-access-template:
 [`mysterymaps_guard_water_masks()`](https://mufflyt.github.io/mysterymaps/reference/mysterymaps_guard_water_masks.md),
 [`mysterymaps_name_search()`](https://mufflyt.github.io/mysterymaps/reference/mysterymaps_name_search.md),
 [`mysterymaps_notes_panel()`](https://mufflyt.github.io/mysterymaps/reference/mysterymaps_notes_panel.md)
+
+## Examples
+
+``` r
+if (FALSE) { # interactive()
+providers <- sf::st_as_sf(
+  data.frame(lon = c(-99.5, -99.5, -90), lat = c(40.2, 40.4, 40.2)),
+  coords = c("lon", "lat"), crs = 4326)
+surface <- sf::st_sf(band = "30 minutes", geometry = sf::st_sfc(
+  sf::st_polygon(list(cbind(c(-100, -99, -99, -100, -100), c(40, 40, 41, 41, 40)))),
+  crs = 4326))
+# the third provider sits outside the dissolved surface built from them,
+# so this call reports (and, by default, errors on) the gap
+tryCatch(
+  mysterymaps_gate_provider_coverage(providers, surface, label = "30-minute"),
+  error = function(e) conditionMessage(e))
+}
+```

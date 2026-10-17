@@ -38,3 +38,13 @@ Other coverage-surfaces:
 [`mysterymaps_base_legend_switcher()`](https://mufflyt.github.io/mysterymaps/reference/mysterymaps_base_legend_switcher.md),
 [`mysterymaps_jenks_zero_scale()`](https://mufflyt.github.io/mysterymaps/reference/mysterymaps_jenks_zero_scale.md),
 [`mysterymaps_zoom_gated_labels()`](https://mufflyt.github.io/mysterymaps/reference/mysterymaps_zoom_gated_labels.md)
+
+## Examples
+
+``` r
+if (FALSE) { # interactive() && requireNamespace("leaflet", quietly = TRUE)
+m <- leaflet::leaflet() |> leaflet::addTiles() |>
+  leaflet::addLegend(colors = "#08519c", labels = "Supply", group = "Supply")
+mysterymaps_register_base_legend(m, "Supply")
+}
+```

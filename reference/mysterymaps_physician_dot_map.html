@@ -66,7 +66,11 @@ failure are handled here rather than left for the next caller.</p>
 <span>  point_alpha <span class="op">=</span> <span class="fl">0.75</span>,</span>
 <span>  color_var <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  palette <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  crs <span class="op">=</span> <span class="fl">5070</span></span>
+<span>  crs <span class="op">=</span> <span class="fl">5070</span>,</span>
+<span>  jitter_miles <span class="op">=</span> <span class="fl">1.5</span>,</span>
+<span>  jitter_seed <span class="op">=</span> <span class="fl">42</span>,</span>
+<span>  outline <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  point_outline_color <span class="op">=</span> <span class="st">"black"</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -108,6 +112,31 @@ failure are handled here rather than left for the next caller.</p>
 <dd><p>Projection for display. Default EPSG:5070, Albers Equal Area,
 appropriate for the contiguous United States.</p></dd>
 
+
+<dt id="arg-jitter-miles">jitter_miles<a class="anchor" aria-label="anchor" href="#arg-jitter-miles"></a></dt>
+<dd><p><code>numeric(1)</code>: maximum deterministic jitter radius, in
+miles, applied via <code><a href="mysterymaps_jitter_points.html">mysterymaps_jitter_points()</a></code> before plotting. Default
+<code>1.5</code> (under the 2-mile ceiling), so physicians stacked on the same
+building or block separate visually without a run-to-run-unstable map.
+<code>0</code> disables jitter.</p></dd>
+
+
+<dt id="arg-jitter-seed">jitter_seed<a class="anchor" aria-label="anchor" href="#arg-jitter-seed"></a></dt>
+<dd><p><code>numeric(1)</code> or <code>NULL</code>: seed for <code>jitter_miles</code>. Default
+<code>42</code>, so the jitter – and therefore the published figure – is
+reproducible. Passed to <code><a href="mysterymaps_jitter_points.html">mysterymaps_jitter_points()</a></code>.</p></dd>
+
+
+<dt id="arg-outline">outline<a class="anchor" aria-label="anchor" href="#arg-outline"></a></dt>
+<dd><p><code>logical(1)</code>: draw points as a filled, outlined shape
+(<code>shape = 21</code>) rather than a solid dot (<code>shape = 16</code>). Default <code>TRUE</code>;
+an outline reads more clearly against a busy basemap or a <code>color_var</code>
+fill that is close in hue to the basemap.</p></dd>
+
+
+<dt id="arg-point-outline-color">point_outline_color<a class="anchor" aria-label="anchor" href="#arg-point-outline-color"></a></dt>
+<dd><p>Outline colour used when <code>outline = TRUE</code>.</p></dd>
+
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
@@ -136,6 +165,19 @@ which reads as a real absence rather than a label mismatch. This function
 refuses a zero-row input with a message that says so.</p>
     </div>
 
+    <div class="section level2">
+    <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span> <span class="co"># interactive()</span></span></span>
+<span class="r-in"><span><span class="va">physicians</span> <span class="op">&lt;-</span> <span class="fu">sf</span><span class="fu">::</span><span class="fu"><a href="https://r-spatial.github.io/sf/reference/st_as_sf.html" class="external-link">st_as_sf</a></span><span class="op">(</span></span></span>
+<span class="r-in"><span>  <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>lon <span class="op">=</span> <span class="op">-</span><span class="fl">99.5</span> <span class="op">+</span> <span class="fl">0</span><span class="op">:</span><span class="fl">2</span>, lat <span class="op">=</span> <span class="fl">40.2</span> <span class="op">+</span> <span class="op">(</span><span class="fl">0</span><span class="op">:</span><span class="fl">2</span><span class="op">)</span> <span class="op">*</span> <span class="fl">0.2</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>  coords <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"lon"</span>, <span class="st">"lat"</span><span class="op">)</span>, crs <span class="op">=</span> <span class="fl">4326</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">basemap</span> <span class="op">&lt;-</span> <span class="fu">sf</span><span class="fu">::</span><span class="fu"><a href="https://r-spatial.github.io/sf/reference/sf.html" class="external-link">st_sf</a></span><span class="op">(</span>geometry <span class="op">=</span> <span class="fu">sf</span><span class="fu">::</span><span class="fu"><a href="https://r-spatial.github.io/sf/reference/sfc.html" class="external-link">st_sfc</a></span><span class="op">(</span></span></span>
+<span class="r-in"><span>  <span class="fu">sf</span><span class="fu">::</span><span class="fu"><a href="https://r-spatial.github.io/sf/reference/st.html" class="external-link">st_polygon</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/cbind.html" class="external-link">cbind</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="op">-</span><span class="fl">100</span>, <span class="op">-</span><span class="fl">97</span>, <span class="op">-</span><span class="fl">97</span>, <span class="op">-</span><span class="fl">100</span>, <span class="op">-</span><span class="fl">100</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">39</span>, <span class="fl">39</span>, <span class="fl">42</span>, <span class="fl">42</span>, <span class="fl">39</span><span class="op">)</span><span class="op">)</span><span class="op">)</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>  crs <span class="op">=</span> <span class="fl">4326</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu">mysterymaps_physician_dot_map</span><span class="op">(</span><span class="va">physicians</span>, <span class="va">basemap</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="op">}</span></span></span>
+</code></pre></div>
+    </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside></div>
 

@@ -48,3 +48,14 @@ Other coverage-surfaces:
 [`mysterymaps_base_legend_switcher()`](https://mufflyt.github.io/mysterymaps/reference/mysterymaps_base_legend_switcher.md),
 [`mysterymaps_jenks_zero_scale()`](https://mufflyt.github.io/mysterymaps/reference/mysterymaps_jenks_zero_scale.md),
 [`mysterymaps_register_base_legend()`](https://mufflyt.github.io/mysterymaps/reference/mysterymaps_register_base_legend.md)
+
+## Examples
+
+``` r
+if (FALSE) { # interactive() && requireNamespace("leaflet", quietly = TRUE)
+m <- leaflet::leaflet() |> leaflet::addTiles() |>
+  leaflet::addCircleMarkers(lng = -104.99, lat = 39.74, label = "Denver",
+                           group = "Providers")
+mysterymaps_zoom_gated_labels(m, "Providers", min_zoom = 9, max_labels = 400)
+}
+```
