@@ -22,6 +22,7 @@ mysterymaps_clear_isochrone_cache()
 \code{\link[=mysterymaps_create_isochrones]{mysterymaps_create_isochrones()}} which builds the memoized cache.
 
 Other mapping:
+\code{\link[=mysterymaps_accessibility_map]{mysterymaps_accessibility_map()}},
 \code{\link[=mysterymaps_bivariate_choropleth_map]{mysterymaps_bivariate_choropleth_map()}},
 \code{\link[=mysterymaps_cartogram_map]{mysterymaps_cartogram_map()}},
 \code{\link[=mysterymaps_catchment_redundancy_map]{mysterymaps_catchment_redundancy_map()}},

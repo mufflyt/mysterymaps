@@ -9,6 +9,7 @@ bbox
 behaviour
 behaviours
 capitalise
+cartogram
 CDN
 checkpointed
 choropleth
@@ -26,6 +27,7 @@ downloader
 EPSG
 errored
 erroring
+favour
 formatter
 Formatter
 geocode
@@ -76,6 +78,7 @@ pkgdown
 positionally
 practises
 pre
+productizing
 proj
 rangeland
 README
@@ -91,11 +94,15 @@ SFCA
 SpatialPolygonsDataFrame
 SSOT
 subspecialty
+tercile
+terciles
 th
+tibble
 tooltips
 unmeasurable
 unrecognised
 unstroked
+urogynecologist
 urogynecology
 viridis
 Viridis

@@ -108,6 +108,7 @@ mysterymaps_cartogram_map(
 }
 \seealso{
 Other mapping:
+\code{\link[=mysterymaps_accessibility_map]{mysterymaps_accessibility_map()}},
 \code{\link[=mysterymaps_bivariate_choropleth_map]{mysterymaps_bivariate_choropleth_map()}},
 \code{\link[=mysterymaps_catchment_redundancy_map]{mysterymaps_catchment_redundancy_map()}},
 \code{\link[=mysterymaps_clear_isochrone_cache]{mysterymaps_clear_isochrone_cache()}},

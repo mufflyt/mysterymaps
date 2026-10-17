@@ -219,3 +219,51 @@ test_that("ggplot2, maps and mapproj are each named in their own error", {
       sprintf("'%s' is required", pkg))
   }
 })
+
+# --------------------------------------------------------------------------
+# zero_aware: opt-in only -- mysterymaps_geographic_map() has a confirmed
+# real downstream caller (mufflyt/midwifery, replayed by the downstream-
+# consumer nightly CI), so the default path must stay byte-for-byte unchanged.
+# --------------------------------------------------------------------------
+
+test_that("zero_aware defaults to FALSE and leaves the continuous scale untouched", {
+  skip_unless_ggplot()
+  df <- data.frame(state = c("CO", "CA"), rate = c(0, 0.72))
+  p <- suppressWarnings(mysterymaps_geographic_map(df, outcome_col = "rate"))
+  expect_false(".mm_fill_color" %in% names(p$data))
+  expect_s3_class(p$scales$scales[[1]], "ScaleContinuous")
+})
+
+test_that("REGRESSION: with zero_aware = TRUE, a measured-zero state gets zero_color, not the gradient's dark end", {
+  skip_unless_ggplot()
+  df <- data.frame(state = c("CO", "CA", "TX"), rate = c(0, 0.72, 0.48))
+  p <- mysterymaps_geographic_map(df, outcome_col = "rate", zero_aware = TRUE)
+  co <- unique(p$data$.mm_fill_color[p$data$region == "colorado"])
+  ca <- unique(p$data$.mm_fill_color[p$data$region == "california"])
+  expect_equal(co, "#e0e0e0")
+  expect_false(identical(co, ca))
+})
+
+test_that("zero_color is overridable under zero_aware", {
+  skip_unless_ggplot()
+  df <- data.frame(state = "CO", rate = 0)
+  p <- mysterymaps_geographic_map(df, outcome_col = "rate", zero_aware = TRUE,
+                                  zero_color = "pink")
+  expect_true(any(p$data$.mm_fill_color[!is.na(p$data$.mm_fill_color)] == "pink"))
+})
+
+test_that("passing labels under zero_aware = TRUE warns that it is ignored", {
+  skip_unless_ggplot()
+  df <- data.frame(state = "CO", rate = 0.5)
+  expect_warning(
+    mysterymaps_geographic_map(df, outcome_col = "rate", zero_aware = TRUE,
+                               labels = scales::percent_format()),
+    "ignored")
+})
+
+test_that("zero_aware must be a single logical value", {
+  skip_unless_ggplot()
+  df <- data.frame(state = "CO", rate = 0.5)
+  expect_error(mysterymaps_geographic_map(df, outcome_col = "rate", zero_aware = "yes"),
+               "single logical value")
+})

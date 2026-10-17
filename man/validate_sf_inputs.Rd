@@ -41,7 +41,8 @@ do not contain empty geometries. Invalid geometries are repaired with
 Other geospatial:
 \code{\link[=mm_area_in]{mm_area_in()}},
 \code{\link[=mm_honeycomb_counts]{mm_honeycomb_counts()}},
-\code{\link[=mysterymaps_hex_bin_counts]{mysterymaps_hex_bin_counts()}}
+\code{\link[=mysterymaps_hex_bin_counts]{mysterymaps_hex_bin_counts()}},
+\code{\link[=mysterymaps_hex_bin_rate]{mysterymaps_hex_bin_rate()}}
 }
 \concept{geospatial}
 \keyword{internal}

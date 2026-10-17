@@ -52,11 +52,13 @@ reference:
       - mysterymaps_flow_map
       - mysterymaps_rate_choropleth_map
       - mysterymaps_pathway_small_multiples_map
+      - mysterymaps_accessibility_map
 
   - title: Geospatial aggregation
     desc: Binning points onto a grid, areal interpolation.
     contents:
       - mysterymaps_hex_bin_counts
+      - mysterymaps_hex_bin_rate
 
   - title: Isochrones, geocoding and overlap
     contents:

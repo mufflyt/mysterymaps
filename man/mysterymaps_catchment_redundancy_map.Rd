@@ -12,6 +12,9 @@ mysterymaps_catchment_redundancy_map(
   subtitle = NULL,
   caption = NULL,
   grid_spacing_miles = 5,
+  k = 6,
+  zero_color = "#e0e0e0",
+  na_color = "#ffffff",
   crs = 5070
 )
 }
@@ -29,6 +32,14 @@ the distinct provider.}
 
 \item{grid_spacing_miles}{\code{numeric(1)}: sample grid spacing, in miles.
 Default \code{5}. Smaller is more accurate and slower.}
+
+\item{k}{\code{integer(1)}: target number of Jenks classes for the positive
+(1-or-more) redundancy counts, passed to
+\code{\link[=mysterymaps_jenks_zero_scale]{mysterymaps_jenks_zero_scale()}}. Default \code{6}.}
+
+\item{zero_color, na_color}{Colours for a measured-zero (no coverage at
+all) and an unmeasured polygon, respectively. Defaults match
+\code{\link[=mysterymaps_jenks_zero_scale]{mysterymaps_jenks_zero_scale()}}'s own.}
 
 \item{crs}{Projection for display. Default EPSG:5070 (Albers Equal Area),
 appropriate for the contiguous United States.}
@@ -67,8 +78,16 @@ grid misses entirely is sampled once more directly, at
 \code{\link[sf:st_point_on_surface]{sf::st_point_on_surface()}} (guaranteed to land inside the polygon, unlike
 a bounding-box centroid, which can fall outside an irregular shape).
 
-Fill scale breaks are forced to integers, since a provider count is a
-whole number and the per-polygon summary is a median of whole numbers.
+A redundancy count is classified, not coloured continuously: \code{0} --
+nothing covers this area at all -- is as categorically different from \code{1}
+as \code{1} is different from \code{5}, and a continuous \code{scale_fill_viridis_c()}
+(the original implementation) puts \code{0} at the dark end of the same
+gradient as every low-but-nonzero value, where it reads as merely "low
+redundancy" rather than the "no option at all" finding it actually is.
+\code{\link[=mysterymaps_jenks_zero_scale]{mysterymaps_jenks_zero_scale()}} with \code{digits = NULL} gives whole-number
+legend labels appropriate to a count and puts \code{0} in its own class, so it
+replaces the old \code{scale_fill_viridis_c()} plus a hand-written
+integer-breaks helper.
 
 \code{catchments} must contain exactly one row per \verb{(provider, band)} you want
 counted. If \code{catchments} holds multiple drive-time bands per provider,
@@ -98,6 +117,7 @@ mysterymaps_catchment_redundancy_map(
 }
 \seealso{
 Other mapping:
+\code{\link[=mysterymaps_accessibility_map]{mysterymaps_accessibility_map()}},
 \code{\link[=mysterymaps_bivariate_choropleth_map]{mysterymaps_bivariate_choropleth_map()}},
 \code{\link[=mysterymaps_cartogram_map]{mysterymaps_cartogram_map()}},
 \code{\link[=mysterymaps_clear_isochrone_cache]{mysterymaps_clear_isochrone_cache()}},

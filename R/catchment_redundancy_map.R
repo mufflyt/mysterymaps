@@ -31,8 +31,16 @@
 #' [sf::st_point_on_surface()] (guaranteed to land inside the polygon, unlike
 #' a bounding-box centroid, which can fall outside an irregular shape).
 #'
-#' Fill scale breaks are forced to integers, since a provider count is a
-#' whole number and the per-polygon summary is a median of whole numbers.
+#' A redundancy count is classified, not coloured continuously: `0` --
+#' nothing covers this area at all -- is as categorically different from `1`
+#' as `1` is different from `5`, and a continuous `scale_fill_viridis_c()`
+#' (the original implementation) puts `0` at the dark end of the same
+#' gradient as every low-but-nonzero value, where it reads as merely "low
+#' redundancy" rather than the "no option at all" finding it actually is.
+#' [mysterymaps_jenks_zero_scale()] with `digits = NULL` gives whole-number
+#' legend labels appropriate to a count and puts `0` in its own class, so it
+#' replaces the old `scale_fill_viridis_c()` plus a hand-written
+#' integer-breaks helper.
 #'
 #' `catchments` must contain exactly one row per `(provider, band)` you want
 #' counted. If `catchments` holds multiple drive-time bands per provider,
@@ -49,6 +57,12 @@
 #' @param title,subtitle,caption Character labels. `NULL` omits.
 #' @param grid_spacing_miles `numeric(1)`: sample grid spacing, in miles.
 #'   Default `5`. Smaller is more accurate and slower.
+#' @param k `integer(1)`: target number of Jenks classes for the positive
+#'   (1-or-more) redundancy counts, passed to
+#'   [mysterymaps_jenks_zero_scale()]. Default `6`.
+#' @param zero_color,na_color Colours for a measured-zero (no coverage at
+#'   all) and an unmeasured polygon, respectively. Defaults match
+#'   [mysterymaps_jenks_zero_scale()]'s own.
 #' @param crs Projection for display. Default EPSG:5070 (Albers Equal Area),
 #'   appropriate for the contiguous United States.
 #'
@@ -79,6 +93,9 @@ mysterymaps_catchment_redundancy_map <- function(catchments,
                                                   subtitle = NULL,
                                                   caption = NULL,
                                                   grid_spacing_miles = 5,
+                                                  k = 6,
+                                                  zero_color = "#e0e0e0",
+                                                  na_color = "#ffffff",
                                                   crs = 5070) {
   for (pkg in c("sf", "ggplot2")) {
     if (!requireNamespace(pkg, quietly = TRUE)) {
@@ -92,6 +109,7 @@ mysterymaps_catchment_redundancy_map <- function(catchments,
   checkmate::assert_string(provider_id_var)
   checkmate::assert_subset(provider_id_var, names(catchments))
   checkmate::assert_number(grid_spacing_miles, lower = 0.01)
+  checkmate::assert_int(k, lower = 1L)
   if (nrow(catchments) == 0L) {
     stop("mysterymaps_catchment_redundancy_map(): `catchments` has zero rows.",
          call. = FALSE)
@@ -150,18 +168,17 @@ mysterymaps_catchment_redundancy_map <- function(catchments,
 
   polygons_disp <- sf::st_transform(polygons_p, crs = crs)
 
-  integer_breaks <- function(limits) {
-    b <- unique(round(scales::extended_breaks()(limits)))
-    b[b >= floor(limits[1]) & b <= ceiling(limits[2])]
-  }
+  sc <- mysterymaps_jenks_zero_scale(
+    polygons_disp$.mm_redundancy, k = k, zero_col = zero_color, na_col = na_color,
+    palette = function(kk) viridisLite::viridis(kk, option = "viridis"))
+  polygons_disp$.mm_fill_color <- sc$color(polygons_disp$.mm_redundancy)
 
   ggplot2::ggplot() +
-    ggplot2::geom_sf(data = polygons_disp, mapping = ggplot2::aes(fill = .data$.mm_redundancy),
+    ggplot2::geom_sf(data = polygons_disp, mapping = ggplot2::aes(fill = .data$.mm_fill_color),
                      color = "white", linewidth = 0.15) +
-    ggplot2::scale_fill_viridis_c(
-      name = "Number of Overlapping Physician\nCatchment Areas", option = "viridis",
-      na.value = "grey85", breaks = integer_breaks,
-      guide = ggplot2::guide_colorbar(title.position = "top")) +
+    ggplot2::scale_fill_identity(
+      name = "Number of Overlapping Physician\nCatchment Areas", guide = "legend",
+      breaks = sc$leg_cols, labels = sc$leg_labs) +
     ggplot2::labs(title = title, subtitle = subtitle, caption = caption) +
     ggplot2::coord_sf(crs = sf::st_crs(crs), datum = NA) +
     ggplot2::theme_void(base_size = 12) +

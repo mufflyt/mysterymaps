@@ -79,6 +79,7 @@ mysterymaps_bivariate_choropleth_map(
 }
 \seealso{
 Other mapping:
+\code{\link[=mysterymaps_accessibility_map]{mysterymaps_accessibility_map()}},
 \code{\link[=mysterymaps_cartogram_map]{mysterymaps_cartogram_map()}},
 \code{\link[=mysterymaps_catchment_redundancy_map]{mysterymaps_catchment_redundancy_map()}},
 \code{\link[=mysterymaps_clear_isochrone_cache]{mysterymaps_clear_isochrone_cache()}},

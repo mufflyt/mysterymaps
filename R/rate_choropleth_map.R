@@ -20,6 +20,24 @@
 #' title is the one place in the map an abbreviation would otherwise land by
 #' default.
 #'
+#' @section Zero is a category, not the bottom of a gradient:
+#' An earlier version of this function coloured the rate with a plain
+#' continuous `scale_fill_viridis_c()` (optionally log1p-transformed for
+#' skew). That repeats, on a brand-new function, the exact mistake
+#' [mysterymaps_jenks_zero_scale()] exists to prevent: a polygon with a
+#' **measured rate of zero** (real population, no provider) rendered
+#' identically to one just barely above zero, both near the dark end of the
+#' gradient -- on a prior national map this put over half the counties in the
+#' country into one indistinguishable "low" class when the honest answer for
+#' most of them was "none". This function now classifies `.mm_rate` with
+#' [mysterymaps_jenks_zero_scale()] instead: zero gets its own colour and
+#' legend entry, positive rates are Jenks-classified (which is also why there
+#' is no `log_scale` argument any more -- natural breaks already handle the
+#' right-skewed distribution a log transform was compensating for), and a
+#' polygon with a zero *denominator* (`.mm_rate` is `NA`, an undefined rate,
+#' not a measured one) gets `na_color` rather than being folded into the zero
+#' class.
+#'
 #' @param polygons `sf` polygon layer.
 #' @param numerator_var,denominator_var `character(1)`: numeric columns in
 #'   `polygons`.
@@ -28,12 +46,16 @@
 #' @param per `numeric(1)`: rate denominator scale, e.g. `100000` for "per
 #'   100,000". Default `100000`.
 #' @param title,subtitle,caption Character labels. `NULL` omits.
-#' @param log_scale `logical(1)`: colour on a log1p scale. Default `TRUE`;
-#'   rates in this kind of map are typically right-skewed (many near-zero
-#'   areas, a few much higher), and a linear scale would wash out all the
-#'   low end into one colour.
-#' @param viridis_option `character(1)`: passed to
-#'   [ggplot2::scale_fill_viridis_c()]'s `option`.
+#' @param k `integer(1)`: target number of Jenks classes for the positive
+#'   rates, passed to [mysterymaps_jenks_zero_scale()]. Default `6`.
+#' @param digits `integer(1)`: decimal places in the legend's rate labels.
+#'   Default `1`; pass `0` when the rate reads more naturally as a whole
+#'   number (e.g. "per 1,000" counts that are rarely fractional in practice).
+#' @param zero_color,na_color Colours for a measured-zero rate and for an
+#'   undefined (zero-denominator) rate, respectively. Defaults match
+#'   [mysterymaps_jenks_zero_scale()]'s own.
+#' @param viridis_option `character(1)`: passed to the `option` argument of
+#'   the `viridisLite::viridis()` palette used for the positive classes.
 #' @param crs Projection for display. Default EPSG:5070 (Albers Equal Area),
 #'   appropriate for the contiguous United States.
 #'
@@ -61,7 +83,10 @@ mysterymaps_rate_choropleth_map <- function(polygons,
                                             title = NULL,
                                             subtitle = NULL,
                                             caption = NULL,
-                                            log_scale = TRUE,
+                                            k = 6,
+                                            digits = 1,
+                                            zero_color = "#e0e0e0",
+                                            na_color = "#ffffff",
                                             viridis_option = "viridis",
                                             crs = 5070) {
   for (pkg in c("sf", "ggplot2")) {
@@ -78,7 +103,8 @@ mysterymaps_rate_choropleth_map <- function(polygons,
   checkmate::assert_string(denominator_label)
   checkmate::assert_subset(c(numerator_var, denominator_var), names(polygons))
   checkmate::assert_number(per, lower = 0)
-  checkmate::assert_flag(log_scale)
+  checkmate::assert_int(k, lower = 1L)
+  checkmate::assert_int(digits, lower = 0L)
   if (nrow(polygons) == 0L) {
     stop("mysterymaps_rate_choropleth_map(): `polygons` has zero rows.",
          call. = FALSE)
@@ -93,20 +119,17 @@ mysterymaps_rate_choropleth_map <- function(polygons,
   per_fmt <- format(per, big.mark = ",", scientific = FALSE)
   legend_title <- sprintf("%s per %s\n%s", numerator_label, per_fmt, denominator_label)
 
-  fill_scale <- if (log_scale) {
-    ggplot2::scale_fill_viridis_c(name = legend_title, option = viridis_option,
-                                  trans = "log1p", na.value = "grey85",
-                                  guide = ggplot2::guide_colorbar(title.position = "top"))
-  } else {
-    ggplot2::scale_fill_viridis_c(name = legend_title, option = viridis_option,
-                                  na.value = "grey85",
-                                  guide = ggplot2::guide_colorbar(title.position = "top"))
-  }
+  sc <- mysterymaps_jenks_zero_scale(
+    polygons_p$.mm_rate, k = k, digits = digits,
+    zero_col = zero_color, na_col = na_color,
+    palette = function(kk) viridisLite::viridis(kk, option = viridis_option))
+  polygons_p$.mm_fill_color <- sc$color(polygons_p$.mm_rate)
 
   ggplot2::ggplot() +
-    ggplot2::geom_sf(data = polygons_p, mapping = ggplot2::aes(fill = .data$.mm_rate),
+    ggplot2::geom_sf(data = polygons_p, mapping = ggplot2::aes(fill = .data$.mm_fill_color),
                      color = "white", linewidth = 0.15) +
-    fill_scale +
+    ggplot2::scale_fill_identity(name = legend_title, guide = "legend",
+                                 breaks = sc$leg_cols, labels = sc$leg_labs) +
     ggplot2::labs(title = title, subtitle = subtitle, caption = caption) +
     ggplot2::coord_sf(crs = sf::st_crs(crs), datum = NA) +
     ggplot2::theme_void(base_size = 12) +

@@ -122,12 +122,13 @@ Other static (ggplot2) maps:
 | `mysterymaps_geographic_map()` | state choropleth of an outcome rate |
 | `mysterymaps_map_acceptance_rate()` | state or HRR acceptance-rate choropleth |
 | `mysterymaps_hrr_maps()` | Hospital Referral Region maps, by trait |
-| `mysterymaps_rate_choropleth_map()` | numerator/denominator rate choropleth, log-scaled by default |
+| `mysterymaps_rate_choropleth_map()` | numerator/denominator rate choropleth, zero its own colour class via `mysterymaps_jenks_zero_scale()` |
 | `mysterymaps_bivariate_choropleth_map()` | joint tercile class of two variables (e.g. need vs. scarcity), one map |
 | `mysterymaps_catchment_redundancy_map()` | how many providers' catchments overlap each area, not just whether one does |
 | `mysterymaps_cartogram_map()` | polygons warped by drive time instead of true area |
 | `mysterymaps_flow_map()` | pre-routed paths coloured by travel time, over a basemap |
 | `mysterymaps_pathway_small_multiples_map()` | one facet per pathway/certification group, plus a combined panel |
+| `mysterymaps_accessibility_map()` | one-call `twostep::compute_e2sfca()` map, zero vs. outside-catchment vs. missing kept distinct |
 
 ---
 
@@ -205,6 +206,7 @@ vintage list, once, instead of repeating caveats in every popup.
 | `mysterymaps_clear_isochrone_cache()` | drop the cached routing results |
 | `mysterymaps_geocode()` | geocode an address file |
 | `mysterymaps_hex_bin_counts()` | hex-bin point counts over any boundary, not just HRR/physician maps |
+| `mysterymaps_hex_bin_rate()` | hex-bin a rate: point count over an areal-interpolated denominator (e.g. per 100k population), zero/undefined kept distinct |
 
 ---
 

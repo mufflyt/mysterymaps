@@ -115,3 +115,43 @@ test_that("ggplot2, maps and mapproj are each named in their own error", {
       sprintf("'%s' is required", pkg))
   }
 })
+
+# --------------------------------------------------------------------------
+# zero_aware: opt-in only, default behaviour unchanged (see
+# test-geographic-map.R for why this matters).
+# --------------------------------------------------------------------------
+
+test_that("zero_aware defaults to FALSE and leaves the continuous scale untouched", {
+  skip_unless_ggplot()
+  df <- data.frame(state = c("Colorado", "California"), rate = c(0, 0.72))
+  p <- mysterymaps_map_acceptance_rate(df, "state", "rate")
+  expect_false(".mm_fill_color" %in% names(p$data))
+  expect_s3_class(p$scales$scales[[1]], "ScaleContinuous")
+})
+
+test_that("REGRESSION: with zero_aware = TRUE, a measured-0% state gets zero_color", {
+  skip_unless_ggplot()
+  df <- data.frame(state = c("Colorado", "California", "Texas"), rate = c(0, 0.72, 0.48))
+  p <- mysterymaps_map_acceptance_rate(df, "state", "rate", zero_aware = TRUE)
+  co <- unique(p$data$.mm_fill_color[p$data$region == "colorado"])
+  ca <- unique(p$data$.mm_fill_color[p$data$region == "california"])
+  expect_equal(co, "#e0e0e0")
+  expect_false(identical(co, ca))
+})
+
+test_that("passing limits under zero_aware = TRUE warns that it is ignored", {
+  skip_unless_ggplot()
+  df <- data.frame(state = "Colorado", rate = 0.5)
+  expect_warning(
+    mysterymaps_map_acceptance_rate(df, "state", "rate", zero_aware = TRUE,
+                                    limits = c(0, 100)),
+    "ignored")
+})
+
+test_that("zero_aware must be a single logical value", {
+  skip_unless_ggplot()
+  df <- data.frame(state = "Colorado", rate = 0.5)
+  expect_error(
+    mysterymaps_map_acceptance_rate(df, "state", "rate", zero_aware = "yes"),
+    "single logical value")
+})

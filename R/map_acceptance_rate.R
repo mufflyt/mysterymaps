@@ -45,6 +45,21 @@ NULL
 #'   Default `7`.
 #' @param dpi Integer. Resolution passed to [mysterycall_save_plot()].
 #'   Default `300L`.
+#' @param zero_aware Logical scalar. Default `FALSE`, which keeps this
+#'   function's existing continuous `scale_fill_viridis_c()` behaviour
+#'   unchanged. Pass `TRUE` to classify the percentage with
+#'   [mysterymaps_jenks_zero_scale()] instead, so a state with a measured 0%
+#'   acceptance rate gets `zero_color` rather than the same dark end of the
+#'   gradient as a merely low rate -- the same fix already applied to
+#'   [mysterymaps_rate_choropleth_map()]. `limits` is ignored in this mode.
+#' @param k Integer scalar. Target number of Jenks classes for the positive
+#'   rates when `zero_aware = TRUE`. Default `6`.
+#' @param digits Integer scalar or `NULL`. Decimal places in the legend's
+#'   percentage labels when `zero_aware = TRUE`. Default `0` (whole
+#'   percentage points).
+#' @param zero_color Character scalar. Fill color for a measured-0% rate
+#'   when `zero_aware = TRUE`. Default matches
+#'   [mysterymaps_jenks_zero_scale()]'s own.
 #'
 #' @return A `ggplot` object of class `c("gg", "ggplot")`, returned invisibly.
 #'   When `save_path` is not `NULL`, also writes the plot to disk via
@@ -63,6 +78,13 @@ NULL
 #'   rate  = c(0.55, 0.72, 0.48, 0.63, 0.81)
 #' )
 #' mysterymaps_map_acceptance_rate(df, region_col = "state", rate_col = "rate")
+#'
+#' # zero_aware = TRUE: a measured-0% state gets its own colour, not the dark
+#' # end of the same gradient as a merely low rate.
+#' zero_df <- data.frame(state = c("Colorado", "California", "Texas"),
+#'                       rate = c(0, 0.72, 0.48))
+#' mysterymaps_map_acceptance_rate(zero_df, region_col = "state", rate_col = "rate",
+#'                                 zero_aware = TRUE)
 mysterymaps_map_acceptance_rate <- function(data,
                                              region_col,
                                              rate_col,
@@ -75,7 +97,11 @@ mysterymaps_map_acceptance_rate <- function(data,
                                              save_path    = NULL,
                                              width        = 10,
                                              height       = 7,
-                                             dpi          = 300L) {
+                                             dpi          = 300L,
+                                             zero_aware   = FALSE,
+                                             k            = 6L,
+                                             digits       = 0L,
+                                             zero_color   = "#e0e0e0") {
 
   if (!requireNamespace("ggplot2", quietly = TRUE)) {
     stop("Package 'ggplot2' is required for mysterymaps_map_acceptance_rate(). Install with: install.packages('ggplot2')", call. = FALSE)
@@ -111,6 +137,10 @@ mysterymaps_map_acceptance_rate <- function(data,
   if (!rate_col %in% names(data)) {
     stop(sprintf("Column '%s' not found in `data`.", rate_col), call. = FALSE)
   }
+  mm_validate_zero_aware_args(zero_aware, k, digits, zero_color)
+  if (zero_aware && !is.null(limits)) {
+    warning("`limits` is ignored when `zero_aware = TRUE`.", call. = FALSE)
+  }
 
   # ---- Prepare working copy --------------------------------------------------
   work        <- data[, c(region_col, rate_col), drop = FALSE]
@@ -139,18 +169,34 @@ mysterymaps_map_acceptance_rate <- function(data,
   merged <- merged[order(merged$group, merged$order), ]
 
   # ---- Build plot ------------------------------------------------------------
-  p <- ggplot2::ggplot(merged,
-         ggplot2::aes(x = long, y = lat, group = group, fill = rate_pct)) +
-    ggplot2::geom_polygon(color = "white", linewidth = 0.2) +
-    ggplot2::coord_map("albers", lat0 = 39, lat1 = 45) +
-    ggplot2::scale_fill_viridis_c(
-      option   = palette,
-      limits   = limits,
-      na.value = na_color,
-      name     = legend_title
-    ) +
-    ggplot2::theme_void() +
-    ggplot2::labs(title = title)
+  if (zero_aware) {
+    sc <- mysterymaps_jenks_zero_scale(
+      merged$rate_pct, k = k, digits = digits, zero_col = zero_color, na_col = na_color,
+      palette = function(kk) viridisLite::viridis(kk, option = palette))
+    merged$.mm_fill_color <- sc$color(merged$rate_pct)
+    p <- ggplot2::ggplot(merged,
+           ggplot2::aes(x = long, y = lat, group = group, fill = .mm_fill_color)) +
+      ggplot2::geom_polygon(color = "white", linewidth = 0.2) +
+      ggplot2::coord_map("albers", lat0 = 39, lat1 = 45) +
+      ggplot2::scale_fill_identity(
+        name = legend_title, guide = "legend",
+        breaks = sc$leg_cols, labels = sc$leg_labs) +
+      ggplot2::theme_void() +
+      ggplot2::labs(title = title)
+  } else {
+    p <- ggplot2::ggplot(merged,
+           ggplot2::aes(x = long, y = lat, group = group, fill = rate_pct)) +
+      ggplot2::geom_polygon(color = "white", linewidth = 0.2) +
+      ggplot2::coord_map("albers", lat0 = 39, lat1 = 45) +
+      ggplot2::scale_fill_viridis_c(
+        option   = palette,
+        limits   = limits,
+        na.value = na_color,
+        name     = legend_title
+      ) +
+      ggplot2::theme_void() +
+      ggplot2::labs(title = title)
+  }
 
   # ---- Optional save ---------------------------------------------------------
   if (!is.null(save_path)) {
