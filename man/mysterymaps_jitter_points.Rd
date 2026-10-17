@@ -35,6 +35,14 @@ figure. The seed is applied locally -- the caller's \code{.Random.seed} is saved
 and restored on exit -- so jittering one map does not reseed any later
 simulation in the same script.
 }
+\examples{
+\dontshow{if (interactive()) withAutoprint(\{ # examplesIf}
+pts <- sf::st_as_sf(
+  data.frame(lon = rep(-99.5, 3), lat = rep(40.2, 3)),
+  coords = c("lon", "lat"), crs = 4326)
+mysterymaps_jitter_points(pts, miles = 1.5, seed = 42)
+\dontshow{\}) # examplesIf}
+}
 \seealso{
 Other mapping:
 \code{\link[=mysterymaps_bivariate_choropleth_map]{mysterymaps_bivariate_choropleth_map()}},

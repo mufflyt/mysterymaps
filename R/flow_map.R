@@ -35,6 +35,17 @@
 #' @return A `ggplot` object. The caller saves it; this function writes nothing.
 #' @family mapping
 #' @export
+#' @examplesIf interactive()
+#' routes <- sf::st_sf(
+#'   trip = c("a", "b"), minutes = c(12, 45),
+#'   geometry = sf::st_sfc(
+#'     sf::st_linestring(rbind(c(-99, 40), c(-98, 40.5))),
+#'     sf::st_linestring(rbind(c(-98, 41), c(-97, 41.2))),
+#'     crs = 4326))
+#' basemap <- sf::st_sf(geometry = sf::st_sfc(
+#'   sf::st_polygon(list(cbind(c(-100, -96, -96, -100, -100), c(39, 39, 43, 43, 39)))),
+#'   crs = 4326))
+#' mysterymaps_flow_map(routes, basemap, time_var = "minutes")
 mysterymaps_flow_map <- function(routes,
                                  basemap,
                                  time_var,

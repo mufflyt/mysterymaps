@@ -27,6 +27,18 @@
 #'   `group_col` is given, `by_group`.
 #' @family county-access-template
 #' @export
+#' @examplesIf interactive()
+#' providers <- sf::st_as_sf(
+#'   data.frame(lon = c(-99.5, -99.5, -90), lat = c(40.2, 40.4, 40.2)),
+#'   coords = c("lon", "lat"), crs = 4326)
+#' surface <- sf::st_sf(band = "30 minutes", geometry = sf::st_sfc(
+#'   sf::st_polygon(list(cbind(c(-100, -99, -99, -100, -100), c(40, 40, 41, 41, 40)))),
+#'   crs = 4326))
+#' # the third provider sits outside the dissolved surface built from them,
+#' # so this call reports (and, by default, errors on) the gap
+#' tryCatch(
+#'   mysterymaps_gate_provider_coverage(providers, surface, label = "30-minute"),
+#'   error = function(e) conditionMessage(e))
 mysterymaps_gate_provider_coverage <- function(providers, surface,
                                                label = "coverage",
                                                max_missing_pct = 0,

@@ -56,6 +56,14 @@
 #'
 #' @return A `ggplot` object. The caller saves it; this function writes nothing.
 #' @export
+#' @examplesIf interactive()
+#' physicians <- sf::st_as_sf(
+#'   data.frame(lon = -99.5 + 0:2, lat = 40.2 + (0:2) * 0.2),
+#'   coords = c("lon", "lat"), crs = 4326)
+#' basemap <- sf::st_sf(geometry = sf::st_sfc(
+#'   sf::st_polygon(list(cbind(c(-100, -97, -97, -100, -100), c(39, 39, 42, 42, 39)))),
+#'   crs = 4326))
+#' mysterymaps_physician_dot_map(physicians, basemap)
 mysterymaps_physician_dot_map <- function(physicians,
                                           basemap,
                                           title = NULL,

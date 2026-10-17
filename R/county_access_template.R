@@ -30,6 +30,11 @@
 #' @return the map, with the control attached.
 #' @family county-access-template
 #' @export
+#' @examplesIf interactive() && requireNamespace("leaflet.extras", quietly = TRUE)
+#' m <- leaflet::leaflet() |> leaflet::addTiles() |>
+#'   leaflet::addCircleMarkers(lng = -104.99, lat = 39.74, label = "Denver Clinic",
+#'                            group = "Providers")
+#' mysterymaps_name_search(m, group = "Providers", placeholder = "Search provider name...")
 mysterymaps_name_search <- function(map, group = NULL,
                                     placeholder = "Search name...",
                                     zoom = 11L, position = "topleft") {
@@ -94,6 +99,14 @@ mysterymaps_name_search <- function(map, group = NULL,
 #' @return the map, with the panel attached.
 #' @family county-access-template
 #' @export
+#' @examplesIf interactive() && requireNamespace("leaflet", quietly = TRUE)
+#' m <- leaflet::leaflet() |> leaflet::addTiles()
+#' mysterymaps_notes_panel(
+#'   m, title = "About This Map (2023)",
+#'   sections = list("Shading" = "Providers per 1,000 births, by county."),
+#'   vintages = data.frame(source = c("NPPES", "NCHS Births"),
+#'                         vintage = c("2023", "2021-2023")),
+#'   as_of = "2023")
 mysterymaps_notes_panel <- function(map, title, sections, vintages,
                                     as_of = NULL, max_height = "44vh",
                                     bottom = "52px") {

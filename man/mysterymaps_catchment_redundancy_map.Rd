@@ -76,6 +76,26 @@ filter to a single band before calling this function -- passing all bands
 at once would double-count the same provider at a point reachable within
 more than one of their bands.
 }
+\examples{
+\dontshow{if (interactive()) withAutoprint(\{ # examplesIf}
+counties <- sf::st_sf(
+  geometry = sf::st_sfc(lapply(1:2, function(i) {
+    x <- -100 + i
+    sf::st_polygon(list(cbind(c(x, x + 1, x + 1, x, x), c(40, 40, 41, 41, 40))))
+  }), crs = 4326)
+)
+# county 1 is covered by provider A only, county 2 by both A and B
+catch_a <- sf::st_sf(provider = "A", geometry = sf::st_sfc(
+  sf::st_polygon(list(cbind(c(-99, -97, -97, -99, -99), c(40, 40, 42, 42, 40)))),
+  crs = 4326))
+catch_b <- sf::st_sf(provider = "B", geometry = sf::st_sfc(
+  sf::st_polygon(list(cbind(c(-98, -97, -97, -98, -98), c(40, 40, 41, 41, 40)))),
+  crs = 4326))
+mysterymaps_catchment_redundancy_map(
+  rbind(catch_a, catch_b), counties, provider_id_var = "provider",
+  grid_spacing_miles = 10)
+\dontshow{\}) # examplesIf}
+}
 \seealso{
 Other mapping:
 \code{\link[=mysterymaps_bivariate_choropleth_map]{mysterymaps_bivariate_choropleth_map()}},

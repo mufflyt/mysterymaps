@@ -89,6 +89,23 @@ it deliberately does not mean distance -- this function draws a "drive
 time scale" reference line instead, equal to \code{reference_minutes} of
 typical-pace travel, rather than calling \code{\link[=mysterymaps_scale_bar]{mysterymaps_scale_bar()}}.
 }
+\examples{
+\dontshow{if (interactive()) withAutoprint(\{ # examplesIf}
+counties <- sf::st_sf(
+  id = 1:4,
+  hub_lon = -97.5, hub_lat = 40.5,
+  time_min = c(10, 20, 30, 60),
+  straight_miles = c(9.6, 19.2, 28.8, 57.6),
+  geometry = sf::st_sfc(lapply(1:4, function(i) {
+    x <- -100 + i
+    sf::st_polygon(list(cbind(c(x, x + 1, x + 1, x, x), c(40, 40, 41, 41, 40))))
+  }), crs = 4326)
+)
+mysterymaps_cartogram_map(
+  counties, hub_id_var = "id", hub_lon_var = "hub_lon", hub_lat_var = "hub_lat",
+  time_var = "time_min", straight_distance_var = "straight_miles")
+\dontshow{\}) # examplesIf}
+}
 \seealso{
 Other mapping:
 \code{\link[=mysterymaps_bivariate_choropleth_map]{mysterymaps_bivariate_choropleth_map()}},

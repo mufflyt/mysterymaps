@@ -96,6 +96,10 @@ mysterymaps_add_coverage_surfaces <- function(map, surfaces, colors,
 #' @return The leaflet map with the mapping recorded.
 #' @family coverage-surfaces
 #' @export
+#' @examplesIf interactive() && requireNamespace("leaflet", quietly = TRUE)
+#' m <- leaflet::leaflet() |> leaflet::addTiles() |>
+#'   leaflet::addLegend(colors = "#08519c", labels = "Supply", group = "Supply")
+#' mysterymaps_register_base_legend(m, "Supply")
 mysterymaps_register_base_legend <- function(map, group, key = NULL) {
   key <- key %||% tolower(stringr::str_replace_all(group, "[^A-Za-z0-9]", ""))
   prev <- attr(map, "mysterymaps_base_legends") %||% list()
@@ -125,6 +129,11 @@ mysterymaps_register_base_legend <- function(map, group, key = NULL) {
 #' @return The leaflet map with the handler attached.
 #' @family coverage-surfaces
 #' @export
+#' @examplesIf interactive() && requireNamespace("leaflet", quietly = TRUE)
+#' m <- leaflet::leaflet() |> leaflet::addTiles() |>
+#'   leaflet::addLegend(colors = "#08519c", labels = "Supply", group = "Supply") |>
+#'   mysterymaps_register_base_legend("Supply")
+#' mysterymaps_base_legend_switcher(m, default = "Supply")
 mysterymaps_base_legend_switcher <- function(map, default = NULL) {
   reg <- attr(map, "mysterymaps_base_legends")
   if (is.null(reg) || !length(reg)) return(map)
@@ -166,6 +175,11 @@ function(el, x) {
 #' @return The leaflet map with the handler attached.
 #' @family coverage-surfaces
 #' @export
+#' @examplesIf interactive() && requireNamespace("leaflet", quietly = TRUE)
+#' m <- leaflet::leaflet() |> leaflet::addTiles() |>
+#'   leaflet::addCircleMarkers(lng = -104.99, lat = 39.74, label = "Denver",
+#'                            group = "Providers")
+#' mysterymaps_zoom_gated_labels(m, "Providers", min_zoom = 9, max_labels = 400)
 mysterymaps_zoom_gated_labels <- function(map, group, min_zoom = 9, max_labels = 400) {
   js <- sprintf('
 function(el, x) {

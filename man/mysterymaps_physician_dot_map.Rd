@@ -91,3 +91,14 @@ subspecialty by a label the data does not use (\code{MIGS} where the artifact sa
 which reads as a real absence rather than a label mismatch. This function
 refuses a zero-row input with a message that says so.
 }
+\examples{
+\dontshow{if (interactive()) withAutoprint(\{ # examplesIf}
+physicians <- sf::st_as_sf(
+  data.frame(lon = -99.5 + 0:2, lat = 40.2 + (0:2) * 0.2),
+  coords = c("lon", "lat"), crs = 4326)
+basemap <- sf::st_sf(geometry = sf::st_sfc(
+  sf::st_polygon(list(cbind(c(-100, -97, -97, -100, -100), c(39, 39, 42, 42, 39)))),
+  crs = 4326))
+mysterymaps_physician_dot_map(physicians, basemap)
+\dontshow{\}) # examplesIf}
+}

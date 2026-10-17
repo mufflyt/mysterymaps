@@ -67,6 +67,21 @@ The legend title is always built from \code{numerator_label} and
 title is the one place in the map an abbreviation would otherwise land by
 default.
 }
+\examples{
+\dontshow{if (interactive()) withAutoprint(\{ # examplesIf}
+counties <- sf::st_sf(
+  n_providers = c(1, 2, 0, 4),
+  population = c(10000, 100000, 50000, 200000),
+  geometry = sf::st_sfc(lapply(1:4, function(i) {
+    x <- -100 + i
+    sf::st_polygon(list(cbind(c(x, x + 1, x + 1, x, x), c(40, 40, 41, 41, 40))))
+  }), crs = 4326)
+)
+mysterymaps_rate_choropleth_map(
+  counties, numerator_var = "n_providers", denominator_var = "population",
+  numerator_label = "Urogynecologists", denominator_label = "Women Age 40 and Older")
+\dontshow{\}) # examplesIf}
+}
 \seealso{
 Other mapping:
 \code{\link[=mysterymaps_bivariate_choropleth_map]{mysterymaps_bivariate_choropleth_map()}},

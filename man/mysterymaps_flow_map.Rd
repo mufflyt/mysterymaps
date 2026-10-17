@@ -64,6 +64,20 @@ overstate the population actually reachable in that time by several-fold.
 Routing each path on the real road network and drawing it here, rather
 than drawing straight lines, is what keeps a flow map honest in that case.
 }
+\examples{
+\dontshow{if (interactive()) withAutoprint(\{ # examplesIf}
+routes <- sf::st_sf(
+  trip = c("a", "b"), minutes = c(12, 45),
+  geometry = sf::st_sfc(
+    sf::st_linestring(rbind(c(-99, 40), c(-98, 40.5))),
+    sf::st_linestring(rbind(c(-98, 41), c(-97, 41.2))),
+    crs = 4326))
+basemap <- sf::st_sf(geometry = sf::st_sfc(
+  sf::st_polygon(list(cbind(c(-100, -96, -96, -100, -100), c(39, 39, 43, 43, 39)))),
+  crs = 4326))
+mysterymaps_flow_map(routes, basemap, time_var = "minutes")
+\dontshow{\}) # examplesIf}
+}
 \seealso{
 Other mapping:
 \code{\link[=mysterymaps_bivariate_choropleth_map]{mysterymaps_bivariate_choropleth_map()}},

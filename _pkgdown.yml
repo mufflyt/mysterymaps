@@ -23,6 +23,8 @@ reference:
       - mysterymaps_zoom_gated_labels
       - mysterymaps_name_search
       - mysterymaps_map_physicians
+      - mysterymaps_scale_bar
+      - mysterymaps_jitter_points
 
   - title: Scales and labels
     desc: Colour classes and the text that goes beside them.
@@ -31,6 +33,7 @@ reference:
       - mysterymaps_pluralize
       - mysterymaps_format_credentials
       - mysterymaps_place_title_case
+      - MYSTERYMAPS_BIVARIATE_PALETTE
 
   - title: Static maps
     desc: ggplot2 output.
@@ -43,6 +46,17 @@ reference:
       - mysterymaps_map_acog_districts
       - mysterymaps_map_block_group
       - mysterymaps_plot_isochrones
+      - mysterymaps_bivariate_choropleth_map
+      - mysterymaps_cartogram_map
+      - mysterymaps_catchment_redundancy_map
+      - mysterymaps_flow_map
+      - mysterymaps_rate_choropleth_map
+      - mysterymaps_pathway_small_multiples_map
+
+  - title: Geospatial aggregation
+    desc: Binning points onto a grid, areal interpolation.
+    contents:
+      - mysterymaps_hex_bin_counts
 
   - title: Isochrones, geocoding and overlap
     contents:
@@ -53,6 +67,7 @@ reference:
       - mysterymaps_guard_water_masks
       - mysterymaps_clear_isochrone_cache
       - mysterymaps_geocode
+      - MYSTERYMAPS_ISOCHRONE_BANDS_MINUTES
 
 articles:
   - title: Getting started

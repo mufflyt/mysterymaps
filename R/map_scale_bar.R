@@ -81,6 +81,11 @@ mysterymaps_scale_bar <- function(location = "bl", width_hint = 0.25,
 #' @return `points`, with jittered geometry, in its original CRS.
 #' @family mapping
 #' @export
+#' @examplesIf interactive()
+#' pts <- sf::st_as_sf(
+#'   data.frame(lon = rep(-99.5, 3), lat = rep(40.2, 3)),
+#'   coords = c("lon", "lat"), crs = 4326)
+#' mysterymaps_jitter_points(pts, miles = 1.5, seed = 42)
 mysterymaps_jitter_points <- function(points, miles = 1.5, seed = 42) {
   if (!requireNamespace("sf", quietly = TRUE)) {
     stop("mysterymaps_jitter_points() needs the 'sf' package, which is a ",

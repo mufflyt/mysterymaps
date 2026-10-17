@@ -40,6 +40,18 @@
 #' @return A `ggplot` object. The caller saves it; this function writes nothing.
 #' @family mapping
 #' @export
+#' @examplesIf interactive()
+#' counties <- sf::st_sf(
+#'   n_providers = c(1, 2, 0, 4),
+#'   population = c(10000, 100000, 50000, 200000),
+#'   geometry = sf::st_sfc(lapply(1:4, function(i) {
+#'     x <- -100 + i
+#'     sf::st_polygon(list(cbind(c(x, x + 1, x + 1, x, x), c(40, 40, 41, 41, 40))))
+#'   }), crs = 4326)
+#' )
+#' mysterymaps_rate_choropleth_map(
+#'   counties, numerator_var = "n_providers", denominator_var = "population",
+#'   numerator_label = "Urogynecologists", denominator_label = "Women Age 40 and Older")
 mysterymaps_rate_choropleth_map <- function(polygons,
                                             numerator_var,
                                             denominator_var,

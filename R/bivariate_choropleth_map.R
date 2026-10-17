@@ -50,6 +50,18 @@ MYSTERYMAPS_BIVARIATE_PALETTE <- c(
 #' @return A `ggplot` object. The caller saves it; this function writes nothing.
 #' @family mapping
 #' @export
+#' @examplesIf interactive()
+#' counties <- sf::st_sf(
+#'   rate = c(1, 2, 3, 4, 5, 6, 7, 8, 9),
+#'   need = c(9, 8, 7, 6, 5, 4, 3, 2, 1),
+#'   geometry = sf::st_sfc(lapply(1:9, function(i) {
+#'     x <- -100 + i
+#'     sf::st_polygon(list(cbind(c(x, x + 1, x + 1, x, x), c(40, 40, 41, 41, 40))))
+#'   }), crs = 4326)
+#' )
+#' mysterymaps_bivariate_choropleth_map(
+#'   counties, x_var = "rate", y_var = "need",
+#'   x_label = "Providers per Capita", y_label = "Population Need")
 mysterymaps_bivariate_choropleth_map <- function(polygons,
                                                   x_var,
                                                   y_var,

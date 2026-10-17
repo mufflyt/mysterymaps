@@ -81,6 +81,18 @@ Pathways Combined" panel keeps each point's own pathway colour rather than
 flattening to one colour, so it works as a real overview rather than a
 silhouette of the dataset.
 }
+\examples{
+\dontshow{if (interactive()) withAutoprint(\{ # examplesIf}
+pts <- sf::st_as_sf(
+  data.frame(lon = -99.5 + 0:7, lat = 40.2 + (0:7) * 0.2,
+            pathway = rep(c("OBGYN", "URO"), length.out = 8)),
+  coords = c("lon", "lat"), crs = 4326)
+basemap <- sf::st_sf(geometry = sf::st_sfc(
+  sf::st_polygon(list(cbind(c(-100, -97, -97, -100, -100), c(39, 39, 42, 42, 39)))),
+  crs = 4326))
+mysterymaps_pathway_small_multiples_map(pts, basemap, pathway_var = "pathway")
+\dontshow{\}) # examplesIf}
+}
 \seealso{
 Other mapping:
 \code{\link[=mysterymaps_bivariate_choropleth_map]{mysterymaps_bivariate_choropleth_map()}},
