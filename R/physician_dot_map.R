@@ -40,6 +40,19 @@
 #'   "Insufficient values in manual scale", which is what the original did.
 #' @param crs Projection for display. Default EPSG:5070, Albers Equal Area,
 #'   appropriate for the contiguous United States.
+#' @param jitter_miles `numeric(1)`: maximum deterministic jitter radius, in
+#'   miles, applied via [mysterymaps_jitter_points()] before plotting. Default
+#'   `1.5` (under the 2-mile ceiling), so physicians stacked on the same
+#'   building or block separate visually without a run-to-run-unstable map.
+#'   `0` disables jitter.
+#' @param jitter_seed `numeric(1)` or `NULL`: seed for `jitter_miles`. Default
+#'   `42`, so the jitter -- and therefore the published figure -- is
+#'   reproducible. Passed to [mysterymaps_jitter_points()].
+#' @param outline `logical(1)`: draw points as a filled, outlined shape
+#'   (`shape = 21`) rather than a solid dot (`shape = 16`). Default `TRUE`;
+#'   an outline reads more clearly against a busy basemap or a `color_var`
+#'   fill that is close in hue to the basemap.
+#' @param point_outline_color Outline colour used when `outline = TRUE`.
 #'
 #' @return A `ggplot` object. The caller saves it; this function writes nothing.
 #' @export
@@ -53,7 +66,11 @@ mysterymaps_physician_dot_map <- function(physicians,
                                           point_alpha = 0.75,
                                           color_var = NULL,
                                           palette = NULL,
-                                          crs = 5070) {
+                                          crs = 5070,
+                                          jitter_miles = 1.5,
+                                          jitter_seed = 42,
+                                          outline = TRUE,
+                                          point_outline_color = "black") {
   for (pkg in c("sf", "ggplot2")) {
     if (!requireNamespace(pkg, quietly = TRUE)) {
       stop("mysterymaps_physician_dot_map() needs the '", pkg,
@@ -65,6 +82,8 @@ mysterymaps_physician_dot_map <- function(physicians,
   checkmate::assert_class(basemap, "sf")
   checkmate::assert_number(point_size, lower = 0)
   checkmate::assert_number(point_alpha, lower = 0, upper = 1)
+  checkmate::assert_number(jitter_miles, lower = 0)
+  checkmate::assert_flag(outline)
 
   # Trap 3. Zero rows is almost always a label mismatch upstream, not an empty
   # population, and saying "no physicians found" invites the wrong conclusion.
@@ -82,6 +101,9 @@ mysterymaps_physician_dot_map <- function(physicians,
   if (!all(sf::st_is_valid(basemap))) basemap <- sf::st_make_valid(basemap)
   if (!all(sf::st_is_valid(physicians))) physicians <- sf::st_make_valid(physicians)
 
+  physicians <- mysterymaps_jitter_points(physicians, miles = jitter_miles,
+                                          seed = jitter_seed)
+
   basemap_p <- sf::st_transform(basemap, crs = crs)
   points_p  <- sf::st_transform(physicians, crs = crs)
 
@@ -89,19 +111,33 @@ mysterymaps_physician_dot_map <- function(physicians,
     color_var %in% names(points_p)
 
   # Trap 1. Build the layer FIRST. Never inline a bare `if` into a `+` chain.
-  point_layer <- if (use_color) {
+  point_shape <- if (outline) 21L else 16L
+  point_layer <- if (use_color && outline) {
     ggplot2::geom_sf(
-      data = points_p,
-      mapping = ggplot2::aes(color = .data[[color_var]]),
-      size = point_size, alpha = point_alpha, shape = 16, stroke = 0.2)
+      data = points_p, mapping = ggplot2::aes(fill = .data[[color_var]]),
+      color = point_outline_color, size = point_size, alpha = point_alpha,
+      shape = point_shape, stroke = 0.6)
+  } else if (use_color) {
+    ggplot2::geom_sf(
+      data = points_p, mapping = ggplot2::aes(color = .data[[color_var]]),
+      size = point_size, alpha = point_alpha, shape = point_shape, stroke = 0.2)
+  } else if (outline) {
+    ggplot2::geom_sf(
+      data = points_p, fill = point_color, color = point_outline_color,
+      size = point_size, alpha = point_alpha, shape = point_shape, stroke = 0.6)
   } else {
     ggplot2::geom_sf(
       data = points_p, color = point_color,
-      size = point_size, alpha = point_alpha, shape = 16, stroke = 0.2)
+      size = point_size, alpha = point_alpha, shape = point_shape, stroke = 0.2)
   }
 
   scale_layer <- if (!use_color) {
     NULL
+  } else if (outline && (is.null(palette) || length(palette) == 0L)) {
+    ggplot2::scale_fill_hue(name = color_var, na.value = "grey50")
+  } else if (outline) {
+    ggplot2::scale_fill_manual(values = palette, name = color_var,
+                               na.value = "grey50")
   } else if (is.null(palette) || length(palette) == 0L) {
     ggplot2::scale_color_hue(name = color_var, na.value = "grey50")
   } else {

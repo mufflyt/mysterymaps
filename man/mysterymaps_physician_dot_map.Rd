@@ -15,7 +15,11 @@ mysterymaps_physician_dot_map(
   point_alpha = 0.75,
   color_var = NULL,
   palette = NULL,
-  crs = 5070
+  crs = 5070,
+  jitter_miles = 1.5,
+  jitter_seed = 42,
+  outline = TRUE,
+  point_outline_color = "black"
 )
 }
 \arguments{
@@ -37,6 +41,23 @@ mysterymaps_physician_dot_map(
 
 \item{crs}{Projection for display. Default EPSG:5070, Albers Equal Area,
 appropriate for the contiguous United States.}
+
+\item{jitter_miles}{\code{numeric(1)}: maximum deterministic jitter radius, in
+miles, applied via \code{\link[=mysterymaps_jitter_points]{mysterymaps_jitter_points()}} before plotting. Default
+\code{1.5} (under the 2-mile ceiling), so physicians stacked on the same
+building or block separate visually without a run-to-run-unstable map.
+\code{0} disables jitter.}
+
+\item{jitter_seed}{\code{numeric(1)} or \code{NULL}: seed for \code{jitter_miles}. Default
+\code{42}, so the jitter -- and therefore the published figure -- is
+reproducible. Passed to \code{\link[=mysterymaps_jitter_points]{mysterymaps_jitter_points()}}.}
+
+\item{outline}{\code{logical(1)}: draw points as a filled, outlined shape
+(\code{shape = 21}) rather than a solid dot (\code{shape = 16}). Default \code{TRUE};
+an outline reads more clearly against a busy basemap or a \code{color_var}
+fill that is close in hue to the basemap.}
+
+\item{point_outline_color}{Outline colour used when \code{outline = TRUE}.}
 }
 \value{
 A \code{ggplot} object. The caller saves it; this function writes nothing.

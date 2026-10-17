@@ -21,15 +21,23 @@ map <- mysterymaps_map_leaflet()
 }
 \seealso{
 Other mapping:
+\code{\link[=mysterymaps_bivariate_choropleth_map]{mysterymaps_bivariate_choropleth_map()}},
+\code{\link[=mysterymaps_cartogram_map]{mysterymaps_cartogram_map()}},
+\code{\link[=mysterymaps_catchment_redundancy_map]{mysterymaps_catchment_redundancy_map()}},
 \code{\link[=mysterymaps_clear_isochrone_cache]{mysterymaps_clear_isochrone_cache()}},
 \code{\link[=mysterymaps_create_isochrones]{mysterymaps_create_isochrones()}},
+\code{\link[=mysterymaps_flow_map]{mysterymaps_flow_map()}},
 \code{\link[=mysterymaps_hrr_maps]{mysterymaps_hrr_maps()}},
 \code{\link[=mysterymaps_isochrones_for_df]{mysterymaps_isochrones_for_df()}},
+\code{\link[=mysterymaps_jitter_points]{mysterymaps_jitter_points()}},
 \code{\link[=mysterymaps_map_acceptance_rate]{mysterymaps_map_acceptance_rate()}},
 \code{\link[=mysterymaps_map_acog_districts]{mysterymaps_map_acog_districts()}},
 \code{\link[=mysterymaps_map_base]{mysterymaps_map_base()}},
 \code{\link[=mysterymaps_map_block_group]{mysterymaps_map_block_group()}},
 \code{\link[=mysterymaps_map_physicians]{mysterymaps_map_physicians()}},
-\code{\link[=mysterymaps_plot_isochrones]{mysterymaps_plot_isochrones()}}
+\code{\link[=mysterymaps_pathway_small_multiples_map]{mysterymaps_pathway_small_multiples_map()}},
+\code{\link[=mysterymaps_plot_isochrones]{mysterymaps_plot_isochrones()}},
+\code{\link[=mysterymaps_rate_choropleth_map]{mysterymaps_rate_choropleth_map()}},
+\code{\link[=mysterymaps_scale_bar]{mysterymaps_scale_bar()}}
 }
 \concept{mapping}
