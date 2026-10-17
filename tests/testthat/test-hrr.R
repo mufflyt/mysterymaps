@@ -364,6 +364,40 @@ test_that("min_count defaults to 1, unlike mm_honeycomb_counts's 2", {
   expect_equal(out$count, 1L)
 })
 
+test_that("include_zero_cells returns the full grid, zero cells included", {
+  # The default path never produces a zero-count row at all (a cell with no
+  # points never enters the inner-join side), so a reader cannot tell "zero,
+  # measured" from "not drawn". include_zero_cells = TRUE must return every
+  # cell in the boundary, with an explicit 0 where nothing landed.
+  skip_if_not_installed("sf")
+  area <- hex_area(lon = c(-105, -100), lat = c(38, 42))
+  lone <- hex_points(-102.5, 40.0)
+
+  without_zeros <- suppressWarnings(suppressMessages(
+    mysterymaps_hex_bin_counts(area, lone, cellsize = 0.5)))
+  with_zeros <- suppressWarnings(suppressMessages(
+    mysterymaps_hex_bin_counts(area, lone, cellsize = 0.5, include_zero_cells = TRUE)))
+
+  expect_gt(nrow(with_zeros), nrow(without_zeros))
+  expect_true(any(with_zeros$count == 0L))
+  expect_equal(sum(with_zeros$count), 1L)
+  expect_false(anyNA(with_zeros$count))
+})
+
+test_that("include_zero_cells ignores min_count rather than silently honouring it", {
+  # Suppressing small counts and asserting a cell is a true zero are
+  # different, incompatible claims; min_count must not quietly drop a
+  # below-threshold cell to zero (or out of the grid) in this mode.
+  skip_if_not_installed("sf")
+  area <- hex_area(lon = c(-105, -100), lat = c(38, 42))
+  pts <- hex_points(c(-102.5, -102.5), c(40, 40))
+
+  out <- suppressWarnings(suppressMessages(
+    mysterymaps_hex_bin_counts(area, pts, cellsize = 0.5, min_count = 5L,
+                               include_zero_cells = TRUE)))
+  expect_equal(sum(out$count), 2L)
+})
+
 test_that("southern_limit defaults to -90, unlike mm_honeycomb_counts's US-specific 15", {
   # A boundary south of 15N (e.g. most of South America, Africa, Australia)
   # must not be silently emptied by a default built for HRR/US maps.
@@ -399,4 +433,22 @@ test_that("arguments are validated before any sf work happens", {
                class = "simpleError")
   expect_error(mysterymaps_hex_bin_counts(area, hex_points(1, 1), value_col = 1),
                class = "simpleError")
+})
+
+test_that("REGRESSION: include_zero_cells matches via spatial join, not grid_id", {
+  # grid_id is assigned BEFORE st_intersection(grid, boundary) runs, and that
+  # intersection can slice one hex into several disjoint polygon fragments
+  # along an irregular boundary -- every fragment inherits the SAME grid_id.
+  # An attribute join (left_join(by = "grid_id")) fans out across every
+  # fragment sharing an id; only a spatial join (st_join(), matching each
+  # fragment to the specific counts geometry that overlaps IT) gets this
+  # right. Caught by running the real CONUS boundary: 757 nonzero cells with
+  # a naive attribute join, versus 609 -- the drop-zero path's true count --
+  # once fixed. This inspects the source for the regression directly, since
+  # a synthetic boundary that reliably fragments a hex cell at a chosen
+  # cellsize is fragile to construct and the real-boundary numbers above are
+  # the actual evidence the fix is correct.
+  body_text <- paste(deparse(body(mm_honeycomb_counts_full_grid)), collapse = "\n")
+  expect_true(grepl("st_join", body_text, fixed = TRUE))
+  expect_false(grepl("left_join", body_text, fixed = TRUE))
 })

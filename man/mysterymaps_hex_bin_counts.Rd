@@ -10,7 +10,8 @@ mysterymaps_hex_bin_counts(
   value_col = "count",
   cellsize = 0.3,
   min_count = 1L,
-  southern_limit = -90
+  southern_limit = -90,
+  include_zero_cells = FALSE
 )
 }
 \arguments{
@@ -28,17 +29,31 @@ CRS (degrees, if left in EPSG:4326). Default \code{0.3}.}
 
 \item{min_count}{\code{integer(1)}: cells holding fewer than this many points
 are dropped rather than returned -- small-cell suppression, not a
-rendering detail. Default \code{1L} (no suppression).}
+rendering detail. Default \code{1L} (no suppression). Ignored when
+\code{include_zero_cells = TRUE} (see below).}
 
 \item{southern_limit}{\code{numeric(1)}: cells entirely south of this latitude
 are dropped. \code{\link[=mm_honeycomb_counts]{mm_honeycomb_counts()}} defaults this to \code{15} to cut
 outlying US territory out of HRR maps; that is wrong for a boundary that
 is not the continental US (it would silently delete most of the Southern
 Hemisphere), so this wrapper defaults to \code{-90}, i.e. no clipping.}
+
+\item{include_zero_cells}{\code{logical(1)}: return every hex cell in
+\code{boundary_sf}, including ones no point fell in, with \code{value_col = 0}
+there, instead of silently omitting them. Default \code{FALSE}, matching
+\code{\link[=mm_honeycomb_counts]{mm_honeycomb_counts()}}'s original point-counting behaviour. A reader
+cannot tell "zero, measured" from "not drawn" on a map with gaps in the
+grid -- the distinction \code{\link[=mysterymaps_jenks_zero_scale]{mysterymaps_jenks_zero_scale()}} and
+\code{\link[=mysterymaps_hex_bin_rate]{mysterymaps_hex_bin_rate()}} both exist to preserve. \code{min_count} does
+not apply in this mode: suppressing small counts and asserting that a
+cell is a true zero are different, incompatible claims about the same
+cell.}
 }
 \value{
-An \code{sf} of hex cells carrying a \code{value_col} count column. Cells
-with fewer than \code{min_count} points are not returned.
+An \code{sf} of hex cells carrying a \code{value_col} count column. With the
+default \code{include_zero_cells = FALSE}, cells with fewer than \code{min_count}
+points are not returned at all; with \code{include_zero_cells = TRUE}, every
+cell in \code{boundary_sf} is returned, zero-count ones included.
 }
 \description{
 Builds a hexagonal grid over \code{boundary_sf}, counts how many \code{points_sf}
@@ -53,15 +68,19 @@ no new hex-counting logic of its own.
 \examples{
 \dontshow{if (interactive()) withAutoprint(\{ # examplesIf}
 mysterymaps_hex_bin_counts(boundary_sf, points_sf, value_col = "flood_risk")
+mysterymaps_hex_bin_counts(boundary_sf, points_sf, include_zero_cells = TRUE)
 \dontshow{\}) # examplesIf}
 }
 \seealso{
 \code{\link[=mysterymaps_hrr_maps]{mysterymaps_hrr_maps()}}, which wraps \code{\link[=mm_honeycomb_counts]{mm_honeycomb_counts()}} for
-the HRR/physician use case with AK/HI/PR insets baked in.
+the HRR/physician use case with AK/HI/PR insets baked in;
+\code{\link[=mysterymaps_hex_bin_rate]{mysterymaps_hex_bin_rate()}}, which always returns the full grid because
+a rate needs to distinguish zero from missing.
 
 Other geospatial:
 \code{\link[=mm_area_in]{mm_area_in()}},
 \code{\link[=mm_honeycomb_counts]{mm_honeycomb_counts()}},
+\code{\link[=mysterymaps_hex_bin_rate]{mysterymaps_hex_bin_rate()}},
 \code{\link[=validate_sf_inputs]{validate_sf_inputs()}}
 }
 \concept{geospatial}

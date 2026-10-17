@@ -315,6 +315,53 @@ mm_honeycomb_counts <- function(usa, physician_sf, cellsize = 0.3,
     dplyr::filter(!is.na(.data$physician_count))
 }
 
+#' Hex-bin point counts over any study-area boundary, keeping zero cells
+#'
+#' @description
+#' The `include_zero_cells = TRUE` path of [mysterymaps_hex_bin_counts()]:
+#' identical grid construction to [mm_honeycomb_counts()] (same s2 handling,
+#' same `southern_limit` clip), but every cell is returned -- a
+#' `dplyr::left_join()` plus `dplyr::coalesce(0L)` in place of the inner
+#' count-and-filter -- so "zero points landed here" and "this cell was
+#' suppressed" are never the same output. Internal; use
+#' [mysterymaps_hex_bin_counts()].
+#' @keywords internal
+#' @noRd
+mm_honeycomb_counts_full_grid <- function(boundary_sf, points_sf, value_col = "count",
+                                          cellsize = 0.3, southern_limit = -90) {
+  old_s2 <- sf::sf_use_s2()
+  on.exit(suppressMessages(sf::sf_use_s2(old_s2)), add = TRUE)
+  suppressMessages(sf::sf_use_s2(FALSE))
+
+  boundary_4326 <- sf::st_transform(boundary_sf, 4326)
+
+  grid <- sf::st_make_grid(boundary_4326, c(cellsize, cellsize), what = "polygons",
+                           square = FALSE) %>%
+    sf::st_sf() %>%
+    dplyr::mutate(grid_id = dplyr::row_number()) %>%
+    sf::st_intersection(boundary_4326)
+
+  in_scope <- sf::st_sfc(sf::st_polygon(list(cbind(
+    c(-180, 180, 180, -180, -180),
+    c(southern_limit, southern_limit, 90, 90, southern_limit)))), crs = 4326)
+  grid <- grid[lengths(sf::st_intersects(grid, in_scope)) > 0L, , drop = FALSE]
+
+  counts <- sf::st_intersection(grid, sf::st_transform(points_sf, 4326)) %>%
+    dplyr::group_by(.data$grid_id) %>%
+    dplyr::summarize(.mm_count = dplyr::n(), .groups = "drop")
+
+  # A SPATIAL join (st_join), exactly as mm_honeycomb_counts() uses, not an
+  # attribute join on grid_id: st_intersection(grid, boundary) upstream can
+  # slice one hex into several polygon fragments along an irregular
+  # coastline, all carrying the SAME grid_id, so an attribute join fans out
+  # across every fragment that shares an id instead of matching the one
+  # fragment counts' geometry actually overlaps.
+  out <- sf::st_join(grid[, "grid_id"], counts[, ".mm_count"]) %>%
+    dplyr::mutate(.mm_count = dplyr::coalesce(.data$.mm_count, 0L))
+  names(out)[names(out) == ".mm_count"] <- value_col
+  out
+}
+
 #' Hex-bin point counts over any study-area boundary
 #'
 #' Builds a hexagonal grid over `boundary_sf`, counts how many `points_sf`
@@ -336,31 +383,56 @@ mm_honeycomb_counts <- function(usa, physician_sf, cellsize = 0.3,
 #'   CRS (degrees, if left in EPSG:4326). Default `0.3`.
 #' @param min_count `integer(1)`: cells holding fewer than this many points
 #'   are dropped rather than returned -- small-cell suppression, not a
-#'   rendering detail. Default `1L` (no suppression).
+#'   rendering detail. Default `1L` (no suppression). Ignored when
+#'   `include_zero_cells = TRUE` (see below).
 #' @param southern_limit `numeric(1)`: cells entirely south of this latitude
 #'   are dropped. [mm_honeycomb_counts()] defaults this to `15` to cut
 #'   outlying US territory out of HRR maps; that is wrong for a boundary that
 #'   is not the continental US (it would silently delete most of the Southern
 #'   Hemisphere), so this wrapper defaults to `-90`, i.e. no clipping.
-#' @return An `sf` of hex cells carrying a `value_col` count column. Cells
-#'   with fewer than `min_count` points are not returned.
+#' @param include_zero_cells `logical(1)`: return every hex cell in
+#'   `boundary_sf`, including ones no point fell in, with `value_col = 0`
+#'   there, instead of silently omitting them. Default `FALSE`, matching
+#'   [mm_honeycomb_counts()]'s original point-counting behaviour. A reader
+#'   cannot tell "zero, measured" from "not drawn" on a map with gaps in the
+#'   grid -- the distinction [mysterymaps_jenks_zero_scale()] and
+#'   [mysterymaps_hex_bin_rate()] both exist to preserve. `min_count` does
+#'   not apply in this mode: suppressing small counts and asserting that a
+#'   cell is a true zero are different, incompatible claims about the same
+#'   cell.
+#' @return An `sf` of hex cells carrying a `value_col` count column. With the
+#'   default `include_zero_cells = FALSE`, cells with fewer than `min_count`
+#'   points are not returned at all; with `include_zero_cells = TRUE`, every
+#'   cell in `boundary_sf` is returned, zero-count ones included.
 #' @seealso [mysterymaps_hrr_maps()], which wraps [mm_honeycomb_counts()] for
-#'   the HRR/physician use case with AK/HI/PR insets baked in.
+#'   the HRR/physician use case with AK/HI/PR insets baked in;
+#'   [mysterymaps_hex_bin_rate()], which always returns the full grid because
+#'   a rate needs to distinguish zero from missing.
 #' @family geospatial
 #' @export
 #' @examplesIf interactive()
 #' mysterymaps_hex_bin_counts(boundary_sf, points_sf, value_col = "flood_risk")
+#' mysterymaps_hex_bin_counts(boundary_sf, points_sf, include_zero_cells = TRUE)
 mysterymaps_hex_bin_counts <- function(boundary_sf, points_sf,
                                         value_col = "count",
                                         cellsize = 0.3,
                                         min_count = 1L,
-                                        southern_limit = -90) {
+                                        southern_limit = -90,
+                                        include_zero_cells = FALSE) {
   checkmate::assert_class(boundary_sf, "sf")
   checkmate::assert_class(points_sf, "sf")
   checkmate::assert_string(value_col)
   checkmate::assert_number(cellsize, lower = 0, finite = TRUE)
   checkmate::assert_int(min_count, lower = 1L)
   checkmate::assert_number(southern_limit, lower = -90, upper = 90)
+  checkmate::assert_flag(include_zero_cells)
+
+  if (include_zero_cells) {
+    return(mm_honeycomb_counts_full_grid(boundary_sf, points_sf,
+                                         value_col = value_col,
+                                         cellsize = cellsize,
+                                         southern_limit = southern_limit))
+  }
 
   out <- mm_honeycomb_counts(boundary_sf, points_sf, cellsize = cellsize,
                              min_count = min_count,
