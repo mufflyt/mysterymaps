@@ -331,3 +331,72 @@ test_that("the count owns its s2 setting and gives it back", {
   expect_equal(results[[1]], results[[2]])
   expect_true(all(vapply(results, function(r) r[["restored"]] == 1, logical(1))))
 })
+
+# --------------------------------------------------------------------------
+# mysterymaps_hex_bin_counts: the exported, boundary-agnostic wrapper
+# --------------------------------------------------------------------------
+
+test_that("the output column is named value_col, not physician_count", {
+  skip_if_not_installed("sf")
+  area <- hex_area(lon = c(-105, -100), lat = c(38, 42))
+  pts <- hex_points(-102.5, 40)
+
+  out <- suppressWarnings(suppressMessages(
+    mysterymaps_hex_bin_counts(area, pts, value_col = "flood_risk",
+                               cellsize = 0.5)))
+
+  expect_true("flood_risk" %in% names(out))
+  expect_false("physician_count" %in% names(out))
+  expect_equal(out$flood_risk, 1L)
+})
+
+test_that("min_count defaults to 1, unlike mm_honeycomb_counts's 2", {
+  # mm_honeycomb_counts suppresses lone points by default because HRR maps
+  # draw physician density; a generic hazard/accessibility map has no reason
+  # to inherit that assumption, so a single point must survive here.
+  skip_if_not_installed("sf")
+  area <- hex_area(lon = c(-105, -100), lat = c(38, 42))
+  lone <- hex_points(-102.5, 40.0)
+
+  out <- suppressWarnings(suppressMessages(
+    mysterymaps_hex_bin_counts(area, lone, cellsize = 0.5)))
+  expect_equal(nrow(out), 1L)
+  expect_equal(out$count, 1L)
+})
+
+test_that("southern_limit defaults to -90, unlike mm_honeycomb_counts's US-specific 15", {
+  # A boundary south of 15N (e.g. most of South America, Africa, Australia)
+  # must not be silently emptied by a default built for HRR/US maps.
+  skip_if_not_installed("sf")
+  area <- hex_area(lon = c(-70, -65), lat = c(-35, -30))  # Buenos Aires-ish
+  pts <- hex_points(c(-67.5, -67.5), c(-32.5, -32.5))
+
+  out <- suppressWarnings(suppressMessages(
+    mysterymaps_hex_bin_counts(area, pts, cellsize = 0.5)))
+  expect_equal(nrow(out), 1L)
+})
+
+test_that("cellsize and min_count still pass through to the honeycomb count", {
+  skip_if_not_installed("sf")
+  area <- hex_area(lon = c(-105, -100), lat = c(38, 42))
+  pts <- hex_points(c(-102.5, -102.5, -102.5), c(40, 40, 40))
+
+  suppressed <- suppressWarnings(suppressMessages(
+    mysterymaps_hex_bin_counts(area, pts, cellsize = 0.5, min_count = 4L)))
+  kept <- suppressWarnings(suppressMessages(
+    mysterymaps_hex_bin_counts(area, pts, cellsize = 0.5, min_count = 3L)))
+
+  expect_equal(nrow(suppressed), 0L)
+  expect_equal(nrow(kept), 1L)
+  expect_equal(kept$count, 3L)
+})
+
+test_that("arguments are validated before any sf work happens", {
+  expect_error(mysterymaps_hex_bin_counts(data.frame(x = 1), hex_points(1, 1)),
+               class = "simpleError")
+  area <- hex_area(lon = c(-105, -100), lat = c(38, 42))
+  expect_error(mysterymaps_hex_bin_counts(area, data.frame(x = 1)),
+               class = "simpleError")
+  expect_error(mysterymaps_hex_bin_counts(area, hex_points(1, 1), value_col = 1),
+               class = "simpleError")
+})

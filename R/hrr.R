@@ -314,3 +314,57 @@ mm_honeycomb_counts <- function(usa, physician_sf, cellsize = 0.3,
   sf::st_join(grid, counts) %>%
     dplyr::filter(!is.na(.data$physician_count))
 }
+
+#' Hex-bin point counts over any study-area boundary
+#'
+#' Builds a hexagonal grid over `boundary_sf`, counts how many `points_sf`
+#' fall in each cell, and returns the cells that cleared `min_count` -- the
+#' GEOLYTIX-style "bin points into hexagons, shade by count" map, generalized
+#' from the HRR/physician case in [mysterymaps_hrr_maps()] to any boundary and
+#' any point dataset. It is a thin, renaming wrapper around
+#' [mm_honeycomb_counts()], which carries the tested fixes (coastline slivers
+#' under s2, the westernmost-cells defect, CRS transforms); this function adds
+#' no new hex-counting logic of its own.
+#'
+#' @param boundary_sf `sf`: polygon(s) defining the study area the grid is
+#'   built over and clipped to.
+#' @param points_sf `sf`: point data to count per hex cell. Transformed to
+#'   `boundary_sf`'s CRS automatically if it arrives in another one.
+#' @param value_col `character(1)`: name of the output count column. Default
+#'   `"count"`.
+#' @param cellsize `numeric(1)`: hexagon size in the units of `boundary_sf`'s
+#'   CRS (degrees, if left in EPSG:4326). Default `0.3`.
+#' @param min_count `integer(1)`: cells holding fewer than this many points
+#'   are dropped rather than returned -- small-cell suppression, not a
+#'   rendering detail. Default `1L` (no suppression).
+#' @param southern_limit `numeric(1)`: cells entirely south of this latitude
+#'   are dropped. [mm_honeycomb_counts()] defaults this to `15` to cut
+#'   outlying US territory out of HRR maps; that is wrong for a boundary that
+#'   is not the continental US (it would silently delete most of the Southern
+#'   Hemisphere), so this wrapper defaults to `-90`, i.e. no clipping.
+#' @return An `sf` of hex cells carrying a `value_col` count column. Cells
+#'   with fewer than `min_count` points are not returned.
+#' @seealso [mysterymaps_hrr_maps()], which wraps [mm_honeycomb_counts()] for
+#'   the HRR/physician use case with AK/HI/PR insets baked in.
+#' @family geospatial
+#' @export
+#' @examplesIf interactive()
+#' mysterymaps_hex_bin_counts(boundary_sf, points_sf, value_col = "flood_risk")
+mysterymaps_hex_bin_counts <- function(boundary_sf, points_sf,
+                                        value_col = "count",
+                                        cellsize = 0.3,
+                                        min_count = 1L,
+                                        southern_limit = -90) {
+  checkmate::assert_class(boundary_sf, "sf")
+  checkmate::assert_class(points_sf, "sf")
+  checkmate::assert_string(value_col)
+  checkmate::assert_number(cellsize, lower = 0, finite = TRUE)
+  checkmate::assert_int(min_count, lower = 1L)
+  checkmate::assert_number(southern_limit, lower = -90, upper = 90)
+
+  out <- mm_honeycomb_counts(boundary_sf, points_sf, cellsize = cellsize,
+                             min_count = min_count,
+                             southern_limit = southern_limit)
+  names(out)[names(out) == "physician_count"] <- value_col
+  out
+}
