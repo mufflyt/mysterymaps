@@ -197,7 +197,7 @@ mysterymaps_hex_access_maps <- function(
     dplyr::mutate(
       access_band = base::cut(
         .data$weighted_minutes,
-        breaks = c(-base::Inf, 30, 60, 120, 180, base::Inf),
+        breaks = c(-Inf, 30, 60, 120, 180, Inf),
         labels = c("0-30", "30-60", "60-120",
                    "120-180", ">180"),
         right = TRUE
