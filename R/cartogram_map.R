@@ -150,7 +150,6 @@ mysterymaps_cartogram_map <- function(polygons,
   ref_y0 <- bb["ymin"] + 0.06 * (bb["ymax"] - bb["ymin"])
   ref_len_m <- reference_minutes * dist_per_min * unit_m
   ref_df <- data.frame(x = c(ref_x0, ref_x0 + ref_len_m), y = c(ref_y0, ref_y0))
-  ref_unit_label <- if (distance_unit == "miles") "mile" else "kilometer"
 
   p <- ggplot2::ggplot() +
     ggplot2::geom_sf(data = warped, mapping = ggplot2::aes(fill = .data$.mm_time),
