@@ -131,19 +131,26 @@ mysterymaps_hex_bin_rate <- function(boundary_sf,
     sf::st_intersection(sf::st_union(boundary_sf))
 
   counts <- sf::st_intersection(grid, points_sf) %>%
-    sf::st_drop_geometry() %>%
     dplyr::group_by(.data$grid_id) %>%
     dplyr::summarize(count = dplyr::n(), .groups = "drop")
 
   denom_interp <- suppressWarnings(
     sf::st_interpolate_aw(denominator_sf[, denominator_col], grid, extensive = TRUE))
-  denom_interp$grid_id <- grid$grid_id[sf::st_nearest_feature(
-    sf::st_centroid(suppressWarnings(denom_interp)),
-    suppressWarnings(sf::st_centroid(grid)))]
 
-  out <- grid %>%
-    dplyr::left_join(counts, by = "grid_id") %>%
-    dplyr::left_join(sf::st_drop_geometry(denom_interp), by = "grid_id") %>%
+  # SPATIAL joins, not attribute joins on grid_id: st_intersection(grid,
+  # boundary_sf) can fragment one hex into several polygon pieces along an
+  # irregular boundary, all sharing the SAME grid_id -- an attribute join
+  # fans count/population out across every sibling fragment instead of
+  # matching the one fragment that's actually theirs. counts' geometry
+  # (summarized points, grouped but not dropped) spatially intersects only
+  # its own fragment; st_interpolate_aw() returns geometry copied directly
+  # from grid's own rows (just a possibly-shorter subset, dropping cells with
+  # no source overlap), so an exact st_equals match reattaches each
+  # interpolated value to precisely the fragment it was computed for,
+  # ambiguity-free regardless of duplicate grid_id.
+  out <- grid[, "grid_id"] %>%
+    sf::st_join(counts[, "count"]) %>%
+    sf::st_join(denom_interp, join = sf::st_equals) %>%
     dplyr::mutate(
       count = dplyr::coalesce(.data$count, 0L),
       denominator = dplyr::coalesce(.data[[denominator_col]], 0))

@@ -208,6 +208,24 @@ test_that("points arriving in another CRS are still counted in the right cells",
   expect_equal(sum(out_wgs$count), sum(out_alb$count))
 })
 
+test_that("REGRESSION: matches via spatial join, not an attribute join on grid_id", {
+  # grid_id is assigned BEFORE st_intersection(grid, boundary_sf) runs, and
+  # that intersection can slice one hex into several disjoint polygon
+  # fragments along an irregular boundary -- every fragment inherits the
+  # SAME grid_id. An attribute join (left_join(by = "grid_id")) fans count
+  # and population out across every fragment sharing an id, rather than
+  # matching the one fragment each value actually belongs to. Flagged
+  # against a real nationwide hex map (sharp, suspiciously uniform east/west
+  # divide along the CONUS boundary's irregular coastline). A synthetic
+  # boundary that reliably fragments a hex cell at a chosen cellsize is
+  # fragile to construct, so this inspects the source directly, mirroring
+  # the same check for mm_honeycomb_counts_full_grid() in test-hrr.R.
+  body_text <- paste(deparse(body(mysterymaps_hex_bin_rate)), collapse = "\n")
+  expect_false(grepl("left_join", body_text, fixed = TRUE))
+  expect_true(grepl("st_join", body_text, fixed = TRUE))
+  expect_true(grepl("st_equals", body_text, fixed = TRUE))
+})
+
 test_that("sf is named in the error when it is not installed", {
   local_mocked_bindings(
     requireNamespace = function(package, ...) !identical(package, "sf"),

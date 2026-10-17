@@ -96,14 +96,26 @@ mysterymaps_bivariate_choropleth_map <- function(polygons,
   tercile_class <- function(x) {
     x_complete <- x[!is.na(x)]
     cls <- rep(NA_integer_, length(x))
+    rank_based_fallback <- function() {
+      # Too few distinct values for three quantile classes, OR enough
+      # distinct values but a skewed enough distribution that the quantile
+      # breaks themselves collapse to duplicates (classInt::classIntervals
+      # can do this with >=3 distinct values present overall -- e.g. a third
+      # or more of the values tied at the same minimum, which a sparse,
+      # areally-interpolated denominator like hex-cell population routinely
+      # produces). A plain rank-based tercile has no such failure mode, so
+      # the map renders instead of erroring either way.
+      ceiling(3 * rank(x_complete, ties.method = "first") / length(x_complete))
+    }
     if (length(unique(x_complete)) < 3L) {
-      # Too few distinct values for three quantile classes; fall back to a
-      # plain rank-based tercile so the map still renders instead of erroring.
-      cls[!is.na(x)] <- ceiling(3 * rank(x_complete, ties.method = "first") /
-                                  length(x_complete))
-      return(pmin(cls, 3L))
+      cls[!is.na(x)] <- pmin(rank_based_fallback(), 3L)
+      return(cls)
     }
     breaks <- classInt::classIntervals(x_complete, n = 3, style = "quantile")$brks
+    if (length(unique(breaks)) < length(breaks)) {
+      cls[!is.na(x)] <- pmin(rank_based_fallback(), 3L)
+      return(cls)
+    }
     breaks[1] <- -Inf; breaks[length(breaks)] <- Inf
     cls[!is.na(x)] <- as.integer(cut(x_complete, breaks = breaks, labels = FALSE))
     cls

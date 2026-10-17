@@ -41,3 +41,19 @@ testthat::test_that("too few distinct values still renders via the rank fallback
     counties, x_var = "rate", y_var = "need", x_label = "X", y_label = "Y")
   testthat::expect_s3_class(p, "ggplot")
 })
+
+testthat::test_that("REGRESSION: skewed data with collapsing quantile breaks still renders", {
+  # classInt::classIntervals(style = "quantile") can produce duplicate break
+  # points even with well over 3 distinct values present, if the
+  # distribution is skewed enough -- e.g. a third or more of the values tied
+  # at the minimum, which is exactly what an areally-interpolated denominator
+  # (hex-cell population from sparse/empty land) produces nationally. cut()
+  # then errors with "'breaks' are not unique". Caught building a real
+  # nationwide hex map: 4,104 cells, most near-zero population.
+  skip_unless_spatial()
+  counties <- mm_counties(n = 10, rate = c(rep(0, 7), 1, 2, 3))
+  counties$need <- 1:10
+  p <- mysterymaps_bivariate_choropleth_map(
+    counties, x_var = "rate", y_var = "need", x_label = "X", y_label = "Y")
+  testthat::expect_s3_class(p, "ggplot")
+})
