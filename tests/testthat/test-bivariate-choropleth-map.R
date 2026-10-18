@@ -175,6 +175,76 @@ testthat::test_that("n_classes below 2 errors", {
     class = "simpleError")
 })
 
+testthat::test_that("zero_aware = FALSE (the default) leaves classing unchanged", {
+  skip_unless_spatial()
+  counties <- mm_counties(n = 6, rate = c(0, 0, 1, 2, 3, 4))
+  counties$need <- c(1, 6, 2, 5, 3, 4)
+  p_default <- mysterymaps_bivariate_choropleth_map(
+    counties, x_var = "rate", y_var = "need", x_label = "X", y_label = "Y")
+  p_explicit <- mysterymaps_bivariate_choropleth_map(
+    counties, x_var = "rate", y_var = "need", x_label = "X", y_label = "Y", zero_aware = FALSE)
+  testthat::expect_identical(
+    p_default$layers[[1]]$data$.mm_bivar_key,
+    p_explicit$layers[[1]]$data$.mm_bivar_key)
+})
+
+testthat::test_that("zero_aware = TRUE gives an exact zero its own tier, separate from the lowest positive class", {
+  skip_unless_spatial()
+  counties <- mm_counties(n = 6, rate = c(0, 0, 1, 2, 3, 4))
+  counties$need <- c(1, 6, 2, 5, 3, 4)
+  p <- mysterymaps_bivariate_choropleth_map(
+    counties, x_var = "rate", y_var = "need", x_label = "X", y_label = "Y", zero_aware = TRUE)
+  key <- p$layers[[1]]$data$.mm_bivar_key
+  x_class <- as.integer(sub("-.*", "", key))
+  testthat::expect_true(all(x_class[counties$rate == 0] == 0L))
+  testthat::expect_true(all(x_class[counties$rate > 0] >= 1L))
+})
+
+testthat::test_that("zero_aware = TRUE on one axis still carries the other axis's own class", {
+  # x = 0 for two rows with different y values must not collapse to the same
+  # key -- only x's information is flattened by zero_aware, never y's.
+  skip_unless_spatial()
+  counties <- mm_counties(n = 6, rate = c(0, 0, 1, 2, 3, 4))
+  counties$need <- c(1, 6, 2, 5, 3, 4)
+  p <- mysterymaps_bivariate_choropleth_map(
+    counties, x_var = "rate", y_var = "need", x_label = "X", y_label = "Y", zero_aware = TRUE)
+  key <- p$layers[[1]]$data$.mm_bivar_key
+  zero_rows <- key[counties$rate == 0]
+  testthat::expect_length(unique(zero_rows), 2L)
+  testthat::expect_true(all(grepl("^0-", zero_rows)))
+})
+
+testthat::test_that("zero_aware = TRUE auto-generates an (n_classes + 1) x (n_classes + 1) default palette", {
+  skip_unless_spatial()
+  counties <- mm_counties(n = 9, rate = c(0, 0, 0, 1, 2, 3, 4, 5, 6))
+  counties$need <- rev(seq_len(9))
+  p <- mysterymaps_bivariate_choropleth_map(
+    counties, x_var = "rate", y_var = "need", x_label = "X", y_label = "Y", zero_aware = TRUE)
+  fill_scale <- Filter(function(s) "fill" %in% s$aesthetics, p$scales$scales)[[1]]
+  testthat::expect_length(fill_scale$palette(16), 16L)
+})
+
+testthat::test_that("a palette of the wrong length for zero_aware = TRUE errors naming the zero tier", {
+  skip_unless_spatial()
+  counties <- mm_counties(n = 4, rate = c(0, 1, 2, 3))
+  counties$need <- rev(counties$rate)
+  testthat::expect_error(
+    mysterymaps_bivariate_choropleth_map(
+      counties, x_var = "rate", y_var = "need", x_label = "X", y_label = "Y",
+      zero_aware = TRUE, n_classes = 3, palette = MYSTERYMAPS_BIVARIATE_PALETTE),
+    "zero_aware = TRUE")
+})
+
+testthat::test_that("zero_aware must be a single logical value", {
+  skip_unless_spatial()
+  counties <- mm_counties(n = 4, rate = 1:4)
+  counties$need <- rev(counties$rate)
+  testthat::expect_error(
+    mysterymaps_bivariate_choropleth_map(
+      counties, x_var = "rate", y_var = "need", x_label = "X", y_label = "Y",
+      zero_aware = "yes"))
+})
+
 testthat::test_that("mm_bivariate_palette() interpolates corners correctly at the corners themselves", {
   pal <- mm_bivariate_palette(3)
   testthat::expect_identical(unname(pal["1-1"]), "#E8E8E8")

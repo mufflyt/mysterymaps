@@ -31,6 +31,12 @@
 #'
 #' @param physicians `sf` POINT layer, one row per physician.
 #' @param basemap `sf` polygon layer to draw beneath the points.
+#' @param basemap_fill,basemap_color `character(1)`: fill and outline colour
+#'   for the `basemap` polygons. Defaults match this function's long-standing
+#'   hard-coded look (`"#f8f9fa"`, `"gray40"`); exposed because every point
+#'   aesthetic already was and the basemap styling was not.
+#' @param basemap_linewidth `numeric(1)`: outline width for the `basemap`
+#'   polygons. Default `0.25`.
 #' @param title,subtitle,caption Character labels. `NULL` omits.
 #' @param point_color Fill colour when `color_var` is `NULL`.
 #' @param point_size,point_alpha Point aesthetics.
@@ -66,6 +72,9 @@
 #' mysterymaps_physician_dot_map(physicians, basemap)
 mysterymaps_physician_dot_map <- function(physicians,
                                           basemap,
+                                          basemap_fill = "#f8f9fa",
+                                          basemap_color = "gray40",
+                                          basemap_linewidth = 0.25,
                                           title = NULL,
                                           subtitle = NULL,
                                           caption = NULL,
@@ -88,6 +97,9 @@ mysterymaps_physician_dot_map <- function(physicians,
   }
   checkmate::assert_class(physicians, "sf")
   checkmate::assert_class(basemap, "sf")
+  checkmate::assert_string(basemap_fill)
+  checkmate::assert_string(basemap_color)
+  checkmate::assert_number(basemap_linewidth, lower = 0)
   checkmate::assert_number(point_size, lower = 0)
   checkmate::assert_number(point_alpha, lower = 0, upper = 1)
   checkmate::assert_number(jitter_miles, lower = 0)
@@ -154,8 +166,8 @@ mysterymaps_physician_dot_map <- function(physicians,
   }
 
   p <- ggplot2::ggplot() +
-    ggplot2::geom_sf(data = basemap_p, fill = "#f8f9fa", color = "gray40",
-                     linewidth = 0.25) +
+    ggplot2::geom_sf(data = basemap_p, fill = basemap_fill, color = basemap_color,
+                     linewidth = basemap_linewidth) +
     point_layer +
     ggplot2::coord_sf(crs = sf::st_crs(crs), datum = NA) +
     ggplot2::labs(title = title, subtitle = subtitle, caption = caption) +

@@ -18,7 +18,8 @@ mysterymaps_bivariate_choropleth_map(
   crs = 5070,
   legend_position = "br",
   legend_size = 0.16,
-  n_classes = 3
+  n_classes = 3,
+  zero_aware = FALSE
 )
 }
 \arguments{
@@ -57,10 +58,27 @@ generally lands in blank space rather than over the mapped area; shrink
 different \code{legend_position}.}
 
 \item{n_classes}{\code{integer(1)}: classes per axis (so the legend is
-\code{n_classes} x \code{n_classes}). Default \code{3}, the cartographic standard --
-human colour perception reliably resolves about 3 steps varying along
-two channels at once; above roughly 4, interpolated cells stop being
+\code{n_classes} x \code{n_classes}, or \code{(n_classes + 1)} x \code{(n_classes + 1)} when
+\code{zero_aware = TRUE}). Default \code{3}, the cartographic standard -- human
+colour perception reliably resolves about 3 steps varying along two
+channels at once; above roughly 4, interpolated cells stop being
 reliably distinguishable from their neighbours. Must be \verb{>= 2}.}
+
+\item{zero_aware}{\code{logical(1)}: give an exact \code{0} its own tier per axis,
+separate from the quantile classing of the positive values -- the same
+"zero is a category, not the bottom of a gradient" rule
+\code{\link[=mysterymaps_jenks_zero_scale]{mysterymaps_jenks_zero_scale()}} applies elsewhere in this package,
+extended to two axes at once. Default \code{FALSE} (unchanged legacy
+behaviour: zero is just whatever quantile class it falls into). Matters
+most for areally-interpolated denominators like
+\code{\link[=mysterymaps_hex_bin_rate]{mysterymaps_hex_bin_rate()}}'s output, where a large share of cells are
+often a \emph{measured} zero rather than a low-but-nonzero rate. When \code{TRUE},
+an axis with zero values gets \code{n_classes} positive-value quantile tiers
+plus one zero tier (keys \code{"0"} .. \code{"<n_classes>"}); a value of exactly
+zero on only one axis still carries the other axis's own class (e.g.
+\code{"0-3"} is "no measured x, highest y"), so no information is collapsed
+away. \code{NA} is unaffected either way -- it is \code{na_color}'s concern, not
+this one's.}
 }
 \value{
 A \code{ggplot} object. The caller saves it; this function writes nothing.

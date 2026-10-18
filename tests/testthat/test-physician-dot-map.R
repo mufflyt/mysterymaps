@@ -42,6 +42,26 @@ testthat::test_that("the point layer reaches the plot", {
                         info = "no layer carries the physician rows")
 })
 
+testthat::test_that("basemap_fill, basemap_color and basemap_linewidth reach the basemap layer", {
+  skip_unless_spatial()
+  f <- fixture()
+  p <- mysterymaps_physician_dot_map(
+    f$pts, f$poly, basemap_fill = "blue", basemap_color = "red", basemap_linewidth = 0.9)
+  basemap_layer <- p$layers[[1]]
+  testthat::expect_identical(basemap_layer$aes_params$fill, "blue")
+  testthat::expect_identical(basemap_layer$aes_params$colour, "red")
+  testthat::expect_identical(basemap_layer$aes_params$linewidth, 0.9)
+})
+
+testthat::test_that("basemap styling defaults match the function's original hard-coded look", {
+  skip_unless_spatial()
+  f <- fixture()
+  basemap_layer <- mysterymaps_physician_dot_map(f$pts, f$poly)$layers[[1]]
+  testthat::expect_identical(basemap_layer$aes_params$fill, "#f8f9fa")
+  testthat::expect_identical(basemap_layer$aes_params$colour, "gray40")
+  testthat::expect_identical(basemap_layer$aes_params$linewidth, 0.25)
+})
+
 testthat::test_that("the coloured path builds, with and without a palette", {
   # scale_color_manual(values = NULL) raises "Insufficient values in manual
   # scale", which made the original error outright whenever color_var was
