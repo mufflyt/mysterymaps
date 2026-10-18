@@ -58,6 +58,9 @@ failure are handled here rather than left for the next caller.</p>
     <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">mysterymaps_physician_dot_map</span><span class="op">(</span></span>
 <span>  <span class="va">physicians</span>,</span>
 <span>  <span class="va">basemap</span>,</span>
+<span>  basemap_fill <span class="op">=</span> <span class="st">"#f8f9fa"</span>,</span>
+<span>  basemap_color <span class="op">=</span> <span class="st">"gray40"</span>,</span>
+<span>  basemap_linewidth <span class="op">=</span> <span class="fl">0.25</span>,</span>
 <span>  title <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  subtitle <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  caption <span class="op">=</span> <span class="cn">NULL</span>,</span>
@@ -84,6 +87,18 @@ failure are handled here rather than left for the next caller.</p>
 
 <dt id="arg-basemap">basemap<a class="anchor" aria-label="anchor" href="#arg-basemap"></a></dt>
 <dd><p><code>sf</code> polygon layer to draw beneath the points.</p></dd>
+
+
+<dt id="arg-basemap-fill-basemap-color">basemap_fill, basemap_color<a class="anchor" aria-label="anchor" href="#arg-basemap-fill-basemap-color"></a></dt>
+<dd><p><code>character(1)</code>: fill and outline colour
+for the <code>basemap</code> polygons. Defaults match this function's long-standing
+hard-coded look (<code>"#f8f9fa"</code>, <code>"gray40"</code>); exposed because every point
+aesthetic already was and the basemap styling was not.</p></dd>
+
+
+<dt id="arg-basemap-linewidth">basemap_linewidth<a class="anchor" aria-label="anchor" href="#arg-basemap-linewidth"></a></dt>
+<dd><p><code>numeric(1)</code>: outline width for the <code>basemap</code>
+polygons. Default <code>0.25</code>.</p></dd>
 
 
 <dt id="arg-title-subtitle-caption">title, subtitle, caption<a class="anchor" aria-label="anchor" href="#arg-title-subtitle-caption"></a></dt>

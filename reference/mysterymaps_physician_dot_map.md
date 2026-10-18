@@ -12,6 +12,9 @@ caller.
 mysterymaps_physician_dot_map(
   physicians,
   basemap,
+  basemap_fill = "#f8f9fa",
+  basemap_color = "gray40",
+  basemap_linewidth = 0.25,
   title = NULL,
   subtitle = NULL,
   caption = NULL,
@@ -37,6 +40,18 @@ mysterymaps_physician_dot_map(
 - basemap:
 
   `sf` polygon layer to draw beneath the points.
+
+- basemap_fill, basemap_color:
+
+  `character(1)`: fill and outline colour for the `basemap` polygons.
+  Defaults match this function's long-standing hard-coded look
+  (`"#f8f9fa"`, `"gray40"`); exposed because every point aesthetic
+  already was and the basemap styling was not.
+
+- basemap_linewidth:
+
+  `numeric(1)`: outline width for the `basemap` polygons. Default
+  `0.25`.
 
 - title, subtitle, caption:
 

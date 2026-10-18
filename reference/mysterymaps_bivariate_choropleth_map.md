@@ -23,7 +23,8 @@ mysterymaps_bivariate_choropleth_map(
   crs = 5070,
   legend_position = "br",
   legend_size = 0.16,
-  n_classes = 3
+  n_classes = 3,
+  zero_aware = FALSE
 )
 ```
 
@@ -86,10 +87,30 @@ mysterymaps_bivariate_choropleth_map(
 - n_classes:
 
   `integer(1)`: classes per axis (so the legend is `n_classes` x
-  `n_classes`). Default `3`, the cartographic standard – human colour
-  perception reliably resolves about 3 steps varying along two channels
-  at once; above roughly 4, interpolated cells stop being reliably
-  distinguishable from their neighbours. Must be `>= 2`.
+  `n_classes`, or `(n_classes + 1)` x `(n_classes + 1)` when
+  `zero_aware = TRUE`). Default `3`, the cartographic standard – human
+  colour perception reliably resolves about 3 steps varying along two
+  channels at once; above roughly 4, interpolated cells stop being
+  reliably distinguishable from their neighbours. Must be `>= 2`.
+
+- zero_aware:
+
+  `logical(1)`: give an exact `0` its own tier per axis, separate from
+  the quantile classing of the positive values – the same "zero is a
+  category, not the bottom of a gradient" rule
+  [`mysterymaps_jenks_zero_scale()`](https://mufflyt.github.io/mysterymaps/reference/mysterymaps_jenks_zero_scale.md)
+  applies elsewhere in this package, extended to two axes at once.
+  Default `FALSE` (unchanged legacy behaviour: zero is just whatever
+  quantile class it falls into). Matters most for areally-interpolated
+  denominators like
+  [`mysterymaps_hex_bin_rate()`](https://mufflyt.github.io/mysterymaps/reference/mysterymaps_hex_bin_rate.md)'s
+  output, where a large share of cells are often a *measured* zero
+  rather than a low-but-nonzero rate. When `TRUE`, an axis with zero
+  values gets `n_classes` positive-value quantile tiers plus one zero
+  tier (keys `"0"` .. `"<n_classes>"`); a value of exactly zero on only
+  one axis still carries the other axis's own class (e.g. `"0-3"` is "no
+  measured x, highest y"), so no information is collapsed away. `NA` is
+  unaffected either way – it is `na_color`'s concern, not this one's.
 
 ## Value
 

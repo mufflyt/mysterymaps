@@ -2,6 +2,35 @@
 
 ## mysterymaps (development version)
 
+### New: `zero_aware` on `mysterymaps_bivariate_choropleth_map()`
+
+Extends this package’s “zero is a category, not the bottom of a
+gradient” rule
+([`mysterymaps_jenks_zero_scale()`](https://mufflyt.github.io/mysterymaps/reference/mysterymaps_jenks_zero_scale.md))
+to the bivariate map. Default `FALSE` (unchanged legacy behaviour: an
+exact `0` is just whatever quantile tier it falls into, same as any
+other value). When `TRUE`, each axis gets its own zero tier separate
+from the quantile classing of its positive values – a value of `0` on
+only one axis still carries the other axis’s own class (e.g. `"0-3"`),
+so classing one axis as zero never collapses the other axis’s
+information. The default `(n_classes + 1) x (n_classes + 1)` palette is
+auto-generated the same way a non-default `n_classes` already was
+(bilinear interpolation of the same four corners); a supplied `palette`
+of the wrong length errors naming the zero tier explicitly. Most useful
+for areally-interpolated denominators like
+[`mysterymaps_hex_bin_rate()`](https://mufflyt.github.io/mysterymaps/reference/mysterymaps_hex_bin_rate.md)’s
+output, where a large share of cells are often a measured zero rather
+than a low-but-nonzero rate.
+
+### New: `basemap_fill`, `basemap_color`, `basemap_linewidth` on `mysterymaps_physician_dot_map()`
+
+Every point aesthetic (`point_color`, `point_outline_color`,
+`point_size`, `point_alpha`) was already a parameter; the basemap drawn
+beneath the points was not, hard-coded to `fill = "#f8f9fa"`,
+`color = "gray40"`, `linewidth = 0.25`. Those are now the defaults of
+three new, optional arguments, so a caller can match the basemap styling
+to a figure’s palette without hard-coding it.
+
 ### New: `n_classes` on `mysterymaps_bivariate_choropleth_map()`
 
 The bivariate map was hard-coded to terciles – a 3x3 grid. `n_classes`
