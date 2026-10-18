@@ -119,10 +119,15 @@ mysterymaps_bivariate_choropleth_map(
 }
 \seealso{
 Other mapping:
+\code{\link[=mysterymaps_access_choropleth_map]{mysterymaps_access_choropleth_map()}},
+\code{\link[=mysterymaps_access_choropleth_map_multi]{mysterymaps_access_choropleth_map_multi()}},
 \code{\link[=mysterymaps_accessibility_map]{mysterymaps_accessibility_map()}},
+\code{\link[=mysterymaps_aggregate_values_to_polygons]{mysterymaps_aggregate_values_to_polygons()}},
 \code{\link[=mysterymaps_cartogram_map]{mysterymaps_cartogram_map()}},
 \code{\link[=mysterymaps_catchment_redundancy_map]{mysterymaps_catchment_redundancy_map()}},
+\code{\link[=mysterymaps_choropleth_point_map]{mysterymaps_choropleth_point_map()}},
 \code{\link[=mysterymaps_clear_isochrone_cache]{mysterymaps_clear_isochrone_cache()}},
+\code{\link[=mysterymaps_count_points_in_polygons]{mysterymaps_count_points_in_polygons()}},
 \code{\link[=mysterymaps_create_isochrones]{mysterymaps_create_isochrones()}},
 \code{\link[=mysterymaps_flow_map]{mysterymaps_flow_map()}},
 \code{\link[=mysterymaps_hrr_maps]{mysterymaps_hrr_maps()}},

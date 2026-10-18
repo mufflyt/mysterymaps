@@ -22,6 +22,7 @@ colour
 Colour
 coloured
 Colouring
+colouring
 colours
 CONUS
 Covington
@@ -37,6 +38,7 @@ favour
 formatter
 Formatter
 GEOLYTIX
+geo
 geocode
 Geocode
 geocoded
@@ -45,9 +47,11 @@ geocodes
 geocoding
 geodesically
 Geocoding
+geolocate
 geospatial
 ggplot
 grey
+htmlwidget
 HRR
 HRRs
 isochrone
@@ -88,10 +92,12 @@ organised
 OSRM
 overplotted
 pkgdown
+POINTs
 Poquoson
 positionally
 practises
 pre
+px
 productizing
 proj
 rangeland
@@ -113,6 +119,7 @@ tercile
 terciles
 th
 tibble
+toggleable
 tooltips
 undistorted
 unmeasurable
