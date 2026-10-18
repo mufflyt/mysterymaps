@@ -46,10 +46,10 @@ testthat::test_that("REGRESSION: skewed data with collapsing quantile breaks sti
   # classInt::classIntervals(style = "quantile") can produce duplicate break
   # points even with well over 3 distinct values present, if the
   # distribution is skewed enough -- e.g. a third or more of the values tied
-  # at the minimum, which an areally-interpolated denominator (hex-cell
-  # population from sparse/empty land) routinely produces. cut() then errors
-  # with "'breaks' are not unique". Caught building a real nationwide hex
-  # map: 4,104 cells, most near-zero population.
+  # at the minimum, which is exactly what an areally-interpolated denominator
+  # (hex-cell population from sparse/empty land) produces nationally. cut()
+  # then errors with "'breaks' are not unique". Caught building a real
+  # nationwide hex map: 4,104 cells, most near-zero population.
   skip_unless_spatial()
   counties <- mm_counties(n = 10, rate = c(rep(0, 7), 1, 2, 3))
   counties$need <- 1:10
@@ -93,4 +93,93 @@ testthat::test_that("MYSTERYMAPS_BIVARIATE_PALETTE is the default palette argume
   testthat::expect_identical(
     formals(mysterymaps_bivariate_choropleth_map)$palette,
     quote(MYSTERYMAPS_BIVARIATE_PALETTE))
+})
+
+testthat::test_that("n_classes = 3 (the default) uses the literal hand-tuned palette, not a regenerated one", {
+  # MYSTERYMAPS_BIVARIATE_PALETTE's middle cells are hand-tuned for midtone
+  # separation, not a plain bilinear interpolation of its four corners --
+  # the default path must use the literal constant, unchanged.
+  skip_unless_spatial()
+  counties <- mm_counties(n = 9, rate = 1:9)
+  counties$need <- rev(counties$rate)
+  p <- mysterymaps_bivariate_choropleth_map(
+    counties, x_var = "rate", y_var = "need", x_label = "X", y_label = "Y")
+  fill_scale <- Filter(function(s) "fill" %in% s$aesthetics, p$scales$scales)[[1]]
+  testthat::expect_identical(unname(fill_scale$palette(9)), unname(MYSTERYMAPS_BIVARIATE_PALETTE))
+})
+
+testthat::test_that("n_classes != 3 auto-generates an n x n palette when palette is not supplied", {
+  skip_unless_spatial()
+  # rate and need are deliberately NOT perfectly correlated (a fixed
+  # pseudo-random permutation of 1:25): a monotonic pairing (e.g. need =
+  # rev(rate)) is perfectly anti-correlated and can only ever populate the
+  # anti-diagonal 5 of 25 cells, which is correct behaviour, not something
+  # this test should mistake for a bug.
+  counties <- mm_counties(n = 25, rate = 1:25)
+  counties$need <- c(13, 2, 19, 7, 24, 11, 4, 16, 22, 9, 1, 18, 6, 25, 14,
+                     3, 20, 8, 17, 5, 12, 23, 10, 21, 15)
+  p <- mysterymaps_bivariate_choropleth_map(
+    counties, x_var = "rate", y_var = "need", x_label = "X", y_label = "Y", n_classes = 5)
+  key <- p$layers[[1]]$data$.mm_bivar_key
+  testthat::expect_true(all(key %in% paste(rep(1:5, each = 5), rep(1:5, 5), sep = "-")))
+  testthat::expect_gt(length(unique(key)), 5L)
+  fill_scale <- Filter(function(s) "fill" %in% s$aesthetics, p$scales$scales)[[1]]
+  testthat::expect_length(fill_scale$palette(25), 25L)
+})
+
+testthat::test_that("an explicit palette overrides auto-generation even when n_classes != 3", {
+  skip_unless_spatial()
+  counties <- mm_counties(n = 4, rate = 1:4)
+  counties$need <- rev(counties$rate)
+  custom <- stats::setNames(c("#000000", "#111111", "#222222", "#333333"),
+                            c("1-1", "2-1", "1-2", "2-2"))
+  p <- mysterymaps_bivariate_choropleth_map(
+    counties, x_var = "rate", y_var = "need", x_label = "X", y_label = "Y",
+    n_classes = 2, palette = custom)
+  fill_scale <- Filter(function(s) "fill" %in% s$aesthetics, p$scales$scales)[[1]]
+  testthat::expect_identical(unname(fill_scale$palette(4)), unname(custom))
+})
+
+testthat::test_that("a palette of the wrong length for n_classes errors", {
+  skip_unless_spatial()
+  counties <- mm_counties(n = 4, rate = 1:4)
+  counties$need <- rev(counties$rate)
+  testthat::expect_error(
+    mysterymaps_bivariate_choropleth_map(
+      counties, x_var = "rate", y_var = "need", x_label = "X", y_label = "Y",
+      n_classes = 5, palette = MYSTERYMAPS_BIVARIATE_PALETTE),
+    "n_classes = 5")
+})
+
+testthat::test_that("n_classes ties never split across classes, generalized beyond terciles", {
+  # The same regression as the tercile case, at a different n_classes.
+  skip_unless_spatial()
+  n <- 300
+  x <- c(rep(0, 258), seq_len(42))
+  counties <- mm_counties(n = n, rate = x)
+  counties$need <- seq_len(n)
+  p <- mysterymaps_bivariate_choropleth_map(
+    counties, x_var = "rate", y_var = "need", x_label = "X", y_label = "Y", n_classes = 5)
+  key <- p$layers[[1]]$data$.mm_bivar_key
+  x_class <- as.integer(sub("-.*", "", key))
+  testthat::expect_length(unique(x_class[x == 0]), 1L)
+})
+
+testthat::test_that("n_classes below 2 errors", {
+  skip_unless_spatial()
+  counties <- mm_counties(n = 4, rate = 1:4)
+  counties$need <- rev(counties$rate)
+  testthat::expect_error(
+    mysterymaps_bivariate_choropleth_map(
+      counties, x_var = "rate", y_var = "need", x_label = "X", y_label = "Y", n_classes = 1),
+    class = "simpleError")
+})
+
+testthat::test_that("mm_bivariate_palette() interpolates corners correctly at the corners themselves", {
+  pal <- mm_bivariate_palette(3)
+  testthat::expect_identical(unname(pal["1-1"]), "#E8E8E8")
+  testthat::expect_identical(unname(pal["3-1"]), "#5AC8C8")
+  testthat::expect_identical(unname(pal["1-3"]), "#BE64AC")
+  testthat::expect_identical(unname(pal["3-3"]), "#3B4994")
+  testthat::expect_length(pal, 9L)
 })

@@ -17,7 +17,8 @@ mysterymaps_bivariate_choropleth_map(
   na_color = "grey85",
   crs = 5070,
   legend_position = "br",
-  legend_size = 0.16
+  legend_size = 0.16,
+  n_classes = 3
 )
 }
 \arguments{
@@ -30,8 +31,12 @@ grid (e.g. \code{"Women Age 40 and Older"}, not \code{"Women 40+"}).}
 
 \item{title, subtitle, caption}{Character labels. \code{NULL} omits.}
 
-\item{palette}{Named length-9 colour vector, keys \code{"1-1"} .. \code{"3-3"}
-(x class first, y class second). Default \link{MYSTERYMAPS_BIVARIATE_PALETTE}.}
+\item{palette}{Named length-\code{n_classes^2} colour vector, keys \code{"1-1"} ..
+\code{"<n_classes>-<n_classes>"} (x class first, y class second). Default
+\link{MYSTERYMAPS_BIVARIATE_PALETTE} when \code{n_classes = 3} (its literal,
+hand-tuned values, not a regenerated approximation); auto-generated via
+bilinear interpolation of the same four corner colours for any other
+\code{n_classes}, unless a palette is supplied explicitly.}
 
 \item{na_color}{Colour for polygons missing \code{x_var} or \code{y_var}.}
 
@@ -50,15 +55,22 @@ itself, so a small inset tucked flush into one, as this is by default,
 generally lands in blank space rather than over the mapped area; shrink
 \code{legend_size} further for a shape where that isn't true, or pick a
 different \code{legend_position}.}
+
+\item{n_classes}{\code{integer(1)}: classes per axis (so the legend is
+\code{n_classes} x \code{n_classes}). Default \code{3}, the cartographic standard --
+human colour perception reliably resolves about 3 steps varying along
+two channels at once; above roughly 4, interpolated cells stop being
+reliably distinguishable from their neighbours. Must be \verb{>= 2}.}
 }
 \value{
 A \code{ggplot} object. The caller saves it; this function writes nothing.
 }
 \description{
-Shades each polygon by the joint tercile class of two numeric variables
-at once -- e.g. population need versus provider scarcity -- so a reader
-sees where the two overlap without needing two separate maps. Includes a
-3x3 legend grid rendered as an inset, not a separate figure.
+Shades each polygon by the joint class of two numeric variables at once
+-- e.g. population need versus provider scarcity -- so a reader sees
+where the two overlap without needing two separate maps. Includes an
+\code{n_classes} x \code{n_classes} legend grid (terciles, \code{n_classes = 3}, by
+default) rendered as an inset, not a separate figure.
 }
 \details{
 The legend inset is built with \code{\link[ggplot2:annotation_custom]{ggplot2::annotation_custom()}} around a
@@ -66,7 +78,7 @@ small second \code{ggplot}, not \code{cowplot::draw_plot()}. This package does n
 depend on \code{cowplot}, and \code{annotation_custom()} does the same job -- drawing
 one grob inside another plot's panel -- without adding a dependency for it.
 
-Each variable is split into terciles independently with
+Each variable is split into \code{n_classes} groups independently with
 \code{\link[classInt:classIntervals]{classInt::classIntervals()}} (\code{style = "quantile"}), so the bivariate class
 reflects each variable's own distribution rather than a shared arbitrary
 cutoff. A polygon with \code{NA} in either variable gets \code{NA} for the joint

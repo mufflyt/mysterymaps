@@ -13,13 +13,70 @@ MYSTERYMAPS_BIVARIATE_PALETTE <- c(
   "1-3" = "#be64ac", "2-3" = "#8c62aa", "3-3" = "#3b4994"
 )
 
+#' Generate an n x n bivariate palette by bilinear interpolation
+#'
+#' @description
+#' Builds an `n_classes` x `n_classes` palette for
+#' [mysterymaps_bivariate_choropleth_map()] at any grid size, by bilinearly
+#' interpolating sRGB between four corner colours -- the same four corners
+#' [MYSTERYMAPS_BIVARIATE_PALETTE] uses for its own `"1-1"`, `"3-1"`,
+#' `"1-3"`, `"3-3"` cells -- so a 4x4 or 5x5 legend stays recognizably the
+#' same colour scheme, not a different palette. [MYSTERYMAPS_BIVARIATE_PALETTE]
+#' itself is NOT regenerated from this at `n_classes = 3`: its middle cells
+#' were hand-tuned (after Joshua Stevens' scheme) for better midtone
+#' separation than a plain linear interpolation gives, so the 3x3 default
+#' stays the literal hand-tuned constant.
+#'
+#' Above roughly 4x4, the interpolated cells stop being reliably
+#' distinguishable from their neighbours -- human colour perception does not
+#' resolve many steps varying along two channels at once. This function will
+#' still generate a 5x5 or larger grid on request; it does not warn, because
+#' whether that resolution is legible is a judgement call for the map's
+#' actual data and audience, not something this function can decide for a
+#' caller.
+#'
+#' @param n_classes `integer(1)`: classes per axis. Must be `>= 2`.
+#' @param corners Named length-4 character vector of hex colours, keys
+#'   `"ll"` (low x, low y), `"hl"` (high x, low y), `"lh"` (low x, high y),
+#'   `"hh"` (high x, high y). Defaults to [MYSTERYMAPS_BIVARIATE_PALETTE]'s
+#'   own four corners.
+#' @return A named character vector of `n_classes^2` hex colours, keys
+#'   `"<x_class>-<y_class>"`.
+#' @keywords internal
+#' @noRd
+mm_bivariate_palette <- function(n_classes,
+                                 corners = c(ll = "#e8e8e8", hl = "#5ac8c8",
+                                            lh = "#be64ac", hh = "#3b4994")) {
+  to_rgb <- function(hex) grDevices::col2rgb(hex) / 255
+  ll <- to_rgb(corners[["ll"]]); hl <- to_rgb(corners[["hl"]])
+  lh <- to_rgb(corners[["lh"]]); hh <- to_rgb(corners[["hh"]])
+  step <- if (n_classes > 1L) 1 / (n_classes - 1L) else 0
+  out <- character(n_classes * n_classes)
+  nm <- character(n_classes * n_classes)
+  idx <- 1L
+  for (j in seq_len(n_classes)) {
+    ty <- (j - 1L) * step
+    top <- ll * (1 - ty) + lh * ty
+    bot <- hl * (1 - ty) + hh * ty
+    for (i in seq_len(n_classes)) {
+      tx <- (i - 1L) * step
+      col <- top * (1 - tx) + bot * tx
+      out[idx] <- grDevices::rgb(col[1], col[2], col[3])
+      nm[idx] <- paste0(i, "-", j)
+      idx <- idx + 1L
+    }
+  }
+  stats::setNames(out, nm)
+}
+
 #' Two-variable (bivariate) choropleth map
 #'
 #' @description
-#' Shades each polygon by the joint tercile class of two numeric variables
-#' at once -- e.g. population need versus provider scarcity -- so a reader
-#' sees where the two overlap without needing two separate maps. Includes a
-#' 3x3 legend grid rendered as an inset, not a separate figure.
+#' Shades each polygon by the joint class of two numeric variables at once
+#' -- e.g. population need versus provider scarcity -- so a reader sees
+#' where the two overlap without needing two separate maps. Includes an
+#' `n_classes` x `n_classes` legend grid (terciles, `n_classes = 3`, by
+#' default) rendered as an inset, not a separate figure.
 #'
 #' @details
 #' The legend inset is built with [ggplot2::annotation_custom()] around a
@@ -27,7 +84,7 @@ MYSTERYMAPS_BIVARIATE_PALETTE <- c(
 #' depend on `cowplot`, and `annotation_custom()` does the same job -- drawing
 #' one grob inside another plot's panel -- without adding a dependency for it.
 #'
-#' Each variable is split into terciles independently with
+#' Each variable is split into `n_classes` groups independently with
 #' [classInt::classIntervals()] (`style = "quantile"`), so the bivariate class
 #' reflects each variable's own distribution rather than a shared arbitrary
 #' cutoff. A polygon with `NA` in either variable gets `NA` for the joint
@@ -38,9 +95,18 @@ MYSTERYMAPS_BIVARIATE_PALETTE <- c(
 #' @param x_label,y_label `character(1)`: full-word axis labels for the legend
 #'   grid (e.g. `"Women Age 40 and Older"`, not `"Women 40+"`).
 #' @param title,subtitle,caption Character labels. `NULL` omits.
-#' @param palette Named length-9 colour vector, keys `"1-1"` .. `"3-3"`
-#'   (x class first, y class second). Default [MYSTERYMAPS_BIVARIATE_PALETTE].
+#' @param palette Named length-`n_classes^2` colour vector, keys `"1-1"` ..
+#'   `"<n_classes>-<n_classes>"` (x class first, y class second). Default
+#'   [MYSTERYMAPS_BIVARIATE_PALETTE] when `n_classes = 3` (its literal,
+#'   hand-tuned values, not a regenerated approximation); auto-generated via
+#'   bilinear interpolation of the same four corner colours for any other
+#'   `n_classes`, unless a palette is supplied explicitly.
 #' @param na_color Colour for polygons missing `x_var` or `y_var`.
+#' @param n_classes `integer(1)`: classes per axis (so the legend is
+#'   `n_classes` x `n_classes`). Default `3`, the cartographic standard --
+#'   human colour perception reliably resolves about 3 steps varying along
+#'   two channels at once; above roughly 4, interpolated cells stop being
+#'   reliably distinguishable from their neighbours. Must be `>= 2`.
 #' @param crs Projection for display. Default EPSG:5070 (Albers Equal Area),
 #'   appropriate for the contiguous United States.
 #' @param legend_position `character(1)`: corner for the legend inset, one of
@@ -82,7 +148,8 @@ mysterymaps_bivariate_choropleth_map <- function(polygons,
                                                   na_color = "grey85",
                                                   crs = 5070,
                                                   legend_position = "br",
-                                                  legend_size = 0.16) {
+                                                  legend_size = 0.16,
+                                                  n_classes = 3) {
   for (pkg in c("sf", "ggplot2")) {
     if (!requireNamespace(pkg, quietly = TRUE)) {
       stop("mysterymaps_bivariate_choropleth_map() needs the '", pkg,
@@ -90,6 +157,7 @@ mysterymaps_bivariate_choropleth_map <- function(polygons,
            "this function.", call. = FALSE)
     }
   }
+  palette_missing <- missing(palette)
   checkmate::assert_class(polygons, "sf")
   checkmate::assert_string(x_var)
   checkmate::assert_string(y_var)
@@ -98,6 +166,15 @@ mysterymaps_bivariate_choropleth_map <- function(polygons,
   checkmate::assert_subset(c(x_var, y_var), names(polygons))
   checkmate::assert_choice(legend_position, c("br", "bl", "tr", "tl"))
   checkmate::assert_number(legend_size, lower = 0, upper = 1)
+  checkmate::assert_int(n_classes, lower = 2L)
+  if (palette_missing && n_classes != 3L) {
+    palette <- mm_bivariate_palette(n_classes)
+  }
+  if (length(palette) != n_classes^2) {
+    stop("mysterymaps_bivariate_choropleth_map(): `palette` has ", length(palette),
+         " colour(s) but n_classes = ", n_classes, " needs exactly ", n_classes^2, ".",
+         call. = FALSE)
+  }
   if (nrow(polygons) == 0L) {
     stop("mysterymaps_bivariate_choropleth_map(): `polygons` has zero rows.",
          call. = FALSE)
@@ -107,13 +184,13 @@ mysterymaps_bivariate_choropleth_map <- function(polygons,
     x_complete <- x[!is.na(x)]
     cls <- rep(NA_integer_, length(x))
     rank_based_fallback <- function() {
-      # Too few distinct values for three quantile classes, OR enough
+      # Too few distinct values for n_classes quantile classes, OR enough
       # distinct values but a skewed enough distribution that the quantile
       # breaks themselves collapse to duplicates (classInt::classIntervals
-      # can do this with >=3 distinct values present overall -- e.g. a third
-      # or more of the values tied at the same minimum, which a sparse,
-      # areally-interpolated denominator like hex-cell population routinely
-      # produces).
+      # can do this with >=n_classes distinct values present overall -- e.g.
+      # a third or more of the values tied at the same minimum, which a
+      # sparse, areally-interpolated denominator like hex-cell population
+      # routinely produces).
       #
       # REGRESSION: rank(x, ties.method = "first") breaks ties by each
       # value's position in x, not by anything about the data -- on a
@@ -123,21 +200,22 @@ mysterymaps_bivariate_choropleth_map <- function(polygons,
       # result was three near-perfect vertical bands at mean longitudes
       # -113.9/-97.5/-81.7 for cells that were all, in fact, zero -- a map
       # artifact with zero informational content, read (correctly) as "that
-      # can't be correct." Classing the DISTINCT values into terciles and
+      # can't be correct." Classing the DISTINCT values into groups and
       # looking each observation up by its value, instead of ranking raw
       # observations, guarantees every tied value lands in one class
       # together -- here, nearly all of class 1, honestly.
       distinct_vals <- sort(unique(x_complete))
-      value_class <- pmin(ceiling(3 * seq_along(distinct_vals) / length(distinct_vals)), 3L)
+      value_class <- pmin(ceiling(n_classes * seq_along(distinct_vals) / length(distinct_vals)),
+                          n_classes)
       unname(value_class[match(x_complete, distinct_vals)])
     }
-    if (length(unique(x_complete)) < 3L) {
-      cls[!is.na(x)] <- pmin(rank_based_fallback(), 3L)
+    if (length(unique(x_complete)) < n_classes) {
+      cls[!is.na(x)] <- pmin(rank_based_fallback(), n_classes)
       return(cls)
     }
-    breaks <- classInt::classIntervals(x_complete, n = 3, style = "quantile")$brks
+    breaks <- classInt::classIntervals(x_complete, n = n_classes, style = "quantile")$brks
     if (length(unique(breaks)) < length(breaks)) {
-      cls[!is.na(x)] <- pmin(rank_based_fallback(), 3L)
+      cls[!is.na(x)] <- pmin(rank_based_fallback(), n_classes)
       return(cls)
     }
     breaks[1] <- -Inf; breaks[length(breaks)] <- Inf
