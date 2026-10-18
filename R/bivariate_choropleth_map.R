@@ -103,10 +103,26 @@ mm_bivariate_palette <- function(n_classes,
 #'   `n_classes`, unless a palette is supplied explicitly.
 #' @param na_color Colour for polygons missing `x_var` or `y_var`.
 #' @param n_classes `integer(1)`: classes per axis (so the legend is
-#'   `n_classes` x `n_classes`). Default `3`, the cartographic standard --
-#'   human colour perception reliably resolves about 3 steps varying along
-#'   two channels at once; above roughly 4, interpolated cells stop being
+#'   `n_classes` x `n_classes`, or `(n_classes + 1)` x `(n_classes + 1)` when
+#'   `zero_aware = TRUE`). Default `3`, the cartographic standard -- human
+#'   colour perception reliably resolves about 3 steps varying along two
+#'   channels at once; above roughly 4, interpolated cells stop being
 #'   reliably distinguishable from their neighbours. Must be `>= 2`.
+#' @param zero_aware `logical(1)`: give an exact `0` its own tier per axis,
+#'   separate from the quantile classing of the positive values -- the same
+#'   "zero is a category, not the bottom of a gradient" rule
+#'   [mysterymaps_jenks_zero_scale()] applies elsewhere in this package,
+#'   extended to two axes at once. Default `FALSE` (unchanged legacy
+#'   behaviour: zero is just whatever quantile class it falls into). Matters
+#'   most for areally-interpolated denominators like
+#'   [mysterymaps_hex_bin_rate()]'s output, where a large share of cells are
+#'   often a *measured* zero rather than a low-but-nonzero rate. When `TRUE`,
+#'   an axis with zero values gets `n_classes` positive-value quantile tiers
+#'   plus one zero tier (keys `"0"` .. `"<n_classes>"`); a value of exactly
+#'   zero on only one axis still carries the other axis's own class (e.g.
+#'   `"0-3"` is "no measured x, highest y"), so no information is collapsed
+#'   away. `NA` is unaffected either way -- it is `na_color`'s concern, not
+#'   this one's.
 #' @param crs Projection for display. Default EPSG:5070 (Albers Equal Area),
 #'   appropriate for the contiguous United States.
 #' @param legend_position `character(1)`: corner for the legend inset, one of
@@ -149,7 +165,8 @@ mysterymaps_bivariate_choropleth_map <- function(polygons,
                                                   crs = 5070,
                                                   legend_position = "br",
                                                   legend_size = 0.16,
-                                                  n_classes = 3) {
+                                                  n_classes = 3,
+                                                  zero_aware = FALSE) {
   for (pkg in c("sf", "ggplot2")) {
     if (!requireNamespace(pkg, quietly = TRUE)) {
       stop("mysterymaps_bivariate_choropleth_map() needs the '", pkg,
@@ -167,12 +184,26 @@ mysterymaps_bivariate_choropleth_map <- function(polygons,
   checkmate::assert_choice(legend_position, c("br", "bl", "tr", "tl"))
   checkmate::assert_number(legend_size, lower = 0, upper = 1)
   checkmate::assert_int(n_classes, lower = 2L)
-  if (palette_missing && n_classes != 3L) {
+  checkmate::assert_flag(zero_aware)
+  if (palette_missing && zero_aware) {
+    # One extra tier per axis for the zero class. Generated the same way any
+    # non-default n_classes is -- bilinear interpolation of the same four
+    # corners -- then the tier labels are shifted down by one so the zero
+    # tier is key "0", not "1" (which would collide with the first positive
+    # class).
+    palette <- mm_bivariate_palette(n_classes + 1L)
+    shifted_x <- as.integer(sub("-.*", "", names(palette))) - 1L
+    shifted_y <- as.integer(sub(".*-", "", names(palette))) - 1L
+    names(palette) <- paste0(shifted_x, "-", shifted_y)
+  } else if (palette_missing && n_classes != 3L) {
     palette <- mm_bivariate_palette(n_classes)
   }
-  if (length(palette) != n_classes^2) {
+  n_tiers <- if (zero_aware) n_classes + 1L else n_classes
+  if (length(palette) != n_tiers^2) {
     stop("mysterymaps_bivariate_choropleth_map(): `palette` has ", length(palette),
-         " colour(s) but n_classes = ", n_classes, " needs exactly ", n_classes^2, ".",
+         " colour(s) but n_classes = ", n_classes,
+         if (zero_aware) " with zero_aware = TRUE (1 zero tier + n_classes positive tiers per axis)" else "",
+         " needs exactly ", n_tiers^2, ".",
          call. = FALSE)
   }
   if (nrow(polygons) == 0L) {
@@ -180,9 +211,7 @@ mysterymaps_bivariate_choropleth_map <- function(polygons,
          call. = FALSE)
   }
 
-  tercile_class <- function(x) {
-    x_complete <- x[!is.na(x)]
-    cls <- rep(NA_integer_, length(x))
+  tercile_class <- function(vals) {
     rank_based_fallback <- function() {
       # Too few distinct values for n_classes quantile classes, OR enough
       # distinct values but a skewed enough distribution that the quantile
@@ -204,27 +233,46 @@ mysterymaps_bivariate_choropleth_map <- function(polygons,
       # looking each observation up by its value, instead of ranking raw
       # observations, guarantees every tied value lands in one class
       # together -- here, nearly all of class 1, honestly.
-      distinct_vals <- sort(unique(x_complete))
+      distinct_vals <- sort(unique(vals))
       value_class <- pmin(ceiling(n_classes * seq_along(distinct_vals) / length(distinct_vals)),
                           n_classes)
-      unname(value_class[match(x_complete, distinct_vals)])
+      unname(value_class[match(vals, distinct_vals)])
     }
-    if (length(unique(x_complete)) < n_classes) {
-      cls[!is.na(x)] <- pmin(rank_based_fallback(), n_classes)
-      return(cls)
+    if (length(unique(vals)) < n_classes) {
+      return(pmin(rank_based_fallback(), n_classes))
     }
-    breaks <- classInt::classIntervals(x_complete, n = n_classes, style = "quantile")$brks
+    breaks <- classInt::classIntervals(vals, n = n_classes, style = "quantile")$brks
     if (length(unique(breaks)) < length(breaks)) {
-      cls[!is.na(x)] <- pmin(rank_based_fallback(), n_classes)
-      return(cls)
+      return(pmin(rank_based_fallback(), n_classes))
     }
     breaks[1] <- -Inf; breaks[length(breaks)] <- Inf
-    cls[!is.na(x)] <- as.integer(cut(x_complete, breaks = breaks, labels = FALSE))
+    as.integer(cut(vals, breaks = breaks, labels = FALSE))
+  }
+
+  classify_axis <- function(x) {
+    x_complete <- x[!is.na(x)]
+    cls <- rep(NA_integer_, length(x))
+    if (!zero_aware) {
+      cls[!is.na(x)] <- tercile_class(x_complete)
+      return(cls)
+    }
+    # zero_aware: an exact 0 is its own tier, never classed alongside the
+    # positive values -- the same reasoning as mysterymaps_jenks_zero_scale(),
+    # applied per axis. Positive values are quantile-classed among
+    # THEMSELVES (not diluted by however many zeros sit below them), then
+    # shifted up by one so tier 0 stays free for zero.
+    is_zero <- x_complete == 0
+    out <- integer(length(x_complete))
+    out[is_zero] <- 0L
+    if (any(!is_zero)) {
+      out[!is_zero] <- tercile_class(x_complete[!is_zero])
+    }
+    cls[!is.na(x)] <- out
     cls
   }
 
-  x_class <- tercile_class(polygons[[x_var]])
-  y_class <- tercile_class(polygons[[y_var]])
+  x_class <- classify_axis(polygons[[x_var]])
+  y_class <- classify_axis(polygons[[y_var]])
   bivar_key <- ifelse(is.na(x_class) | is.na(y_class), NA_character_,
                       paste0(x_class, "-", y_class))
   polygons$.mm_bivar_key <- bivar_key

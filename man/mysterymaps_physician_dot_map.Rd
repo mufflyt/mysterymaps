@@ -7,6 +7,9 @@
 mysterymaps_physician_dot_map(
   physicians,
   basemap,
+  basemap_fill = "#f8f9fa",
+  basemap_color = "gray40",
+  basemap_linewidth = 0.25,
   title = NULL,
   subtitle = NULL,
   caption = NULL,
@@ -26,6 +29,14 @@ mysterymaps_physician_dot_map(
 \item{physicians}{\code{sf} POINT layer, one row per physician.}
 
 \item{basemap}{\code{sf} polygon layer to draw beneath the points.}
+
+\item{basemap_fill, basemap_color}{\code{character(1)}: fill and outline colour
+for the \code{basemap} polygons. Defaults match this function's long-standing
+hard-coded look (\code{"#f8f9fa"}, \code{"gray40"}); exposed because every point
+aesthetic already was and the basemap styling was not.}
+
+\item{basemap_linewidth}{\code{numeric(1)}: outline width for the \code{basemap}
+polygons. Default \code{0.25}.}
 
 \item{title, subtitle, caption}{Character labels. \code{NULL} omits.}
 
