@@ -93,6 +93,16 @@ m <- leaflet::leaflet() |>
 m <- mysterymaps_base_legend_switcher(m, default = "Supply")
 ```
 
+Other leaflet map templates and spatial helpers:
+
+| Function | Produces |
+|---|---|
+| `mysterymaps_access_choropleth_map()` | county- or congressional-district-level closest-provider access map, shaded by drive time or supply as a toggle, with click-to-highlight and name search |
+| `mysterymaps_access_choropleth_map_multi()` | the `_multi` sibling: several geographies at once, plus a control panel (zoom-to-ZIP, worst-access list, URL deep-linking) |
+| `mysterymaps_choropleth_point_map()` | a general multi-layer choropleth + point leaflet map with switchable base layers and per-layer legends |
+| `mysterymaps_count_points_in_polygons()` | point-in-polygon counts, one count per polygon |
+| `mysterymaps_aggregate_values_to_polygons()` | rolls values from one polygon layer up to a different one (e.g. counties to Hospital Referral Regions) |
+
 ---
 
 ## A static map

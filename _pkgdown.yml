@@ -10,6 +10,9 @@ reference:
     desc: Whole maps, assembled.
     contents:
       - mysterymaps_county_access_map
+      - mysterymaps_access_choropleth_map
+      - mysterymaps_access_choropleth_map_multi
+      - mysterymaps_choropleth_point_map
       - mysterymaps_map_base
       - mysterymaps_map_leaflet
       - mysterymaps_notes_panel
@@ -59,6 +62,8 @@ reference:
     contents:
       - mysterymaps_hex_bin_counts
       - mysterymaps_hex_bin_rate
+      - mysterymaps_count_points_in_polygons
+      - mysterymaps_aggregate_values_to_polygons
 
   - title: Isochrones, geocoding and overlap
     contents:
