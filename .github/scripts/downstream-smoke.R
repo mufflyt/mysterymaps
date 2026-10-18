@@ -22,13 +22,15 @@
 # from -- an invented scenario tests this package's idea of how it is used,
 # which is exactly what already failed once.
 #
-# Extended below to cover the six map-template functions added for
+# Extended below to cover the eight map/aggregation functions added for
 # mufflyt/isochrones' Siff_Virginia/ deliverable: mysterymaps_pathway_small_
-# multiples_map(), mysterymaps_catchment_redundancy_map() and
-# mysterymaps_bivariate_choropleth_map() have a real call site there
-# (build_new_map_types.R, usa_hex_bivariate_physicians_population.R) and the
-# fixtures below reproduce its exact argument shapes with small synthetic sf
-# objects, not that repository's real geocoded/ACS data. The other three --
+# multiples_map(), mysterymaps_catchment_redundancy_map(),
+# mysterymaps_bivariate_choropleth_map(), mysterymaps_hex_bin_counts() and
+# mysterymaps_hex_bin_rate() have a real call site there
+# (build_new_map_types.R, usa_hex_physician_density.R,
+# usa_hex_bivariate_physicians_population.R) and the fixtures below reproduce
+# their exact argument shapes with small synthetic sf objects, not that
+# repository's real geocoded/ACS data. The other three --
 # mysterymaps_cartogram_map(), mysterymaps_flow_map() and
 # mysterymaps_rate_choropleth_map() -- have no real external caller yet, so
 # their scenarios are lifted from this package's own @examplesIf documentation
@@ -147,6 +149,56 @@ scenarios <- list(
         x_label = "fixture", y_label = "fixture", title = "fixture",
         crs = 5070, n_classes = 3) +
         mysterymaps::mysterymaps_scale_bar()
+    }
+  ),
+  list(
+    source = "mufflyt/isochrones Siff_Virginia/usa_hex_physician_density.R",
+    call = function() {
+      set.seed(4)
+      conus_fx <- sf::st_sf(geometry = sf::st_sfc(
+        sf::st_polygon(list(cbind(c(-100, -94, -94, -100, -100), c(35, 35, 41, 41, 35)))),
+        crs = 4326))
+      phys_fx <- sf::st_sf(
+        physician_count = rep(1, 15),
+        geometry = sf::st_sfc(lapply(1:15, function(i)
+          sf::st_point(c(stats::runif(1, -100, -94), stats::runif(1, 35, 41)))), crs = 4326)
+      )
+      hexes_fx <- mysterymaps::mysterymaps_hex_bin_counts(
+        conus_fx, phys_fx, value_col = "physician_count",
+        cellsize = 0.5, include_zero_cells = TRUE)
+      # The real script's own next step: plot the aggregated hexes, the same
+      # way a consumer calling this function actually uses its result.
+      ggplot2::ggplot() +
+        ggplot2::geom_sf(data = conus_fx) +
+        ggplot2::geom_sf(data = hexes_fx, ggplot2::aes(fill = physician_count))
+    }
+  ),
+  list(
+    source = "mufflyt/isochrones Siff_Virginia/usa_hex_bivariate_physicians_population.R (hex_bin_rate aggregation step)",
+    call = function() {
+      set.seed(5)
+      conus_fx <- sf::st_sf(geometry = sf::st_sfc(
+        sf::st_polygon(list(cbind(c(-100, -94, -94, -100, -100), c(35, 35, 41, 41, 35)))),
+        crs = 4326))
+      phys_fx <- sf::st_sf(
+        geometry = sf::st_sfc(lapply(1:15, function(i)
+          sf::st_point(c(stats::runif(1, -100, -94), stats::runif(1, 35, 41)))), crs = 4326)
+      )
+      # tract-like denominator polygons tiling the same region, each with a
+      # population "estimate" -- the shape get_acs(geometry = TRUE) returns.
+      tract_pop_fx <- sf::st_sf(
+        estimate = stats::runif(16, 500, 5000),
+        geometry = sf::st_sfc(lapply(0:15, function(i) {
+          x <- -100 + (i %% 4) * 1.5; y <- 35 + (i %/% 4) * 1.5
+          sf::st_polygon(list(cbind(c(x, x + 1.5, x + 1.5, x, x), c(y, y, y + 1.5, y + 1.5, y))))
+        }), crs = 4326)
+      )
+      hexes_fx <- mysterymaps::mysterymaps_hex_bin_rate(
+        conus_fx, phys_fx, tract_pop_fx, denominator_col = "estimate",
+        cellsize = 0.5, value_col = "physicians_per_capita")
+      ggplot2::ggplot() +
+        ggplot2::geom_sf(data = conus_fx) +
+        ggplot2::geom_sf(data = hexes_fx, ggplot2::aes(fill = physicians_per_capita))
     }
   ),
 
