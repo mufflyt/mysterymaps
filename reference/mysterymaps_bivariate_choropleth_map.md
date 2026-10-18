@@ -1,9 +1,10 @@
 # Two-variable (bivariate) choropleth map
 
-Shades each polygon by the joint tercile class of two numeric variables
-at once – e.g. population need versus provider scarcity – so a reader
-sees where the two overlap without needing two separate maps. Includes a
-3x3 legend grid rendered as an inset, not a separate figure.
+Shades each polygon by the joint class of two numeric variables at once
+– e.g. population need versus provider scarcity – so a reader sees where
+the two overlap without needing two separate maps. Includes an
+`n_classes` x `n_classes` legend grid (terciles, `n_classes = 3`, by
+default) rendered as an inset, not a separate figure.
 
 ## Usage
 
@@ -21,7 +22,8 @@ mysterymaps_bivariate_choropleth_map(
   na_color = "grey85",
   crs = 5070,
   legend_position = "br",
-  legend_size = 0.16
+  legend_size = 0.16,
+  n_classes = 3
 )
 ```
 
@@ -46,9 +48,13 @@ mysterymaps_bivariate_choropleth_map(
 
 - palette:
 
-  Named length-9 colour vector, keys `"1-1"` .. `"3-3"` (x class first,
-  y class second). Default
-  [MYSTERYMAPS_BIVARIATE_PALETTE](https://mufflyt.github.io/mysterymaps/reference/MYSTERYMAPS_BIVARIATE_PALETTE.md).
+  Named length-`n_classes^2` colour vector, keys `"1-1"` ..
+  `"<n_classes>-<n_classes>"` (x class first, y class second). Default
+  [MYSTERYMAPS_BIVARIATE_PALETTE](https://mufflyt.github.io/mysterymaps/reference/MYSTERYMAPS_BIVARIATE_PALETTE.md)
+  when `n_classes = 3` (its literal, hand-tuned values, not a
+  regenerated approximation); auto-generated via bilinear interpolation
+  of the same four corner colours for any other `n_classes`, unless a
+  palette is supplied explicitly.
 
 - na_color:
 
@@ -77,6 +83,14 @@ mysterymaps_bivariate_choropleth_map(
   shrink `legend_size` further for a shape where that isn't true, or
   pick a different `legend_position`.
 
+- n_classes:
+
+  `integer(1)`: classes per axis (so the legend is `n_classes` x
+  `n_classes`). Default `3`, the cartographic standard – human colour
+  perception reliably resolves about 3 steps varying along two channels
+  at once; above roughly 4, interpolated cells stop being reliably
+  distinguishable from their neighbours. Must be `>= 2`.
+
 ## Value
 
 A `ggplot` object. The caller saves it; this function writes nothing.
@@ -91,7 +105,7 @@ does not depend on `cowplot`, and
 does the same job – drawing one grob inside another plot's panel –
 without adding a dependency for it.
 
-Each variable is split into terciles independently with
+Each variable is split into `n_classes` groups independently with
 [`classInt::classIntervals()`](https://r-spatial.github.io/classInt/reference/classIntervals.html)
 (`style = "quantile"`), so the bivariate class reflects each variable's
 own distribution rather than a shared arbitrary cutoff. A polygon with
