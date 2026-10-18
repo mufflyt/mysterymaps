@@ -137,6 +137,16 @@ Other static (ggplot2) maps:
 | [`mysterymaps_pathway_small_multiples_map()`](https://mufflyt.github.io/mysterymaps/reference/mysterymaps_pathway_small_multiples_map.md) | one facet per pathway/certification group, plus a combined panel |
 | [`mysterymaps_accessibility_map()`](https://mufflyt.github.io/mysterymaps/reference/mysterymaps_accessibility_map.md) | one-call `twostep::compute_e2sfca()` map, zero vs. outside-catchment vs. missing kept distinct |
 
+A few of those, rendered on the same synthetic North Carolina data as
+above (`data-raw/make_readme_figures.R`):
+
+|  |  |
+|----|----|
+| **[`mysterymaps_rate_choropleth_map()`](https://mufflyt.github.io/mysterymaps/reference/mysterymaps_rate_choropleth_map.md)** ![Rate choropleth](reference/figures/rate-choropleth.png) | **[`mysterymaps_bivariate_choropleth_map()`](https://mufflyt.github.io/mysterymaps/reference/mysterymaps_bivariate_choropleth_map.md)** ![Bivariate choropleth](reference/figures/bivariate-choropleth.png) |
+| **[`mysterymaps_catchment_redundancy_map()`](https://mufflyt.github.io/mysterymaps/reference/mysterymaps_catchment_redundancy_map.md)** ![Catchment redundancy map](reference/figures/catchment-redundancy.png) | **[`mysterymaps_cartogram_map()`](https://mufflyt.github.io/mysterymaps/reference/mysterymaps_cartogram_map.md)** ![Drive-time cartogram](reference/figures/cartogram.png) |
+| **[`mysterymaps_flow_map()`](https://mufflyt.github.io/mysterymaps/reference/mysterymaps_flow_map.md)** ![Flow map](reference/figures/flow-map.png) | **[`mysterymaps_pathway_small_multiples_map()`](https://mufflyt.github.io/mysterymaps/reference/mysterymaps_pathway_small_multiples_map.md)** ![Pathway small multiples map](reference/figures/pathway-small-multiples.png) |
+| **[`mysterymaps_hex_bin_counts()`](https://mufflyt.github.io/mysterymaps/reference/mysterymaps_hex_bin_counts.md)** ![Hex-binned point counts](reference/figures/hex-bin-counts.png) | **[`mysterymaps_hex_bin_rate()`](https://mufflyt.github.io/mysterymaps/reference/mysterymaps_hex_bin_rate.md)** ![Hex-binned rate over an areally-interpolated denominator](reference/figures/hex-bin-rate.png) |
+
 ------------------------------------------------------------------------
 
 ## Why the defaults are what they are
