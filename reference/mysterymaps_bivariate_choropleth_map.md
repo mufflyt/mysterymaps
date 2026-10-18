@@ -20,7 +20,8 @@ mysterymaps_bivariate_choropleth_map(
   palette = MYSTERYMAPS_BIVARIATE_PALETTE,
   na_color = "grey85",
   crs = 5070,
-  legend_position = "br"
+  legend_position = "br",
+  legend_size = 0.16
 )
 ```
 
@@ -64,6 +65,17 @@ mysterymaps_bivariate_choropleth_map(
   `"tr"`, `"tl"`. Default `"br"`, which leaves the bottom-left corner
   free for
   [`mysterymaps_scale_bar()`](https://mufflyt.github.io/mysterymaps/reference/mysterymaps_scale_bar.md).
+
+- legend_size:
+
+  `numeric(1)`: the inset's width and height, as a fraction of
+  `polygons`' bounding-box width and height respectively. Default
+  `0.16`. A bounding-box CORNER is usually the part of an irregular
+  shape (a coastline, a state outline) farthest from the shape itself,
+  so a small inset tucked flush into one, as this is by default,
+  generally lands in blank space rather than over the mapped area;
+  shrink `legend_size` further for a shape where that isn't true, or
+  pick a different `legend_position`.
 
 ## Value
 

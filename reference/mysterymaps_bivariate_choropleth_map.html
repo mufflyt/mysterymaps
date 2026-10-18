@@ -67,7 +67,8 @@ sees where the two overlap without needing two separate maps. Includes a
 <span>  palette <span class="op">=</span> <span class="va">MYSTERYMAPS_BIVARIATE_PALETTE</span>,</span>
 <span>  na_color <span class="op">=</span> <span class="st">"grey85"</span>,</span>
 <span>  crs <span class="op">=</span> <span class="fl">5070</span>,</span>
-<span>  legend_position <span class="op">=</span> <span class="st">"br"</span></span>
+<span>  legend_position <span class="op">=</span> <span class="st">"br"</span>,</span>
+<span>  legend_size <span class="op">=</span> <span class="fl">0.16</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -110,6 +111,17 @@ appropriate for the contiguous United States.</p></dd>
 <dd><p><code>character(1)</code>: corner for the legend inset, one of
 <code>"br"</code>, <code>"bl"</code>, <code>"tr"</code>, <code>"tl"</code>. Default <code>"br"</code>, which leaves the
 bottom-left corner free for <code><a href="mysterymaps_scale_bar.html">mysterymaps_scale_bar()</a></code>.</p></dd>
+
+
+<dt id="arg-legend-size">legend_size<a class="anchor" aria-label="anchor" href="#arg-legend-size"></a></dt>
+<dd><p><code>numeric(1)</code>: the inset's width and height, as a
+fraction of <code>polygons</code>' bounding-box width and height respectively.
+Default <code>0.16</code>. A bounding-box CORNER is usually the part of an
+irregular shape (a coastline, a state outline) farthest from the shape
+itself, so a small inset tucked flush into one, as this is by default,
+generally lands in blank space rather than over the mapped area; shrink
+<code>legend_size</code> further for a shape where that isn't true, or pick a
+different <code>legend_position</code>.</p></dd>
 
 </dl></div>
     <div class="section level2">
