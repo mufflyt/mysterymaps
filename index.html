@@ -127,6 +127,39 @@
 <span>  <span class="fu">leaflet</span><span class="fu">::</span><span class="fu"><a href="https://rstudio.github.io/leaflet/reference/addLayersControl.html" class="external-link">addLayersControl</a></span><span class="op">(</span>baseGroups <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Supply"</span>, <span class="st">"Within 30 minutes"</span><span class="op">)</span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">m</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/mysterymaps_base_legend_switcher.html">mysterymaps_base_legend_switcher</a></span><span class="op">(</span><span class="va">m</span>, default <span class="op">=</span> <span class="st">"Supply"</span><span class="op">)</span></span></code></pre></div>
+<p>Other leaflet map templates and spatial helpers:</p>
+<table class="table">
+<colgroup>
+<col width="50%">
+<col width="50%">
+</colgroup>
+<thead><tr>
+<th>Function</th>
+<th>Produces</th>
+</tr></thead>
+<tbody>
+<tr>
+<td><code><a href="reference/mysterymaps_access_choropleth_map.html">mysterymaps_access_choropleth_map()</a></code></td>
+<td>county- or congressional-district-level closest-provider access map, shaded by drive time or supply as a toggle, with click-to-highlight and name search</td>
+</tr>
+<tr>
+<td><code><a href="reference/mysterymaps_access_choropleth_map_multi.html">mysterymaps_access_choropleth_map_multi()</a></code></td>
+<td>the <code>_multi</code> sibling: several geographies at once, plus a control panel (zoom-to-ZIP, worst-access list, URL deep-linking)</td>
+</tr>
+<tr>
+<td><code><a href="reference/mysterymaps_choropleth_point_map.html">mysterymaps_choropleth_point_map()</a></code></td>
+<td>a general multi-layer choropleth + point leaflet map with switchable base layers and per-layer legends</td>
+</tr>
+<tr>
+<td><code><a href="reference/mysterymaps_count_points_in_polygons.html">mysterymaps_count_points_in_polygons()</a></code></td>
+<td>point-in-polygon counts, one count per polygon</td>
+</tr>
+<tr>
+<td><code><a href="reference/mysterymaps_aggregate_values_to_polygons.html">mysterymaps_aggregate_values_to_polygons()</a></code></td>
+<td>rolls values from one polygon layer up to a different one (e.g. counties to Hospital Referral Regions)</td>
+</tr>
+</tbody>
+</table>
 <hr>
 </div>
 <div class="section level2">

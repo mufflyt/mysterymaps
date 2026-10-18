@@ -6,6 +6,14 @@ Whole maps, assembled.
 
 - [`mysterymaps_county_access_map()`](https://mufflyt.github.io/mysterymaps/reference/mysterymaps_county_access_map.md)
   : County access map: choropleth, drive-time coverage, provider dots
+- [`mysterymaps_access_choropleth_map()`](https://mufflyt.github.io/mysterymaps/reference/mysterymaps_access_choropleth_map.md)
+  : Single-geography "closest provider" access choropleth, time vs.
+  supply toggle
+- [`mysterymaps_access_choropleth_map_multi()`](https://mufflyt.github.io/mysterymaps/reference/mysterymaps_access_choropleth_map_multi.md)
+  : Multi-geography "closest provider" access choropleth, with full
+  control panel
+- [`mysterymaps_choropleth_point_map()`](https://mufflyt.github.io/mysterymaps/reference/mysterymaps_choropleth_point_map.md)
+  : Multi-layer choropleth + point Leaflet map, switchable by base layer
 - [`mysterymaps_map_base()`](https://mufflyt.github.io/mysterymaps/reference/mysterymaps_map_base.md)
   : Create a Configurable Leaflet Base Map
 - [`mysterymaps_map_leaflet()`](https://mufflyt.github.io/mysterymaps/reference/mysterymaps_map_leaflet.md)
@@ -109,6 +117,11 @@ Binning points onto a grid, areal interpolation.
   : Hex-bin point counts over any study-area boundary
 - [`mysterymaps_hex_bin_rate()`](https://mufflyt.github.io/mysterymaps/reference/mysterymaps_hex_bin_rate.md)
   : Hex-bin a rate (point count per areal-interpolated denominator)
+- [`mysterymaps_count_points_in_polygons()`](https://mufflyt.github.io/mysterymaps/reference/mysterymaps_count_points_in_polygons.md)
+  : Count points falling within each polygon of a layer
+- [`mysterymaps_aggregate_values_to_polygons()`](https://mufflyt.github.io/mysterymaps/reference/mysterymaps_aggregate_values_to_polygons.md)
+  : Aggregate polygon-level values up to a different, arbitrary polygon
+  layer
 
 ## Isochrones, geocoding and overlap
 

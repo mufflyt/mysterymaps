@@ -2,6 +2,47 @@
 
 ## mysterymaps (development version)
 
+### New: county/CD access-map template and spatial helpers, moved from `isochrones`
+
+Five generic, column-driven leaflet-mapping functions moved out of the
+`isochrones` project’s `R/mysterymaps_urogyn.R` – which had explicitly
+flagged itself “destined for the {mysterymaps} package” – and into this
+package, renamed to the house `mysterymaps_*` convention:
+
+- [`mysterymaps_count_points_in_polygons()`](https://mufflyt.github.io/mysterymaps/reference/mysterymaps_count_points_in_polygons.md),
+  [`mysterymaps_aggregate_values_to_polygons()`](https://mufflyt.github.io/mysterymaps/reference/mysterymaps_aggregate_values_to_polygons.md):
+  small spatial helpers (point-in-polygon counts; rolling values from
+  one polygon layer up to a different one, e.g. counties to Hospital
+  Referral Regions).
+- [`mysterymaps_choropleth_point_map()`](https://mufflyt.github.io/mysterymaps/reference/mysterymaps_choropleth_point_map.md):
+  a multi-layer choropleth + point leaflet map with switchable base
+  layers and per-layer legends.
+- [`mysterymaps_access_choropleth_map()`](https://mufflyt.github.io/mysterymaps/reference/mysterymaps_access_choropleth_map.md)
+  /
+  [`mysterymaps_access_choropleth_map_multi()`](https://mufflyt.github.io/mysterymaps/reference/mysterymaps_access_choropleth_map_multi.md):
+  the template behind the national county + congressional-district
+  closest-urogynecologist access map – single- or multi-geography, each
+  shaded two ways (drive time vs. supply) as a toggle, with
+  click-to-highlight nearest providers, name search, and (the `_multi`
+  variant) a full control panel with zoom-to-ZIP, worst-access list, and
+  URL deep-linking. A sibling of
+  [`mysterymaps_county_access_map()`](https://mufflyt.github.io/mysterymaps/reference/mysterymaps_county_access_map.md),
+  not a replacement – see that function’s doc for how the two differ.
+
+Two things were fixed, not just relocated.
+[`mysterymaps_access_choropleth_map()`](https://mufflyt.github.io/mysterymaps/reference/mysterymaps_access_choropleth_map.md)
+had a known bug where its drive-time and supply legends – both *base*
+groups – rendered simultaneously, because `leaflet::addLegend(group=)`
+only ever follows *overlay* groups; it now uses
+[`mysterymaps_base_legend_switcher()`](https://mufflyt.github.io/mysterymaps/reference/mysterymaps_base_legend_switcher.md)
+to show only the active one. And several strings that used to be
+hardcoded in the moved code (`"urogynecologist"`, `"women 65+"`) are now
+optional parameters (`provider_noun`, `coverage_metric_label`,
+`centroid_label`, `aria_label`, `desert_tooltip`) on
+[`mysterymaps_access_choropleth_map_multi()`](https://mufflyt.github.io/mysterymaps/reference/mysterymaps_access_choropleth_map_multi.md),
+with generic defaults – a package function should not carry one study’s
+wording baked in.
+
 ### New: `zero_aware` on `mysterymaps_bivariate_choropleth_map()`
 
 Extends this package’s “zero is a category, not the bottom of a
