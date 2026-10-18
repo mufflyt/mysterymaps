@@ -156,7 +156,11 @@ mysterymaps_cartogram_map <- function(polygons,
                      color = "white", linewidth = 0.15) +
     ggplot2::geom_line(data = ref_df, mapping = ggplot2::aes(x = .data$x, y = .data$y),
                        color = "grey20", linewidth = 1) +
-    ggplot2::annotate("text", x = mean(ref_df$x), y = ref_df$y[1], vjust = -0.8,
+    # Left-justified at the reference line's own start (ref_x0), not centred
+    # on the line's midpoint: a centred label extends leftward past ref_x0,
+    # which sits only 3% of the panel width from bb$xmin, so it rendered off
+    # the left edge of the panel on real (non-square) geography.
+    ggplot2::annotate("text", x = ref_x0, y = ref_df$y[1], vjust = -0.8, hjust = 0,
                       label = sprintf("Approximately %d-%s drive", reference_minutes, "minute"),
                       size = 8, colour = "grey20") +
     ggplot2::scale_fill_viridis_c(name = "Real Drive Time to Nearest Provider (Minutes)",

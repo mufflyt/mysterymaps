@@ -130,6 +130,68 @@ Other static (ggplot2) maps:
 | `mysterymaps_pathway_small_multiples_map()` | one facet per pathway/certification group, plus a combined panel |
 | `mysterymaps_accessibility_map()` | one-call `twostep::compute_e2sfca()` map, zero vs. outside-catchment vs. missing kept distinct |
 
+A few of those, rendered on the same synthetic North Carolina data as above
+(`data-raw/make_readme_figures.R`):
+
+<table>
+<tr>
+<td width="50%">
+
+**`mysterymaps_rate_choropleth_map()`**
+![Rate choropleth](man/figures/rate-choropleth.png)
+
+</td>
+<td width="50%">
+
+**`mysterymaps_bivariate_choropleth_map()`**
+![Bivariate choropleth](man/figures/bivariate-choropleth.png)
+
+</td>
+</tr>
+<tr>
+<td width="50%">
+
+**`mysterymaps_catchment_redundancy_map()`**
+![Catchment redundancy map](man/figures/catchment-redundancy.png)
+
+</td>
+<td width="50%">
+
+**`mysterymaps_cartogram_map()`**
+![Drive-time cartogram](man/figures/cartogram.png)
+
+</td>
+</tr>
+<tr>
+<td width="50%">
+
+**`mysterymaps_flow_map()`**
+![Flow map](man/figures/flow-map.png)
+
+</td>
+<td width="50%">
+
+**`mysterymaps_pathway_small_multiples_map()`**
+![Pathway small multiples map](man/figures/pathway-small-multiples.png)
+
+</td>
+</tr>
+<tr>
+<td width="50%">
+
+**`mysterymaps_hex_bin_counts()`**
+![Hex-binned point counts](man/figures/hex-bin-counts.png)
+
+</td>
+<td width="50%">
+
+**`mysterymaps_hex_bin_rate()`**
+![Hex-binned rate over an areally-interpolated denominator](man/figures/hex-bin-rate.png)
+
+</td>
+</tr>
+</table>
+
 ---
 
 ## Why the defaults are what they are

@@ -43,6 +43,26 @@ testthat::test_that("rows missing time or distance are dropped, not warped as NA
   testthat::expect_equal(nrow(p$layers[[1]]$data), 3L)
 })
 
+testthat::test_that("REGRESSION: the reference-drive-time label anchors at the line's start, not its midpoint", {
+  # Centred on mean(ref_df$x), the label used to extend leftward past ref_x0
+  # (only 3% of the panel width from bb$xmin) and render off the left edge of
+  # the panel on real, non-square geography -- found building the README's
+  # cartogram figure on North Carolina's counties. Left-justified at the
+  # line's own start, the label can only extend rightward, which stays inside
+  # the panel because the reference line itself is short relative to the
+  # warped geometry's extent.
+  skip_unless_spatial()
+  counties <- fixture_counties()
+  p <- mysterymaps_cartogram_map(
+    counties, hub_id_var = "id", hub_lon_var = "hub_lon", hub_lat_var = "hub_lat",
+    time_var = "time_min", straight_distance_var = "straight_miles")
+  is_text_layer <- vapply(p$layers, function(L) inherits(L$geom, "GeomText"), logical(1))
+  is_line_layer <- vapply(p$layers, function(L) inherits(L$geom, "GeomLine"), logical(1))
+  text_x <- unname(p$layers[[which(is_text_layer)]]$data$x)
+  line_x0 <- unname(min(p$layers[[which(is_line_layer)]]$data$x))
+  testthat::expect_equal(text_x, line_x0)
+})
+
 testthat::test_that("errors on zero rows", {
   skip_unless_spatial()
   counties <- fixture_counties()
