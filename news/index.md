@@ -2,6 +2,72 @@
 
 ## mysterymaps (development version)
 
+### New: `n_classes` on `mysterymaps_bivariate_choropleth_map()`
+
+The bivariate map was hard-coded to terciles – a 3x3 grid. `n_classes`
+(default `3`, unchanged) takes any value `>= 2`; `palette`
+auto-generates as an `n x n` bilinear interpolation of the same four
+corner colours when not supplied, so existing 3x3 callers get the
+identical hand-tuned `MYSTERYMAPS_BIVARIATE_PALETTE` they always did,
+byte-for-byte. A 5x5 preview of a real national dataset was visibly
+*harder* to read – the teal shades blur together – confirming 3x3 as the
+right default rather than an arbitrary one. A supplied `palette` of the
+wrong length for `n_classes` errors naming both.
+
+### Bug fixes: `mysterymaps_bivariate_choropleth_map()` classification and legend
+
+Two defects found building a real nationwide hex map (4,104 cells, most
+with zero physicians):
+
+- **Tied values split across classes by row order, not by value.** The
+  duplicate-breaks fallback used `rank(x, ties.method = "first")`, which
+  breaks ties by each value’s *position* in the data. With 86% of cells
+  sharing the value `0`, and
+  [`sf::st_make_grid()`](https://r-spatial.github.io/sf/reference/st_make_grid.html)
+  constructing cells in geographic sweep order, this scattered every
+  zero-count cell across all three classes by longitude alone – three
+  near-perfect vertical bands at mean longitudes -113.9/-97.5/-81.7, all
+  actually tied at zero, reported (correctly) as “that can’t be
+  correct.” Fixed by classing *distinct values* and looking each
+  observation up by its value, so every occurrence of a repeated value
+  lands in the same class. Generalizes to any `n_classes`. The fallback
+  also now also triggers on `classInt` returning fewer unique breaks
+  than requested (duplicate quantile breaks on skewed, zero-heavy data),
+  not only on too few distinct values.
+- **The legend inset could overlap the map.** It lived in the data set’s
+  own bounding-box corner, which is not reliably empty space on an
+  irregular coastline – it clipped into Florida. Moved to a reserved
+  margin strip outside `xlim`/`ylim` entirely, controlled by
+  `legend_size` (default `0.16`).
+
+### Bug fix: a split hexagon fanned its count out to every fragment
+
+[`mysterymaps_hex_bin_counts()`](https://mufflyt.github.io/mysterymaps/reference/mysterymaps_hex_bin_counts.md)
+and
+[`mysterymaps_hex_bin_rate()`](https://mufflyt.github.io/mysterymaps/reference/mysterymaps_hex_bin_rate.md)
+both joined counts back onto the grid by `grid_id`, an attribute
+assigned by
+[`sf::st_make_grid()`](https://r-spatial.github.io/sf/reference/st_make_grid.html)
+*before*
+[`sf::st_intersection()`](https://r-spatial.github.io/sf/reference/geos_binary_ops.html)
+with the study boundary. An irregular coastline can split one hexagon
+into several polygon fragments that all keep the same `grid_id`, so the
+attribute join fanned that hexagon’s count across every fragment sharing
+the id – confirmed on the real CONUS boundary, where this inflated the
+nonzero-cell count from the correct 609 to 757. Fixed in both functions
+by joining spatially
+([`sf::st_join()`](https://r-spatial.github.io/sf/reference/st_join.html))
+instead of by the shared attribute.
+
+### New: `include_zero_cells` on `mysterymaps_hex_bin_counts()`
+
+Previously the function always dropped empty hexagons.
+`include_zero_cells` (default `FALSE`, unchanged) returns the full grid
+with explicit `0`s instead – needed to feed a national density map
+through
+[`mysterymaps_jenks_zero_scale()`](https://mufflyt.github.io/mysterymaps/reference/mysterymaps_jenks_zero_scale.md),
+which has to tell “measured zero” apart from “not on the grid at all.”
+
 ### New: `mysterymaps_hex_bin_rate()`
 
 Hex-bins a *rate* – a point count over an areal-interpolated denominator

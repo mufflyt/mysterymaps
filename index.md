@@ -130,7 +130,7 @@ Other static (ggplot2) maps:
 | [`mysterymaps_map_acceptance_rate()`](https://mufflyt.github.io/mysterymaps/reference/mysterymaps_map_acceptance_rate.md) | state or HRR acceptance-rate choropleth |
 | [`mysterymaps_hrr_maps()`](https://mufflyt.github.io/mysterymaps/reference/mysterymaps_hrr_maps.md) | Hospital Referral Region maps, by trait |
 | [`mysterymaps_rate_choropleth_map()`](https://mufflyt.github.io/mysterymaps/reference/mysterymaps_rate_choropleth_map.md) | numerator/denominator rate choropleth, zero its own colour class via [`mysterymaps_jenks_zero_scale()`](https://mufflyt.github.io/mysterymaps/reference/mysterymaps_jenks_zero_scale.md) |
-| [`mysterymaps_bivariate_choropleth_map()`](https://mufflyt.github.io/mysterymaps/reference/mysterymaps_bivariate_choropleth_map.md) | joint tercile class of two variables (e.g. need vs. scarcity), one map |
+| [`mysterymaps_bivariate_choropleth_map()`](https://mufflyt.github.io/mysterymaps/reference/mysterymaps_bivariate_choropleth_map.md) | joint class of two variables (e.g. need vs. scarcity), one map; 3x3 by default, any `n_classes` |
 | [`mysterymaps_catchment_redundancy_map()`](https://mufflyt.github.io/mysterymaps/reference/mysterymaps_catchment_redundancy_map.md) | how many providers’ catchments overlap each area, not just whether one does |
 | [`mysterymaps_cartogram_map()`](https://mufflyt.github.io/mysterymaps/reference/mysterymaps_cartogram_map.md) | polygons warped by drive time instead of true area |
 | [`mysterymaps_flow_map()`](https://mufflyt.github.io/mysterymaps/reference/mysterymaps_flow_map.md) | pre-routed paths coloured by travel time, over a basemap |
