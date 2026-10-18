@@ -16,7 +16,8 @@ mysterymaps_bivariate_choropleth_map(
   palette = MYSTERYMAPS_BIVARIATE_PALETTE,
   na_color = "grey85",
   crs = 5070,
-  legend_position = "br"
+  legend_position = "br",
+  legend_size = 0.16
 )
 }
 \arguments{
@@ -40,6 +41,15 @@ appropriate for the contiguous United States.}
 \item{legend_position}{\code{character(1)}: corner for the legend inset, one of
 \code{"br"}, \code{"bl"}, \code{"tr"}, \code{"tl"}. Default \code{"br"}, which leaves the
 bottom-left corner free for \code{\link[=mysterymaps_scale_bar]{mysterymaps_scale_bar()}}.}
+
+\item{legend_size}{\code{numeric(1)}: the inset's width and height, as a
+fraction of \code{polygons}' bounding-box width and height respectively.
+Default \code{0.16}. A bounding-box CORNER is usually the part of an
+irregular shape (a coastline, a state outline) farthest from the shape
+itself, so a small inset tucked flush into one, as this is by default,
+generally lands in blank space rather than over the mapped area; shrink
+\code{legend_size} further for a shape where that isn't true, or pick a
+different \code{legend_position}.}
 }
 \value{
 A \code{ggplot} object. The caller saves it; this function writes nothing.
