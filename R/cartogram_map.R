@@ -160,9 +160,13 @@ mysterymaps_cartogram_map <- function(polygons,
     # on the line's midpoint: a centred label extends leftward past ref_x0,
     # which sits only 3% of the panel width from bb$xmin, so it rendered off
     # the left edge of the panel on real (non-square) geography.
+    # size = 8 with no size.unit defaults to millimetres (~23pt) -- large
+    # enough that the label overflowed past the short reference line and
+    # overlapped the warped counties beneath it. 8pt matches this package's
+    # other small map annotations (see common_setup.R's rural-area labels).
     ggplot2::annotate("text", x = ref_x0, y = ref_df$y[1], vjust = -0.8, hjust = 0,
                       label = sprintf("Approximately %d-%s drive", reference_minutes, "minute"),
-                      size = 8, colour = "grey20") +
+                      size = 8, size.unit = "pt", colour = "grey20") +
     ggplot2::scale_fill_viridis_c(name = "Real Drive Time to Nearest Provider (Minutes)",
                                   option = "inferno", direction = -1,
                                   guide = ggplot2::guide_colorbar(title.position = "top"))
