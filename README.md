@@ -123,7 +123,7 @@ Other static (ggplot2) maps:
 | `mysterymaps_map_acceptance_rate()` | state or HRR acceptance-rate choropleth |
 | `mysterymaps_hrr_maps()` | Hospital Referral Region maps, by trait |
 | `mysterymaps_rate_choropleth_map()` | numerator/denominator rate choropleth, zero its own colour class via `mysterymaps_jenks_zero_scale()` |
-| `mysterymaps_bivariate_choropleth_map()` | joint tercile class of two variables (e.g. need vs. scarcity), one map |
+| `mysterymaps_bivariate_choropleth_map()` | joint class of two variables (e.g. need vs. scarcity), one map; 3x3 by default, any `n_classes` |
 | `mysterymaps_catchment_redundancy_map()` | how many providers' catchments overlap each area, not just whether one does |
 | `mysterymaps_cartogram_map()` | polygons warped by drive time instead of true area |
 | `mysterymaps_flow_map()` | pre-routed paths coloured by travel time, over a basemap |
