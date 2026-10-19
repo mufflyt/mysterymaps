@@ -157,6 +157,16 @@ test_that("digits controls the decimal places in legend labels", {
   expect_false(any(grepl("\\.", labs[labs != "0"])))
 })
 
+test_that("SABOTEUR: a drive_time outside {30,60,120,180} errors instead of silently never being drawn", {
+  # Only these four values are wired to a palette colour and draw position;
+  # any other value matched no `dt` in the drawing loop and was silently
+  # never added to the map as an overlay layer, with no error or warning.
+  skip_unless_bg()
+  expect_error(
+    mysterymaps_map_block_group(bg_with_overlap(c(0.1, 0.4)), mm_isochrones(drive_time = c(30, 45))),
+    "45")
+})
+
 test_that("each required package is named in its own error", {
   for (pkg in c("sf", "leaflet", "lwgeom", "webshot", "htmlwidgets")) {
     local_mocked_bindings(

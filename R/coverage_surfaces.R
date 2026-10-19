@@ -57,6 +57,14 @@ mysterymaps_add_coverage_surfaces <- function(map, surfaces, colors,
                                      fill_opacity = 0.55, weight = 0.6,
                                      popups = NULL) {
   stopifnot(is.list(surfaces), length(surfaces) > 0, !is.null(names(surfaces)))
+  # rep_len() recycling a zero-length vector silently returns another
+  # zero-length vector rather than erroring; indexing it below (colors[i])
+  # then fails with an unrelated "subscript out of bounds" naming neither
+  # this argument nor the real cause.
+  if (!length(colors) || !length(legend_labels) || !length(legend_titles)) {
+    stop("mysterymaps_add_coverage_surfaces(): `colors`, `legend_labels` and ",
+         "`legend_titles` must each have at least one element.", call. = FALSE)
+  }
   n <- length(surfaces)
   colors        <- rep_len(colors, n)
   legend_labels <- rep_len(legend_labels, n)

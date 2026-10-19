@@ -63,6 +63,42 @@ testthat::test_that("REGRESSION: the reference-drive-time label anchors at the l
   testthat::expect_equal(text_x, line_x0)
 })
 
+testthat::test_that("SABOTEUR: a negative time_var or straight_distance_var errors instead of clipping to the fastest tier", {
+  # Without a guard, compute_scale_factor() clips a negative value to
+  # scale_clip[1] -- the identical warp given to the single fastest/closest
+  # LEGITIMATE row on the map, with nothing distinguishing a data error from a
+  # genuinely fast trip.
+  skip_unless_spatial()
+  counties <- fixture_counties()
+  counties$time_min[2] <- -50
+  testthat::expect_error(
+    mysterymaps_cartogram_map(
+      counties, hub_id_var = "id", hub_lon_var = "hub_lon", hub_lat_var = "hub_lat",
+      time_var = "time_min", straight_distance_var = "straight_miles"),
+    "negative")
+
+  counties2 <- fixture_counties()
+  counties2$straight_miles[3] <- -10
+  testthat::expect_error(
+    mysterymaps_cartogram_map(
+      counties2, hub_id_var = "id", hub_lon_var = "hub_lon", hub_lat_var = "hub_lat",
+      time_var = "time_min", straight_distance_var = "straight_miles"),
+    "negative")
+})
+
+testthat::test_that("SABOTEUR: swapped hub_lon_var/hub_lat_var errors with a clear WGS84 message, not a GEOS crash", {
+  skip_unless_spatial()
+  counties <- fixture_counties()
+  # longitude and latitude swapped: -97.5 belongs in hub_lon, not hub_lat.
+  counties$hub_lon <- 40.5
+  counties$hub_lat <- -97.5
+  testthat::expect_error(
+    mysterymaps_cartogram_map(
+      counties, hub_id_var = "id", hub_lon_var = "hub_lon", hub_lat_var = "hub_lat",
+      time_var = "time_min", straight_distance_var = "straight_miles"),
+    "WGS84")
+})
+
 testthat::test_that("errors on zero rows", {
   skip_unless_spatial()
   counties <- fixture_counties()

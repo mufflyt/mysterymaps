@@ -57,6 +57,19 @@ mysterymaps_aggregate_values_to_polygons <- function(source_poly, source_values,
          "polygons, each contributing the same value, so the target's sum is inflated.",
          call. = FALSE)
   }
+  # Two target polygons sharing an id are indistinguishable once this result is
+  # joined back onto target_poly: both receive the identical summed value, even
+  # though they are physically different areas that may draw from entirely
+  # different source polygons.
+  dupe_target <- unique(target_poly$id[duplicated(target_poly$id)])
+  if (length(dupe_target)) {
+    stop("mysterymaps_aggregate_values_to_polygons(): `target_poly$id` has duplicate ",
+         "value(s): ", paste(utils::head(dupe_target, 10L), collapse = ", "),
+         if (length(dupe_target) > 10L) sprintf(" (and %d more)", length(dupe_target) - 10L) else "",
+         ". `id` must be unique -- two target polygons sharing an id both receive the ",
+         "identical summed value when this result is joined back, even if they are ",
+         "physically different areas.", call. = FALSE)
+  }
 
   old_s2 <- sf::sf_use_s2()
   on.exit(suppressMessages(sf::sf_use_s2(old_s2)), add = TRUE)

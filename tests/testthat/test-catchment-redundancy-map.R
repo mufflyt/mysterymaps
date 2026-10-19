@@ -105,6 +105,19 @@ testthat::test_that("a polygon narrower than the grid spacing is still scored, v
   testthat::expect_false(any(is.na(vals)))
 })
 
+testthat::test_that("SABOTEUR: grid_spacing_miles = Inf errors clearly instead of a cryptic aggregate() failure", {
+  # Without finite = TRUE, the cell size becomes Inf, st_make_grid() silently
+  # produces a grid with no points, and the failure surfaces several steps
+  # later as stats::aggregate()'s unrelated "no rows to aggregate" -- naming
+  # neither this argument nor Inf as the cause.
+  skip_unless_spatial()
+  f <- fixture()
+  testthat::expect_error(
+    mysterymaps_catchment_redundancy_map(
+      f$catchments, f$counties, provider_id_var = "provider", grid_spacing_miles = Inf),
+    "finite")
+})
+
 testthat::test_that("errors on zero-row catchments or polygons", {
   skip_unless_spatial()
   f <- fixture()

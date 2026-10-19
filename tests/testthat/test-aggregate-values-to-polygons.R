@@ -45,6 +45,22 @@ testthat::test_that("value_col names both the lookup column and the output colum
   testthat::expect_identical(out$fem65, 30)
 })
 
+testthat::test_that("SABOTEUR: a duplicate target_poly$id errors instead of silently fanning out the value on join-back", {
+  # Two physically distinct target regions sharing an id are indistinguishable
+  # once this result is joined back onto target_poly: both receive the
+  # identical summed value, even though only one of them actually received
+  # the contributing source polygon.
+  skip_unless_spatial()
+  regions_dup <- sf::st_sf(id = c("R1", "R1"), geometry = sf::st_sfc(
+    sf::st_polygon(list(cbind(c(-101, -99, -99, -101, -101), c(38, 38, 42, 42, 38)))),
+    sf::st_polygon(list(cbind(c(-99, -95, -95, -99, -99), c(38, 38, 42, 42, 38)))),
+    crs = 4326))
+  testthat::expect_error(
+    mysterymaps_aggregate_values_to_polygons(
+      .two_counties(), data.frame(id = 1:2, n = c(3, 4)), regions_dup, value_col = "n"),
+    "target_poly")
+})
+
 testthat::test_that("missing `id` column in source_values errors", {
   skip_unless_spatial()
   testthat::expect_error(
