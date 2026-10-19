@@ -84,7 +84,7 @@ exported individually:
 ``` r
 
 m <- leaflet::leaflet() |>
-  leaflet::addProviderTiles("CartoDB.PositronNoLabels") |>
+  leaflet::addProviderTiles("Esri.WorldGrayCanvas") |>
   leaflet::addPolygons(data = counties, fillColor = ~pal(rate), group = "Supply") |>
   mysterymaps_register_base_legend("Supply", key = "supply") |>
   mysterymaps_add_coverage_surfaces(

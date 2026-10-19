@@ -2,7 +2,30 @@
 
 ## mysterymaps (development version)
 
-### Bug fixes: 7 silent-corruption and cryptic-error bugs found by adversarial testing
+### Breaking: basemaps move from CARTO to Esri
+
+CARTO basemaps began rendering an “API KEY REQUIRED” watermark across
+every tile for keyless use (September 2026). Every map this package
+builds inherited the watermark silently on its next rebuild — the map
+still rendered, so nothing errored.
+
+- [`mysterymaps_county_access_map()`](https://mufflyt.github.io/mysterymaps/reference/mysterymaps_county_access_map.md)
+  now draws on `Esri.WorldGrayCanvas` instead of
+  `CartoDB.PositronNoLabels`. The Positron labels-above-polygons layer
+  has no keyless Esri equivalent, so place labels now sit under the
+  choropleth rather than over it.
+- [`mysterymaps_map_base()`](https://mufflyt.github.io/mysterymaps/reference/mysterymaps_map_base.md)
+  and
+  [`mysterymaps_map_leaflet()`](https://mufflyt.github.io/mysterymaps/reference/mysterymaps_map_leaflet.md)
+  replace `CartoDB.Voyager` with `Esri.WorldStreetMap`. The
+  layers-control base group is renamed “CartoDB Voyager” -\> “Street
+  Map”; callers that
+  [`showGroup()`](https://rstudio.github.io/leaflet/reference/showGroup.html)/[`hideGroup()`](https://rstudio.github.io/leaflet/reference/showGroup.html)
+  by that name must update.
+- `Stadia.StamenTonerLite` (“Toner Lite”) is unchanged but is the same
+  class of risk: Stadia serves keyless tiles on localhost only. \## Bug
+  fixes: 7 silent-corruption and cryptic-error bugs found by adversarial
+  testing
 
 Deliberately malformed and boundary-case inputs fed to the five leaflet
 map builders
