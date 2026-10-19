@@ -103,6 +103,44 @@ mysterymaps_cartogram_map <- function(polygons,
     stop("mysterymaps_cartogram_map(): `polygons` has zero rows.", call. = FALSE)
   }
 
+  # A negative time or distance is an upstream arithmetic error, not a fast or
+  # close row. Left unchecked, compute_scale_factor() below clips it to
+  # scale_clip[1] -- the identical warp given to the single fastest/closest
+  # LEGITIMATE row on the map, with nothing distinguishing the two.
+  neg_rows <- sort(unique(c(
+    which(!is.na(polygons[[time_var]]) & polygons[[time_var]] < 0),
+    which(!is.na(polygons[[straight_distance_var]]) & polygons[[straight_distance_var]] < 0))))
+  if (length(neg_rows)) {
+    stop(sprintf(paste0(
+      "mysterymaps_cartogram_map(): `%s` and/or `%s` contain negative value(s) ",
+      "(row%s %s). Drive time and straight-line distance cannot be negative; ",
+      "left unchecked, a negative value is clipped to `scale_clip[1]`, which ",
+      "renders identically to the fastest/closest legitimate row on the map."),
+      time_var, straight_distance_var,
+      if (length(neg_rows) == 1L) "" else "s",
+      paste(utils::head(neg_rows, 5L), collapse = ", ")), call. = FALSE)
+  }
+
+  # A longitude/latitude this far outside WGS84 range is almost always the two
+  # columns swapped, not a real hub location -- and warping around it fails
+  # deep inside the geometry engine (GEOS/s2) with an error naming neither this
+  # function, `hub_lon_var`/`hub_lat_var`, nor a swap as the likely cause.
+  lon_vals <- polygons[[hub_lon_var]]
+  lat_vals <- polygons[[hub_lat_var]]
+  bad_ll <- sort(unique(c(
+    which(!is.na(lon_vals) & (lon_vals < -180 | lon_vals > 180)),
+    which(!is.na(lat_vals) & (lat_vals < -90 | lat_vals > 90)))))
+  if (length(bad_ll)) {
+    stop(sprintf(paste0(
+      "mysterymaps_cartogram_map(): `%s`/`%s` contain value(s) outside valid ",
+      "WGS84 longitude/latitude range (row%s %s). This usually means the two ",
+      "columns are swapped (latitude passed as longitude, or vice versa) ",
+      "rather than a real hub location."),
+      hub_lon_var, hub_lat_var,
+      if (length(bad_ll) == 1L) "" else "s",
+      paste(utils::head(bad_ll, 5L), collapse = ", ")), call. = FALSE)
+  }
+
   PROJ <- 5070
   polygons_p <- sf::st_transform(polygons, PROJ)
   if (!all(sf::st_is_valid(polygons_p))) polygons_p <- sf::st_make_valid(polygons_p)

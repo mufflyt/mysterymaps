@@ -108,7 +108,11 @@ mysterymaps_catchment_redundancy_map <- function(catchments,
   checkmate::assert_class(polygons, "sf")
   checkmate::assert_string(provider_id_var)
   checkmate::assert_subset(provider_id_var, names(catchments))
-  checkmate::assert_number(grid_spacing_miles, lower = 0.01)
+  # finite = TRUE: without it, grid_spacing_miles = Inf passes validation, the
+  # grid cell size becomes Inf, and sf::st_make_grid() silently produces a grid
+  # with no points -- which surfaces several steps later as stats::aggregate()'s
+  # unrelated "no rows to aggregate", naming neither this argument nor Inf.
+  checkmate::assert_number(grid_spacing_miles, lower = 0.01, finite = TRUE)
   checkmate::assert_int(k, lower = 1L)
   if (nrow(catchments) == 0L) {
     stop("mysterymaps_catchment_redundancy_map(): `catchments` has zero rows.",

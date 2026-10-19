@@ -106,6 +106,23 @@ mysterymaps_map_block_group <- function(bg_data, isochrones_data, output_dir = "
 
   draw_order <- c(180, 120, 60, 30)
 
+  # Only these four values are wired to a palette colour and a draw position.
+  # Any other value in `isochrones_data$drive_time` matches no `dt` in the loop
+  # below and is silently never added to the map as an overlay layer -- the
+  # function returns and saves normally, with no error or warning that a whole
+  # band of isochrones was dropped.
+  unknown_dt <- setdiff(unique(stats::na.omit(as.numeric(isochrones_data[["drive_time"]]))),
+                        draw_order)
+  if (length(unknown_dt)) {
+    stop(sprintf(paste0(
+      "mysterymaps_map_block_group(): `isochrones_data$drive_time` contains ",
+      "value(s) this function does not know how to draw: %s. Only %s are ",
+      "wired to a palette colour and draw order; any other value is silently ",
+      "never added to the map as an overlay layer."),
+      paste(unknown_dt, collapse = ", "), paste(draw_order, collapse = ", ")),
+      call. = FALSE)
+  }
+
   isochrones_ordered <- isochrones_data
   isochrones_ordered[["drive_time"]] <- as.numeric(isochrones_ordered[["drive_time"]])
   isochrones_ordered <- isochrones_ordered[order(match(isochrones_ordered[["drive_time"]], draw_order)), , drop = FALSE]

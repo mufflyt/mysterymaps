@@ -90,6 +90,21 @@ testthat::test_that("digits controls the decimal places in legend labels", {
   testthat::expect_false(any(grepl("\\.", labs)))
 })
 
+testthat::test_that("SABOTEUR: per = 0 errors instead of silently zeroing every rate", {
+  # A rate scaled by 0 is 0 for every polygon regardless of its real
+  # numerator/denominator, flattening every real distinction on the map with
+  # no error or warning that `per` was almost certainly meant to be nonzero.
+  skip_unless_spatial()
+  counties <- mm_counties(n = 2)
+  counties$n_providers <- c(1, 5)
+  counties$population <- c(10000, 100000)
+  testthat::expect_error(
+    mysterymaps_rate_choropleth_map(
+      counties, numerator_var = "n_providers", denominator_var = "population",
+      numerator_label = "A", denominator_label = "B", per = 0),
+    "per.*is 0")
+})
+
 testthat::test_that("errors on zero rows", {
   skip_unless_spatial()
   counties <- mm_counties(n = 2)

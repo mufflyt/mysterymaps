@@ -90,6 +90,17 @@ test_that("surfaces must be a NAMED list; group names are not optional", {
                                       surfaces = list(), colors = "#08519c"))
 })
 
+test_that("SABOTEUR: an empty colors vector errors instead of a cryptic 'subscript out of bounds'", {
+  # rep_len() recycling a zero-length vector silently returns another
+  # zero-length vector; indexing colors[i] in the per-surface loop then fails
+  # with an unrelated error naming neither this argument nor the real cause.
+  skip_if_not_installed("leaflet")
+  expect_error(
+    mysterymaps_add_coverage_surfaces(
+      leaflet::leaflet(), surfaces = list(A = mm_surface()), colors = character(0)),
+    "at least one element")
+})
+
 test_that("registration accumulates rather than replacing", {
   # A choropleth legend registered first must survive the coverage surfaces
   # being added on top of it.

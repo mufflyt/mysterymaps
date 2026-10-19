@@ -103,6 +103,13 @@ mysterymaps_rate_choropleth_map <- function(polygons,
   checkmate::assert_string(denominator_label)
   checkmate::assert_subset(c(numerator_var, denominator_var), names(polygons))
   checkmate::assert_number(per, lower = 0)
+  if (per == 0) {
+    stop("mysterymaps_rate_choropleth_map(): `per` is 0. A rate scaled by 0 is 0 for ",
+         "every polygon regardless of its real numerator/denominator, so the map would ",
+         "render every polygon identically with no error. This is almost certainly ",
+         "meant to be 100, 1000, or 100000 (\"per 100,000\"), not a literal zero.",
+         call. = FALSE)
+  }
   checkmate::assert_int(k, lower = 1L)
   checkmate::assert_int(digits, lower = 0L)
   if (nrow(polygons) == 0L) {

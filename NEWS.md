@@ -1,5 +1,52 @@
 # mysterymaps (development version)
 
+## Bug fixes: 7 further silent-corruption and cryptic-error bugs found by adversarial testing
+
+A further round of at least 10 deliberately malformed and boundary-case
+inputs, this time against `mysterymaps_cartogram_map()`,
+`mysterymaps_catchment_redundancy_map()`, `mysterymaps_map_block_group()`,
+`mysterymaps_aggregate_values_to_polygons()`, `mysterymaps_add_coverage_surfaces()`
+and `mysterymaps_rate_choropleth_map()`:
+
+* **`mysterymaps_cartogram_map()`: a negative `time_var` or
+  `straight_distance_var`** was silently clipped to `scale_clip[1]` --
+  the identical warp given to the single fastest/closest *legitimate* row on
+  the map, with nothing distinguishing a data error from a genuinely fast or
+  close row. Now rejected with a clear error.
+* **`mysterymaps_cartogram_map()`: `hub_lon_var`/`hub_lat_var` outside valid
+  WGS84 range** (e.g. the two columns swapped) used to fail deep inside the
+  geometry engine with an error naming neither this function nor a likely
+  swap. Now validated upfront with a message that names the likely cause.
+* **`mysterymaps_catchment_redundancy_map()`: `grid_spacing_miles = Inf`**
+  silently produced a grid with no sample points, surfacing several steps
+  later as `stats::aggregate()`'s unrelated "no rows to aggregate." Now
+  rejected with `finite = TRUE`, the same idiom already used for
+  `mysterymaps_jitter_points()`'s `miles`/`seed`.
+* **`mysterymaps_map_block_group()`: an `isochrones_data$drive_time` value
+  outside the hardcoded `{30, 60, 120, 180}` set** matched no entry in the
+  palette/draw-order loop and was silently never added to the map as an
+  overlay layer -- the function still returned and saved normally, with no
+  error or warning that a whole band of isochrones was dropped. Now
+  rejected upfront.
+* **`mysterymaps_aggregate_values_to_polygons()`: a duplicate `target_poly$id`**
+  made two physically distinct target regions indistinguishable once the
+  result is joined back onto `target_poly` -- both would receive the
+  identical summed value. Mirrors the duplicate-`id` guard this function
+  already had for `source_poly$id`.
+* **`mysterymaps_add_coverage_surfaces()`: an empty `colors` (or
+  `legend_labels`/`legend_titles`) vector** silently survived `rep_len()`
+  recycling as another empty vector, then failed several lines later with an
+  unrelated "subscript out of bounds." Now rejected with a clear error.
+* **`mysterymaps_rate_choropleth_map()`: `per = 0`** silently scaled every
+  polygon's rate to `0`, flattening every real distinction on the map with no
+  error or warning that `per` was almost certainly meant to be nonzero (e.g.
+  `100000` for "per 100,000"). Now rejected.
+
+Also probed and confirmed already-safe: `grid_spacing_miles = 0` (already
+clearly rejected by the existing `lower = 0.01` bound) and
+`mysterymaps_jenks_zero_scale(digits = Inf)` (clamped to a large-but-finite
+value with a warning, not silently wrong).
+
 ## Bug fixes: 7 more silent-corruption and cryptic-error bugs found by adversarial testing
 
 A further three rounds of deliberately malformed and boundary-case inputs,
