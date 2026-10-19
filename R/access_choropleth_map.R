@@ -84,6 +84,7 @@ mysterymaps_access_choropleth_map <- function(geo, providers, highlight_lookup,
     stop("mysterymaps_access_choropleth_map(): `geo` is missing columns: ",
          paste(miss, collapse = ", "), call. = FALSE)
   }
+  mm_assert_unique_provider_ids(providers, "mysterymaps_access_choropleth_map")
   lab <- utils::modifyList(list(time = "Drive time to closest", supply = "Supply per capita",
                                 desert = "No access", providers = "Providers"), labels)
   txt <- utils::modifyList(list(time_legend = "Drive time to<br>closest provider",
@@ -145,12 +146,6 @@ function(el, x, data) {
                          layerId = ~paste0("S_", mm_id),
                          highlightOptions = leaflet::highlightOptions(weight = 2, color = "#000",
                                                                       bringToFront = TRUE)) |>
-    leaflet::addPolygons(data = deserts, fill = FALSE, color = "#7a0177", weight = 1.4,
-                         group = lab$desert,
-                         label = ~lapply(sprintf("<b>%s</b> &mdash; %s", mm_label, txt$desert),
-                                         htmltools::HTML),
-                         highlightOptions = leaflet::highlightOptions(weight = 3, color = "#49006a",
-                                                                      bringToFront = TRUE)) |>
     leaflet::addCircleMarkers(data = providers, radius = 2, color = "#3b0a45", stroke = FALSE,
                               fillOpacity = 0.7, group = lab$providers, layerId = ~mm_id,
                               label = ~mm_label, popup = ~mm_popup) |>
@@ -167,11 +162,28 @@ function(el, x, data) {
     leaflet::addLegend(position = "bottomright", pal = supply_pal,
                        values = supply_values, title = txt$supply_legend, na.label = "0 / no data",
                        className = "info legend mm-lg mm-lg-supply") |>
-    leaflet::addControl(html = title_html, position = "topleft") |>
+    leaflet::addControl(html = title_html, position = "topleft")
+
+  # Access-desert overlay only when there is at least one desert; adding a
+  # zero-row polygon layer errors in leaflet's bbox expansion (the same
+  # hazard mysterymaps_access_choropleth_map_multi() already guards against
+  # -- every area having access is a normal, good outcome, not one that
+  # should break the map).
+  overlay_groups <- lab$providers
+  if (nrow(deserts) > 0) {
+    m <- m |> leaflet::addPolygons(
+      data = deserts, fill = FALSE, color = "#7a0177", weight = 1.4, group = lab$desert,
+      label = ~lapply(sprintf("<b>%s</b> &mdash; %s", mm_label, txt$desert), htmltools::HTML),
+      highlightOptions = leaflet::highlightOptions(weight = 3, color = "#49006a", bringToFront = TRUE))
+    overlay_groups <- c(overlay_groups, lab$desert)
+  }
+
+  m <- m |>
     leaflet::addLayersControl(baseGroups = c(lab$time, lab$supply),
-                              overlayGroups = c(lab$providers, lab$desert),
-                              options = leaflet::layersControlOptions(collapsed = FALSE)) |>
-    leaflet::hideGroup(lab$desert) |>
+                              overlayGroups = overlay_groups,
+                              options = leaflet::layersControlOptions(collapsed = FALSE))
+  if (nrow(deserts) > 0) m <- leaflet::hideGroup(m, lab$desert)
+  m <- m |>
     leaflet.extras::addSearchFeatures(
       targetGroups = c("geo-search", lab$providers),
       options = leaflet.extras::searchFeaturesOptions(

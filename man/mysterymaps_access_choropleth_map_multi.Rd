@@ -34,7 +34,11 @@ mysterymaps_access_choropleth_map_multi(
 optional \code{mm_fill_coverage}, \code{mm_hover}, \code{mm_hover_supply},
 \code{mm_hover_coverage}), \code{supply_pal}, \code{supply_values}, and optional
 \code{time_legend}, \code{supply_legend}, \code{coverage_pal}, \code{coverage_values},
-\code{coverage_legend}, \code{desert}. Names become the geography labels shown in
+\code{coverage_legend}, \code{desert}. \strong{\code{mm_id} must be unique across every
+geography combined, not just within one} -- every polygon's layerId
+shares one leaflet layer registry for the whole map, and this function
+errors rather than silently cross-wiring click-to-highlight if two
+geographies share an id. Names become the geography labels shown in
 the control panel. The first geography is shown by default.}
 
 \item{providers}{\code{sf} POINTs (\code{mm_id}, \code{mm_label}, \code{mm_popup}), shared
