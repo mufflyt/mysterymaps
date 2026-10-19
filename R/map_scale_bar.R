@@ -92,8 +92,14 @@ mysterymaps_jitter_points <- function(points, miles = 1.5, seed = 42) {
          "Suggests dependency. Install it to use this function.", call. = FALSE)
   }
   checkmate::assert_class(points, "sf")
-  checkmate::assert_number(miles, lower = 0)
-  checkmate::assert_number(seed, null.ok = TRUE)
+  # finite = TRUE: checkmate::assert_number()'s default allows Inf. miles =
+  # Inf silently passed validation, then radius_m became Inf, stats::runif()
+  # with max = Inf returned NaN for every point with only a non-fatal "NAs
+  # produced" warning -- easy to miss in a batch script -- and the jittered
+  # output was every physician's location replaced by NaN/NaN, a map that
+  # LOOKS like it built successfully but has lost all its geometry.
+  checkmate::assert_number(miles, lower = 0, finite = TRUE)
+  checkmate::assert_number(seed, null.ok = TRUE, finite = TRUE)
 
   if (miles == 0 || nrow(points) == 0L) return(points)
 

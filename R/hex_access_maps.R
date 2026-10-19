@@ -92,9 +92,30 @@ mysterymaps_hex_access_maps <- function(
       !base::inherits(boundary, "sf")) {
     base::stop("origins and boundary must be sf objects")
   }
+  # A 0-row (or all-empty-geometry) boundary has no bounding box -- NA, not
+  # an error -- and sf::st_make_grid() does not notice until several steps
+  # later, failing inside base::seq() with "'from' must be a finite number",
+  # naming neither the boundary nor the real cause.
+  if (base::nrow(boundary) == 0L || base::all(sf::st_is_empty(boundary))) {
+    base::stop("boundary has no rows, or no non-empty geometry; there is no region to grid.")
+  }
   fields <- c(year_col, origin_col, pop_col, time_col)
   if (!base::all(fields %in% base::names(origins))) {
     base::stop("Missing required origin fields")
+  }
+  # "hex_id" is reserved: it is the name of the column the generated grid
+  # carries its own id under, and .hex_access_assign_hexagons() joins it
+  # onto `origins` by that exact name. If `origins` already has a column
+  # called "hex_id", sf::st_join() silently renames BOTH copies to
+  # "hex_id.x"/"hex_id.y" rather than erroring -- the join itself succeeds,
+  # and the failure instead surfaces several steps later as a confusing
+  # "Column `hex_id` not found" from the unrelated dplyr pipeline downstream.
+  if ("hex_id" %in% base::names(origins)) {
+    base::stop(
+      "`origins` already has a column named 'hex_id'; this function reserves ",
+      "that name for the generated hexagon grid id. Rename or drop the existing ",
+      "column before calling."
+    )
   }
   if (base::anyDuplicated(fields) ||
       base::length(years) != 2L ||

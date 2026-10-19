@@ -266,6 +266,22 @@ mysterymaps_jenks_zero_scale <- function(n, k = 6, zero_col = "#e0e0e0",
   if (length(upos) == 0)
     return(c(list(color = function(x, coverage = NULL) {
                mm_reject_negative(x, "x")
+               # This scale was trained on data with no positive values, so
+               # it reserved no class and no legend entry for one. x can be a
+               # DIFFERENT vector from the training data (the constructor's
+               # own docs describe building from one subset and colouring
+               # another) -- without this check, a real positive value here
+               # would fall through to the zero fill below and render
+               # identically to a measured zero: the exact conflation this
+               # whole scale exists to prevent, just reached by training on
+               # an all-zero vector instead of by a bad palette.
+               if (any(is.finite(x) & x > 0)) {
+                 stop("this scale was built from data with no positive values, so it has ",
+                      "no class reserved for one. color() was given a vector containing a ",
+                      "positive value, and the zero colour would render it identically to a ",
+                      "measured zero. Rebuild the scale from data that includes the positive ",
+                      "values you intend to colour.", call. = FALSE)
+               }
                out <- rep(zero_col, length(x))
                out[!is.finite(x)] <- na_col
                out[mm_resolve_coverage(coverage, is_outside, length(x))] <- outside_col

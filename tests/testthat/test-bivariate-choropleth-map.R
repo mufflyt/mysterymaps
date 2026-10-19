@@ -245,6 +245,36 @@ testthat::test_that("zero_aware must be a single logical value", {
       zero_aware = "yes"))
 })
 
+# ---- SABOTEUR: a negative value bypasses zero_aware's zero/positive split --
+# REAL BUG, FIXED. classify_axis() only tested `x_complete == 0`, so a
+# NEGATIVE value (an upstream arithmetic error, not a measurement) fell
+# through into the POSITIVE quantile classing and rendered in the same
+# tercile as the lowest real positive value -- the exact conflation
+# zero_aware exists to prevent, reached from the other end of the scale.
+# mm_reject_negative() (mysterymaps_jenks_zero_scale()'s own guard) is
+# reused here rather than re-implemented.
+testthat::test_that("SABOTEUR: zero_aware = TRUE rejects a negative value instead of classing it as positive", {
+  skip_unless_spatial()
+  counties <- mm_counties(n = 5, rate = c(-50, 0, 2, 4, 9))
+  counties$need <- 1:5
+  testthat::expect_error(
+    mysterymaps_bivariate_choropleth_map(
+      counties, x_var = "rate", y_var = "need", x_label = "X", y_label = "Y",
+      zero_aware = TRUE),
+    "negative"
+  )
+})
+
+testthat::test_that("zero_aware = FALSE is unaffected by the negative-value guard (legacy behaviour preserved)", {
+  skip_unless_spatial()
+  counties <- mm_counties(n = 5, rate = c(-50, 0, 2, 4, 9))
+  counties$need <- 1:5
+  p <- mysterymaps_bivariate_choropleth_map(
+    counties, x_var = "rate", y_var = "need", x_label = "X", y_label = "Y",
+    zero_aware = FALSE)
+  testthat::expect_s3_class(p, "ggplot")
+})
+
 testthat::test_that("mm_bivariate_palette() interpolates corners correctly at the corners themselves", {
   pal <- mm_bivariate_palette(3)
   testthat::expect_identical(unname(pal["1-1"]), "#E8E8E8")

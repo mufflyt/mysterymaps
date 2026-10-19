@@ -10,12 +10,15 @@ skip_unless_spatial <- function() {
   testthat::skip_if_not_installed("sf")
 }
 
-mm_points <- function(origin_id, year, population, travel_minutes, x, y, crs = 4326) {
+mm_points <- function(origin_id, year, population, travel_minutes, x, y, crs = 4326, extra = list()) {
   sf::st_as_sf(
-    base::data.frame(
-      origin_id = origin_id, year = year, population = population,
-      travel_minutes = travel_minutes, x = x, y = y
-    ),
+    base::data.frame(c(
+      base::list(
+        origin_id = origin_id, year = year, population = population,
+        travel_minutes = travel_minutes, x = x, y = y
+      ),
+      extra
+    )),
     coords = c("x", "y"), crs = crs
   )
 }
@@ -255,4 +258,54 @@ testthat::test_that("passing a longlat crs (e.g. 4326) for the equal-area grid e
     mysterymaps_hex_access_maps(locations, mm_region(), hex_km = 300, crs = 4326),
     "projected"
   )
+})
+
+# ---- Saboteur 15: origins already carries a column named "hex_id" ---------
+# REAL BUG, FIXED. sf::st_join() does not error on a colliding column name --
+# it silently renames BOTH copies ("hex_id.x", "hex_id.y"), so the join
+# itself always "succeeds". The failure only surfaced several steps later,
+# as a confusing dplyr error ("Column `hex_id` not found") from inside
+# .hex_access_assign_hexagons()'s arrange()/distinct() call, which never
+# named the real cause: a reserved internal column name collision.
+testthat::test_that("REGRESSION: a pre-existing 'hex_id' column in origins errors clearly instead of a downstream dplyr crash", {
+  skip_unless_spatial()
+  locations <- mm_points(
+    c("a", "b", "a", "b"), c(2013L, 2013L, 2023L, 2023L), c(100, 300, 100, 300),
+    c(20, 80, 40, 100), x = c(-78, -78.01, -78, -78.01), y = c(37, 37.01, 37, 37.01),
+    extra = list(hex_id = c(999L, 998L, 999L, 998L))
+  )
+  testthat::expect_error(
+    mysterymaps_hex_access_maps(locations, mm_region(), hex_km = 300),
+    "hex_id"
+  )
+})
+
+# ---- Saboteur 16: a zero-row (or all-empty-geometry) boundary ---------------
+# REAL BUG, FIXED. A 0-row boundary has no bounding box (NA, not an error),
+# and sf::st_make_grid() did not notice -- it failed several steps later
+# inside base::seq() with "'from' must be a finite number", naming neither
+# the boundary nor the real cause.
+testthat::test_that("REGRESSION: a zero-row boundary errors clearly instead of a cryptic seq() failure", {
+  skip_unless_spatial()
+  empty_boundary <- sf::st_sf(geometry = sf::st_sfc(crs = 4326))
+  locations <- mm_points(
+    c("a", "a"), c(2013L, 2023L), c(100, 100), c(20, 40), x = c(-78, -78), y = c(37, 37)
+  )
+  testthat::expect_error(
+    mysterymaps_hex_access_maps(locations, empty_boundary, hex_km = 300),
+    "boundary"
+  )
+})
+
+testthat::test_that("a boundary with an empty-geometry row mixed in among valid rows still builds", {
+  skip_unless_spatial()
+  mixed_boundary <- sf::st_sf(geometry = sf::st_sfc(
+    sf::st_polygon(), sf::st_as_sfc(sf::st_bbox(c(xmin = -79, ymin = 36, xmax = -77, ymax = 38)))[[1]],
+    crs = 4326
+  ))
+  locations <- mm_points(
+    c("a", "a"), c(2013L, 2023L), c(100, 100), c(20, 40), x = c(-78, -78), y = c(37, 37)
+  )
+  mapped <- mysterymaps_hex_access_maps(locations, mixed_boundary, hex_km = 300)
+  testthat::expect_true(base::nrow(mapped$hexagons) >= 1L)
 })

@@ -185,6 +185,19 @@ mysterymaps_bivariate_choropleth_map <- function(polygons,
   checkmate::assert_number(legend_size, lower = 0, upper = 1)
   checkmate::assert_int(n_classes, lower = 2L)
   checkmate::assert_flag(zero_aware)
+  if (zero_aware) {
+    # zero_aware's whole promise is that an axis's zero tier is never
+    # conflated with its positive values. classify_axis() below only tests
+    # `x_complete == 0`, so a NEGATIVE value (an upstream arithmetic error,
+    # not a measurement) falls through into the POSITIVE quantile classing
+    # and renders in the same tercile as the lowest real positive value --
+    # the exact conflation zero_aware exists to prevent, just reached from
+    # the other end of the scale. mm_reject_negative() already exists for
+    # this in mysterymaps_jenks_zero_scale(); reused here rather than
+    # re-written.
+    mm_reject_negative(polygons[[x_var]], x_var)
+    mm_reject_negative(polygons[[y_var]], y_var)
+  }
   if (palette_missing && zero_aware) {
     # One extra tier per axis for the zero class. Generated the same way any
     # non-default n_classes is -- bilinear interpolation of the same four

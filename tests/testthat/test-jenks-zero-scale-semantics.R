@@ -102,7 +102,26 @@ test_that("all-zero and empty input collapse to a single zero class", {
     s <- mysterymaps_jenks_zero_scale(x)
     expect_identical(s$leg_cols, "#e0e0e0")
     expect_identical(s$leg_labs, "0")
-    expect_identical(s$color(c(0, 1)), c("#e0e0e0", "#e0e0e0"))
+    expect_identical(s$color(c(0, 0)), c("#e0e0e0", "#e0e0e0"))
+  }
+})
+
+# REGRESSION (2026-10-19): this used to assert s$color(c(0, 1)) returned
+# c(zero_col, zero_col) -- i.e. a scale trained on degenerate all-zero/empty
+# data rendered a LATER positive value (via the documented "build from one
+# vector, colour another" pattern: a state's own subset happening to be
+# all-zero, then colouring the full national vector) identically to a
+# measured zero. That is the exact zero/positive conflation this scale
+# exists to prevent, just reached through the training data instead of
+# the palette. It is now a loud, fixable error instead of a silent
+# misrender.
+test_that("color() refuses to colour a positive value when the scale was trained on no positive data", {
+  for (x in list(c(0, 0, 0), numeric(0))) {
+    s <- mysterymaps_jenks_zero_scale(x)
+    expect_error(s$color(c(0, 1)), "no positive values")
+    expect_error(s$color(c(9999)), "no positive values")
+    # Values that are not positive (zero, NA, non-finite) are unaffected.
+    expect_identical(s$color(c(0, NA, Inf, NaN)), c("#e0e0e0", "#ffffff", "#ffffff", "#ffffff"))
   }
 })
 

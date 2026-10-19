@@ -384,6 +384,21 @@ test_that("include_zero_cells returns the full grid, zero cells included", {
   expect_false(anyNA(with_zeros$count))
 })
 
+# ---- SABOTEUR: cellsize = 0 -------------------------------------------------
+# REAL BUG, FIXED. checkmate::assert_number(cellsize, lower = 0) allows 0.
+# sf::st_make_grid() asked for a grid of zero-size hexagons rejects it with
+# an unrelated, cryptic error ("invalid '(to - from)/by'") rather than
+# naming cellsize or the real cause.
+test_that("SABOTEUR: cellsize = 0 errors clearly instead of a cryptic grid-construction failure", {
+  skip_if_not_installed("sf")
+  area <- hex_area(lon = c(-105, -100), lat = c(38, 42))
+  lone <- hex_points(-102.5, 40.0)
+  expect_error(
+    mysterymaps_hex_bin_counts(area, lone, cellsize = 0),
+    "strictly positive"
+  )
+})
+
 test_that("include_zero_cells ignores min_count rather than silently honouring it", {
   # Suppressing small counts and asserting a cell is a true zero are
   # different, incompatible claims; min_count must not quietly drop a
