@@ -62,6 +62,18 @@ test_that("isochrones for one drive time are dissolved into a single feature", {
   expect_equal(nrow(shp), 1L)
 })
 
+test_that("SABOTEUR: a drive_time with no matching rows errors instead of a cryptic GEOS crash", {
+  # Filtering to a drive_time with no rows produces a 0-row sf; st_union() of
+  # that is an empty GEOMETRYCOLLECTION, and addPolygons() fails on it several
+  # steps later with "Don't know how to get polygon data from object of class
+  # ... sfg" -- naming neither the drive_time nor the real cause.
+  skip_unless_plot()
+  out <- withr::local_tempdir()
+  expect_error(
+    mysterymaps_plot_isochrones(iso_for_plot(c(30, 60)), c(30, 999), output_dir = out),
+    "999")
+})
+
 test_that("output directories are created when they do not exist", {
   skip_unless_plot()
   out <- file.path(withr::local_tempdir(), "deep", "nested")

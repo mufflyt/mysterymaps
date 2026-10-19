@@ -49,6 +49,17 @@ test_that("a missing API key is an error naming the environment variable", {
     "HERE_API_KEY")
 })
 
+test_that("SABOTEUR: api_key = NULL is refused with the actionable message, not a cryptic crash", {
+  # is.na(NULL) is logical(0), and the old `is.na(api_key) || !nzchar(api_key)`
+  # check errored with "missing value where TRUE/FALSE needed" -- naming
+  # neither this argument nor NULL as the cause.
+  skip_if_not_installed("sf")
+  skip_if_not_installed("hereR")
+  expect_error(
+    mysterymaps_create_isochrones(mm_points(1), range = 1800, api_key = NULL),
+    "HERE_API_KEY")
+})
+
 test_that("each required package is named in its own error", {
   for (pkg in c("sf", "hereR", "lwgeom")) {
     local_mocked_bindings(
@@ -139,6 +150,15 @@ test_that("a missing key is refused before any row is processed", {
   expect_error(
     mysterymaps_isochrones_for_df(data.frame(lat = 40, long = -100),
                                   api_key = ""),
+    "HERE_API_KEY")
+})
+
+test_that("SABOTEUR: api_key = NULL is refused with the actionable message, not a cryptic crash", {
+  skip_if_not_installed("sf")
+  skip_if_not_installed("hereR")
+  skip_if_not_installed("easyr")
+  expect_error(
+    mysterymaps_isochrones_for_df(data.frame(lat = 40, long = -100), api_key = NULL),
     "HERE_API_KEY")
 })
 

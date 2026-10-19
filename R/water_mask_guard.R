@@ -49,6 +49,19 @@ mysterymaps_guard_water_masks <- function(masks, census_water_km2,
                                           action = c("exclude", "error")) {
   action <- match.arg(action)
   stopifnot(is.list(masks), !is.null(names(masks)), is.numeric(census_water_km2))
+  # `masks[[st]]`/`masks[setdiff(names(masks), bad)]` below both index by
+  # name, and `[[`/`[` on a duplicate name always resolve to the FIRST match
+  # -- so a second mask sharing a state's name is never measured on its own
+  # geometry and is silently dropped from the output entirely, whether or not
+  # it was the one that needed excluding.
+  dupe_states <- unique(names(masks)[duplicated(names(masks))])
+  if (length(dupe_states)) {
+    stop("mysterymaps_guard_water_masks(): `masks` has duplicate name(s): ",
+         paste(dupe_states, collapse = ", "),
+         ". Indexing by name resolves a duplicate to its first match, which ",
+         "silently drops the other mask(s) sharing that name from the result.",
+         call. = FALSE)
+  }
 
   ratio <- vapply(names(masks), function(st) {
     g <- masks[[st]]

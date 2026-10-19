@@ -137,10 +137,14 @@ mysterymaps_map_physicians <- function(physician_data, jitter_range = 0.05, colo
     set.seed(seed)
   }
 
+  # runif(n()) draws from [0, 1], so adding it only ever INCREASES lat and
+  # long -- every point shifts northeast by up to `jitter_range`, a systematic
+  # directional bias rather than a scatter around the true location.
+  # runif(n(), -1, 1) centres the offset on zero so it can land on either side.
   jittered_physician_data <- dplyr::mutate(
     physician_data,
-    lat = lat + runif(n()) * jitter_range,
-    long = long + runif(n()) * jitter_range
+    lat = lat + runif(n(), -1, 1) * jitter_range,
+    long = long + runif(n(), -1, 1) * jitter_range
   )
 
   message("Setting up the base map...")

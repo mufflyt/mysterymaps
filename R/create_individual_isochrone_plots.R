@@ -39,6 +39,19 @@ mysterymaps_plot_isochrones <- function(isochrones, drive_times, output_dir = NU
     stop("Package 'htmlwidgets' is required for this function", call. = FALSE)
   }
 
+  # Filtering to a drive_time with no matching rows produces a 0-row sf, and
+  # sf::st_union() of that is an empty GEOMETRYCOLLECTION rather than an empty
+  # polygon -- leaflet::addPolygons() then fails several steps later with
+  # "Don't know how to get polygon data from object of class ... sfg", naming
+  # neither this drive_time nor the real cause.
+  unmatched <- setdiff(unique(stats::na.omit(drive_times)), unique(isochrones$drive_time))
+  if (length(unmatched)) {
+    stop(sprintf(paste0(
+      "mysterymaps_plot_isochrones(): `drive_times` contains value(s) with no ",
+      "matching rows in `isochrones$drive_time`: %s."),
+      paste(unmatched, collapse = ", ")), call. = FALSE)
+  }
+
   if (is.null(output_dir)) {
     output_dir <- file.path(tempdir(), "isochrone_plots"); dir.create(output_dir, recursive = TRUE, showWarnings = FALSE)
   } else {
