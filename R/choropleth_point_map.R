@@ -81,6 +81,13 @@ mysterymaps_choropleth_point_map <- function(layers, points,
   checkmate::assert_int(jenks_k, lower = 1L)
   checkmate::assert_number(fill_opacity, lower = 0, upper = 1)
   checkmate::assert_number(point_radius, lower = 0)
+  empty <- names(layers)[vapply(layers, nrow, integer(1)) == 0L]
+  if (length(empty)) {
+    stop("mysterymaps_choropleth_point_map(): layer(s) with zero rows: ",
+         paste(empty, collapse = ", "),
+         ". classInt::classIntervals() cannot classify an empty layer, and the error it ",
+         "raises instead of this one does not say which layer or why.", call. = FALSE)
+  }
 
   tok <- function(x) stringr::str_replace_all(x, "[^A-Za-z]", "")
   group_names <- names(layers)

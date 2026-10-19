@@ -28,6 +28,18 @@ mysterymaps_count_points_in_polygons <- function(polygons, points, count_col = "
   checkmate::assert_class(points, "sf")
   checkmate::assert_string(count_col)
   checkmate::assert_subset("id", names(polygons))
+  # A duplicate id makes the join below fan out: every point touching either
+  # duplicate-id polygon gets counted into BOTH rows, silently inflating the
+  # total (measured: 2 real points became 4 "counted" across a duplicated
+  # id). The doc above already promises a unique id; this enforces it.
+  dupe <- unique(polygons$id[duplicated(polygons$id)])
+  if (length(dupe)) {
+    stop("mysterymaps_count_points_in_polygons(): `polygons$id` has duplicate value(s): ",
+         paste(utils::head(dupe, 10L), collapse = ", "),
+         if (length(dupe) > 10L) sprintf(" (and %d more)", length(dupe) - 10L) else "",
+         ". `id` must be unique -- a duplicate id makes the point-in-polygon join fan ",
+         "out, double-counting every point that touches either copy.", call. = FALSE)
+  }
 
   pts <- sf::st_transform(points, sf::st_crs(polygons))
   pts$.one <- 1L

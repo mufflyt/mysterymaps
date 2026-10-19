@@ -21,7 +21,11 @@
 #'   optional `mm_fill_coverage`, `mm_hover`, `mm_hover_supply`,
 #'   `mm_hover_coverage`), `supply_pal`, `supply_values`, and optional
 #'   `time_legend`, `supply_legend`, `coverage_pal`, `coverage_values`,
-#'   `coverage_legend`, `desert`. Names become the geography labels shown in
+#'   `coverage_legend`, `desert`. **`mm_id` must be unique across every
+#'   geography combined, not just within one** -- every polygon's layerId
+#'   shares one leaflet layer registry for the whole map, and this function
+#'   errors rather than silently cross-wiring click-to-highlight if two
+#'   geographies share an id. Names become the geography labels shown in
 #'   the control panel. The first geography is shown by default.
 #' @param providers `sf` POINTs (`mm_id`, `mm_label`, `mm_popup`), shared
 #'   across every geography.
@@ -115,17 +119,30 @@ mysterymaps_access_choropleth_map_multi <- function(geos, providers, highlight_l
   zip_lookup <- NULL
   if (!is.null(zip_centroids) && nrow(zip_centroids)) {
     z <- zip_centroids[stats::complete.cases(zip_centroids[, c("zip", "lat", "lon")]), ]
+    # as.integer() on a non-numeric ZIP (e.g. ZIP+4, "80202-1234") returns NA
+    # with a warning rather than failing -- sprintf("%05d", NA) then names the
+    # lookup entry the literal string "NA" rather than dropping it, which is
+    # worse than silent: it looks like a real, searchable key. complete.cases()
+    # above does not catch this -- the raw zip string is never NA, only its
+    # parsed form is. Validated as plain digits BEFORE parsing, so a malformed
+    # entry is dropped instead of becoming a key.
+    valid <- grepl("^[0-9]{1,5}$", trimws(as.character(z$zip)))
+    z <- z[valid, , drop = FALSE]
     zip_lookup <- stats::setNames(
       Map(function(la, lo) c(round(la, 3), round(lo, 3)), z$lat, z$lon),
       sprintf("%05d", as.integer(z$zip)))
   }
   req <- c("mm_id", "mm_label", "mm_popup", "mm_fill_time", "mm_fill_supply", "mm_no_access")
+  mm_assert_unique_geo_ids(geos, "mysterymaps_access_choropleth_map_multi")
+  mm_assert_unique_provider_ids(providers, "mysterymaps_access_choropleth_map_multi")
+
   old_s2 <- sf::sf_use_s2(); sf::sf_use_s2(FALSE); on.exit(sf::sf_use_s2(old_s2), add = TRUE)
   tok <- function(x) gsub("[^A-Za-z0-9]", "", x)
   esc <- function(x) htmltools::htmlEscape(x)
   geo_names <- names(geos)
   centroid_tpl <- sprintf("<b>%s</b><br>%%s", centroid_label)  # nolint: object_usage_linter. used inside a ~lapply(sprintf(centroid_tpl, ...)) formula below
   has_cov <- any(vapply(geos, function(g) "mm_fill_coverage" %in% names(g$sf), logical(1)))
+  mm_assert_coverage_pal(geos, "mysterymaps_access_choropleth_map_multi")
   has_iso <- !is.null(iso_union) && nrow(iso_union) > 0
 
   # ---- control panel HTML (two-axis geography x metric, basemap, toggles) ----

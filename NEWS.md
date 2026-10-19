@@ -17,6 +17,49 @@ nothing errored.
   `showGroup()`/`hideGroup()` by that name must update.
 * `Stadia.StamenTonerLite` ("Toner Lite") is unchanged but is the same class
   of risk: Stadia serves keyless tiles on localhost only.
+## Bug fixes: 7 silent-corruption and cryptic-error bugs found by adversarial testing
+
+Deliberately malformed and boundary-case inputs fed to the five leaflet map
+builders (`mysterymaps_access_choropleth_map()`, `..._multi()`,
+`mysterymaps_choropleth_point_map()`, `mysterymaps_count_points_in_polygons()`,
+`mysterymaps_aggregate_values_to_polygons()`), looking for silent wrong
+answers rather than crashes:
+
+* **Duplicate `mm_id` cross-wired click-to-highlight**, both across
+  geographies in `mysterymaps_access_choropleth_map_multi()`'s `geos` list
+  and in `providers$mm_id` on both access-choropleth functions -- `mm_id` is
+  used verbatim as a leaflet layerId, and a collision silently makes
+  clicking one feature light up a different, unrelated one. All three now
+  error naming the duplicate value(s) instead.
+* **Duplicate polygon `id` silently double-counted** in
+  `mysterymaps_count_points_in_polygons()` (2 points became 4) and
+  `mysterymaps_aggregate_values_to_polygons()` (15 became 25) -- both
+  already documented `id` as required-unique but never enforced it. Both
+  now error instead of fanning out the join/match.
+* **A zero-row layer leaked a raw `classInt` internals error**
+  (`invalid 'type' (list) of argument`) in
+  `mysterymaps_choropleth_point_map()`. Now names the empty layer.
+* **Every area having access (zero "deserts") crashed**
+  `mysterymaps_access_choropleth_map()` -- an entirely normal, good
+  outcome. Its multi-geography sibling already had a documented guard for
+  this exact failure; the singular function never got it. Fixed to match.
+* **A malformed ZIP (e.g. ZIP+4, `"80202-1234"`) became a lookup key
+  literally named `"NA"`** in `..._multi()`'s zoom-to-ZIP box, instead of
+  being dropped.
+* **`mm_fill_coverage` without a matching `coverage_pal`/`coverage_values`**
+  failed inside `leaflet::addLegend()` with "argument is of length zero",
+  naming neither the geography nor the real problem. Now named explicitly.
+
+The shared duplicate-id and coverage-pal validation extracted into a new
+internal file, `R/access_choropleth_map_guards.R`, which also deduplicated
+near-identical guard code that had drifted between the two access-choropleth
+functions. 25 new regression tests, plus 70 new cross-cutting invariant
+tests (`test-leaflet-map-invariants.R`) covering properties -- legend
+colour/label length matching, unique layerIds, every fill colour being
+valid, every input point becoming exactly one marker -- that must hold for
+any input to any of the five builders, not just the examples in each
+function's own tests.
+
 ## New: county/CD access-map template and spatial helpers, moved from `isochrones`
 
 Five generic, column-driven leaflet-mapping functions moved out of the
