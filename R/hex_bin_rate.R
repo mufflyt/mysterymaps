@@ -101,6 +101,12 @@ mysterymaps_hex_bin_rate <- function(boundary_sf,
   checkmate::assert_subset(denominator_col, names(denominator_sf))
   checkmate::assert_number(per, lower = 0)
   checkmate::assert_number(cellsize, lower = 0, finite = TRUE)
+  if (cellsize == 0) {
+    stop("mysterymaps_hex_bin_rate(): `cellsize` must be strictly positive. ",
+         "0 asks sf::st_make_grid() for a grid of zero-size hexagons, which it ",
+         "rejects with an unrelated, cryptic error (\"invalid '(to - from)/by'\") ",
+         "rather than naming the real cause.", call. = FALSE)
+  }
   checkmate::assert_number(min_denominator, lower = 0, finite = TRUE)
   checkmate::assert_string(value_col)
   if (nrow(boundary_sf) == 0L) {

@@ -62,3 +62,30 @@ testthat::test_that("jitter does not leak the random seed into the caller's stre
   after <- runif(1)
   testthat::expect_identical(before, after)
 })
+
+# ---- SABOTEUR: miles = Inf / seed = Inf -------------------------------------
+# REAL BUG, FIXED. checkmate::assert_number()'s default allows Inf. miles =
+# Inf passed validation, radius_m became Inf, and stats::runif(n, 0, Inf)
+# returned NaN for every point with only a non-fatal "NAs produced" warning
+# -- easy to miss in a batch script. The map "built" with every physician's
+# location silently replaced by NaN/NaN. seed = Inf has the same shape of
+# problem one level down: set.seed(Inf) only warns ("NAs introduced by
+# coercion to integer range"), leaving the RNG in an unspecified state rather
+# than erroring.
+testthat::test_that("SABOTEUR: miles = Inf errors instead of silently producing NaN coordinates", {
+  skip_unless_spatial()
+  pts <- mm_points(n = 3)
+  testthat::expect_error(
+    mysterymaps_jitter_points(pts, miles = Inf, seed = 42),
+    "finite"
+  )
+})
+
+testthat::test_that("SABOTEUR: seed = Inf errors instead of silently leaving the RNG in an unspecified state", {
+  skip_unless_spatial()
+  pts <- mm_points(n = 3)
+  testthat::expect_error(
+    mysterymaps_jitter_points(pts, miles = 1, seed = Inf),
+    "finite"
+  )
+})

@@ -1,5 +1,48 @@
 # mysterymaps (development version)
 
+## Bug fixes: 7 more silent-corruption and cryptic-error bugs found by adversarial testing
+
+A further three rounds of deliberately malformed and boundary-case inputs,
+this time against `mysterymaps_hex_access_maps()`, the shared
+`mysterymaps_jenks_zero_scale()` colour scale nearly every choropleth
+function in this package depends on, and several other previously-untested
+functions:
+
+* **`origins` already carrying a column named `hex_id`** silently collided
+  with `mysterymaps_hex_access_maps()`'s own internal grid-id column --
+  `sf::st_join()` renamed both copies (`hex_id.x`/`hex_id.y`) rather than
+  erroring, and the failure only surfaced several steps later as a
+  confusing, unrelated `dplyr` error. Now named and rejected immediately.
+* **A zero-row (or all-empty-geometry) `boundary`** had no bounding box and
+  `sf::st_make_grid()` failed inside `base::seq()` with `"'from' must be a
+  finite number"`, naming neither the boundary nor the real cause.
+* **The biggest one: `mysterymaps_jenks_zero_scale()`, trained on all-zero
+  or empty data, silently coloured any later positive value identically to
+  zero.** The function's own docs explicitly support building a scale from
+  one vector and colouring a different one (e.g. a state's own subset,
+  then the full national vector); a state with zero providers everywhere
+  would render a county with 9,999 providers in the exact same grey as a
+  county with 0 -- precisely the conflation this scale's extensive
+  docstring says it exists to prevent. This reverses a pre-existing,
+  deliberately-tested expectation (`color(c(0,1))` used to return two
+  identical zero-colours); `color()` now errors instead.
+* **`mysterymaps_jitter_points()`: `miles = Inf` (or `seed = Inf`) silently
+  replaced every point's geometry with `NaN`** coordinates, with only a
+  non-fatal `stats::runif()` warning -- easy to miss in a batch script.
+  Both arguments now require `finite = TRUE`.
+* **`mysterymaps_bivariate_choropleth_map(zero_aware = TRUE)`: a negative
+  value bypassed the zero/positive split entirely**, classed into the same
+  tercile as the lowest real positive value. Fixed by reusing
+  `mysterymaps_jenks_zero_scale()`'s own `mm_reject_negative()` guard.
+* **`mysterymaps_hex_bin_rate()` and `mysterymaps_hex_bin_counts()`:
+  `cellsize = 0`** crashed both with the identical cryptic
+  `"invalid '(to - from)/by'"` from deep inside `sf::st_make_grid()`.
+
+Several other adversarial probes against `mm_coverage_outside()`,
+`mm_area_in()`, `mysterymaps_zoom_gated_labels()`, and
+`mysterymaps_base_legend_switcher()` found correct, already-safe behaviour
+and are recorded as such rather than silently assumed.
+
 ## Bug fix: `mysterymaps_access_choropleth_map()`/`..._multi()` now reproject to WGS84
 
 Neither function reprojected `geo`/`geos`/`providers` to WGS84 before handing

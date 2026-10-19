@@ -226,6 +226,29 @@ test_that("REGRESSION: matches via spatial join, not an attribute join on grid_i
   expect_true(grepl("st_equals", body_text, fixed = TRUE))
 })
 
+# ---- SABOTEUR: cellsize = 0 -------------------------------------------------
+# REAL BUG, FIXED. checkmate::assert_number(cellsize, lower = 0) allows 0.
+# sf::st_make_grid() asked for a grid of zero-size hexagons rejects it with
+# an unrelated, cryptic error ("invalid '(to - from)/by'") rather than
+# naming cellsize or the real cause.
+test_that("SABOTEUR: cellsize = 0 errors clearly instead of a cryptic grid-construction failure", {
+  skip_if_not_installed("sf")
+  boundary_sf <- sf::st_sf(geometry = sf::st_sfc(
+    sf::st_polygon(list(cbind(c(-100, -97, -97, -100, -100), c(39, 39, 42, 42, 39)))),
+    crs = 4326))
+  points_sf <- sf::st_as_sf(
+    data.frame(lon = -99.1, lat = 40.1), coords = c("lon", "lat"), crs = 4326)
+  denominator_sf <- sf::st_sf(
+    population = 10000,
+    geometry = sf::st_sfc(
+      sf::st_polygon(list(cbind(c(-100, -97, -97, -100, -100), c(39, 39, 42, 42, 39)))),
+      crs = 4326))
+  expect_error(
+    mysterymaps_hex_bin_rate(boundary_sf, points_sf, denominator_sf, "population", cellsize = 0),
+    "strictly positive"
+  )
+})
+
 test_that("sf is named in the error when it is not installed", {
   local_mocked_bindings(
     requireNamespace = function(package, ...) !identical(package, "sf"),
