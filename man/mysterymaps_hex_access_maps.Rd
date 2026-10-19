@@ -24,7 +24,9 @@ mysterymaps_hex_access_maps(
 
 \item{year_col, origin_col, pop_col, time_col}{Column names.}
 
-\item{years}{Two comparison years, default 2013 and 2023.}
+\item{years}{Two comparison years, strictly ascending (\code{years[1]} earlier,
+\code{years[2]} later -- \code{change_minutes} is \code{years[2]} minus \code{years[1]}).
+Default 2013 and 2023.}
 
 \item{hex_km}{Hexagon grid spacing in kilometers.}
 

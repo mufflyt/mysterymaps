@@ -6,7 +6,9 @@
 #' @param origins An sf POINT object with one row per origin and year.
 #' @param boundary An sf polygon defining the mapped region.
 #' @param year_col,origin_col,pop_col,time_col Column names.
-#' @param years Two comparison years, default 2013 and 2023.
+#' @param years Two comparison years, strictly ascending (`years[1]` earlier,
+#'   `years[2]` later -- `change_minutes` is `years[2]` minus `years[1]`).
+#'   Default 2013 and 2023.
 #' @param hex_km Hexagon grid spacing in kilometers.
 #' @param crs Equal-area projected CRS in meters.
 #' @param min_coverage Minimum fraction of expected population with valid
@@ -97,7 +99,7 @@ mysterymaps_hex_access_maps <- function(
   if (base::anyDuplicated(fields) ||
       base::length(years) != 2L ||
       base::anyNA(years) ||
-      years[1] == years[2] ||
+      years[1] >= years[2] ||
       !base::is.finite(hex_km) ||
       hex_km <= 0 ||
       !base::is.finite(min_coverage) ||
@@ -221,7 +223,11 @@ mysterymaps_hex_access_maps <- function(
 }
 
 .hex_access_weighted_minutes <- function(time, pop) {
-  ok <- !base::is.na(time) & pop > 0
+  # is.finite() excludes NA for free and also Inf/-Inf/NaN, which the
+  # exported function's own validation already treats as invalid travel
+  # times; a single Inf here would otherwise silently poison the whole
+  # weighted mean to Inf instead of being dropped like NA.
+  ok <- base::is.finite(time) & pop > 0
   if (base::any(ok)) {
     stats::weighted.mean(time[ok], pop[ok])
   } else {
