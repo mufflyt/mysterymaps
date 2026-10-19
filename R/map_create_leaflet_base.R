@@ -15,8 +15,9 @@ mysterymaps_map_leaflet <- function() {
   }
   # Create a new Leaflet map object
   map <- leaflet::leaflet() %>%
-    # Add CartoDB Voyager tiles as the base tile layer
-    leaflet::addProviderTiles("CartoDB.Voyager", group = "CartoDB Voyager") %>%
+    # Esri, not CARTO: keyless CARTO tiles watermark "API KEY REQUIRED"
+    # across the whole map (Sept 2026).
+    leaflet::addProviderTiles("Esri.WorldStreetMap", group = "Street Map") %>%
     leaflet::addProviderTiles("Stadia.StamenTonerLite", group = "Toner Lite") %>%
     # Clear any previously set bounds
     leaflet::clearBounds() %>%
@@ -28,7 +29,7 @@ mysterymaps_map_leaflet <- function() {
     leaflet::setView(lat = 39.8282, lng = -98.5795, zoom = 3) %>%
     # Add a layers control for selecting different base layers
     leaflet::addLayersControl(
-      baseGroups = c("CartoDB Voyager", "Toner Lite"),
+      baseGroups = c("Street Map", "Toner Lite"),
       options = leaflet::layersControlOptions(collapsed = FALSE)
     ) %>%
     # Add default map tiles with caching and cross-origin support

@@ -19,7 +19,13 @@ test_that("both base tile providers are offered, and both are in the control", {
   provider_groups <- vapply(
     Filter(function(cl) cl$method == "addProviderTiles", m$x$calls),
     function(cl) as.character(cl$args[[3]]), character(1))
-  expect_setequal(provider_groups, c("CartoDB Voyager", "Toner Lite"))
+  # "Street Map" is Esri.WorldStreetMap. It replaced CartoDB Voyager when CARTO
+  # began rendering an "API KEY REQUIRED" watermark across every tile for
+  # keyless use (September 2026): the code did not change, the tiles did, so
+  # every shipped map inherited the watermark on its next rebuild. This
+  # assertion pins the swap -- if a CARTO provider reappears here, a watermarked
+  # basemap is being shipped again.
+  expect_setequal(provider_groups, c("Street Map", "Toner Lite"))
 
   control <- mm_call_args(m, "addLayersControl")
   expect_setequal(unlist(control[[1]]), provider_groups)

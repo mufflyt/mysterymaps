@@ -10,6 +10,8 @@ bbox
 behaviour
 behaviours
 capitalise
+CARTO
+CartoDB
 cartogram
 CDN
 Charlottesville
@@ -32,6 +34,7 @@ deterministically
 downloader
 Emporia
 EPSG
+Esri
 errored
 erroring
 Fairfax
@@ -117,6 +120,7 @@ sfc
 SFCA
 SpatialPolygonsDataFrame
 SSOT
+Stadia
 subspecialty
 tercile
 terciles
