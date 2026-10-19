@@ -9,6 +9,8 @@ bbox
 behaviour
 behaviours
 capitalise
+CARTO
+CartoDB
 CDN
 checkpointed
 choropleth
@@ -24,6 +26,7 @@ CONUS
 CRS
 downloader
 EPSG
+Esri
 errored
 erroring
 formatter
@@ -49,6 +52,7 @@ jenks
 Jenks
 jitter
 Ka
+keyless
 kilometres
 labelled
 labelling
@@ -88,6 +92,7 @@ sfc
 SFCA
 SpatialPolygonsDataFrame
 SSOT
+Stadia
 subspecialty
 th
 tooltips
