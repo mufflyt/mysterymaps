@@ -65,6 +65,18 @@ mysterymaps_add_coverage_surfaces <- function(map, surfaces, colors,
     stop("mysterymaps_add_coverage_surfaces(): `colors`, `legend_labels` and ",
          "`legend_titles` must each have at least one element.", call. = FALSE)
   }
+  # Both polygons draw fine with a duplicate surface name, but the registry
+  # attribute keys its legend lookup by that same name, and
+  # jsonlite::toJSON() silently collapses a duplicate name to its LAST value
+  # when serialising it for mysterymaps_base_legend_switcher()'s JS -- so one
+  # surface's legend mapping vanishes rather than erroring.
+  dupe_nm <- unique(names(surfaces)[duplicated(names(surfaces))])
+  if (length(dupe_nm)) {
+    stop("mysterymaps_add_coverage_surfaces(): `surfaces` has duplicate name(s): ",
+         paste(dupe_nm, collapse = ", "), ". Each surface's base-group name must be ",
+         "unique -- a duplicate silently drops one surface's legend mapping when the ",
+         "registry is serialised to JSON.", call. = FALSE)
+  }
   n <- length(surfaces)
   colors        <- rep_len(colors, n)
   legend_labels <- rep_len(legend_labels, n)

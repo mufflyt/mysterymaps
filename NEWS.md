@@ -1,5 +1,41 @@
 # mysterymaps (development version)
 
+## Bug fixes: 4 more silent-corruption and cryptic-error bugs found by adversarial testing
+
+A further round of at least 10 deliberately malformed and boundary-case
+inputs, this time against `mysterymaps_format_credentials()`,
+`mysterymaps_place_title_case()`, `mysterymaps_access_choropleth_map()` and
+`mysterymaps_add_coverage_surfaces()`:
+
+* **`mysterymaps_format_credentials()`: `max_n` had no bounds check.**
+  `utils::head(x, n)` with a *negative* `n` means "all but the last `|n|`
+  elements," not "none" -- `max_n = -1` silently dropped a provider's one
+  real credential entirely (returning `""` rather than keeping it or
+  erroring), and `max_n = 0` or `NA` did the same. Now validated with
+  `checkmate::assert_int(max_n, lower = 1L)`.
+* **`mysterymaps_place_title_case()` mangled a dotted initialism.** `"D.C."`
+  became `"D.c."` and `"U.S."` became `"U.s."` -- the blanket
+  "lowercase everything after the first character" rule, applied to a run of
+  single letters each followed by a period, is exactly the mangling this
+  function's own docs say it exists to avoid.
+* **`mysterymaps_access_choropleth_map()` had no `geo$mm_id` uniqueness
+  guard.** `mm_id` is used verbatim as the time layer's layerId and as the
+  suffix of the supply layer's (`"S_<mm_id>"`), both sharing leaflet's one
+  layer registry for the map -- a duplicate can silently cross-wire which
+  geography's providers light up on click. The multi-geography sibling,
+  `mysterymaps_access_choropleth_map_multi()`, already guards this; the
+  single-geography function now does too.
+* **`mysterymaps_add_coverage_surfaces()`: a duplicate surface name.** Both
+  polygons draw fine, but `jsonlite::toJSON()` silently collapses a
+  duplicate name to its last value when serialising the legend registry for
+  `mysterymaps_base_legend_switcher()`'s JS -- one surface's legend mapping
+  vanished rather than erroring. Now rejected upfront.
+
+Also probed and confirmed already-safe: `mysterymaps_pluralize(Inf, ...)`,
+`mysterymaps_place_title_case()` applied twice (idempotent), and
+`validate_sf_inputs()` on non-overlapping bounding boxes (already errors
+clearly).
+
 ## Bug fixes: 6 more silent-corruption and cryptic-error bugs found by adversarial testing
 
 A further round of at least 10 deliberately malformed and boundary-case

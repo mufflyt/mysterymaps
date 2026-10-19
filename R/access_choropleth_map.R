@@ -84,6 +84,19 @@ mysterymaps_access_choropleth_map <- function(geo, providers, highlight_lookup,
     stop("mysterymaps_access_choropleth_map(): `geo` is missing columns: ",
          paste(miss, collapse = ", "), call. = FALSE)
   }
+  # geo$mm_id is used verbatim as the time layer's layerId and as the suffix
+  # of the supply layer's ("S_<mm_id>") -- both live in leaflet's one layer
+  # registry for the map, so a duplicate makes a layer lookup ambiguous and
+  # click-to-highlight can silently wire to the wrong geography, exactly the
+  # hazard mm_assert_unique_geo_ids() already guards against in the
+  # multi-geography sibling.
+  dupe_geo <- mm_format_duplicates(geo$mm_id)
+  if (!is.null(dupe_geo)) {
+    stop("mysterymaps_access_choropleth_map(): `geo$mm_id` has duplicate value(s): ",
+         dupe_geo, ". `mm_id` is used verbatim as each polygon's layerId, so a ",
+         "duplicate makes click-to-highlight resolve to the wrong geography.",
+         call. = FALSE)
+  }
   mm_assert_unique_provider_ids(providers, "mysterymaps_access_choropleth_map")
   # leaflet expects WGS84 lon/lat and will plot whatever numbers a non-4326
   # CRS hands it with no correction -- a provider in, say, Web Mercator

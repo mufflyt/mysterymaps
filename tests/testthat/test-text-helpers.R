@@ -48,6 +48,14 @@ test_that("already mixed-case input is left alone", {
   expect_equal(mysterymaps_place_title_case("DeKalb"), "DeKalb")
 })
 
+test_that("SABOTEUR: a dotted initialism like D.C. is not mangled", {
+  # The blanket "lowercase everything after the first character" branch
+  # turned "D.C." into "D.c." and "U.S." into "U.s." -- exactly the mangling
+  # this function's own docs say it exists to avoid.
+  expect_equal(mysterymaps_place_title_case("WASHINGTON, D.C."), "Washington, D.C.")
+  expect_equal(mysterymaps_place_title_case("U.S. VIRGIN ISLANDS"), "U.S. Virgin Islands")
+})
+
 test_that("state and directional codes stay upper case", {
   expect_equal(mysterymaps_place_title_case("WASHINGTON, DC"), "Washington, DC")
   expect_match(mysterymaps_place_title_case("NW HARBOR"), "^NW ")
@@ -94,6 +102,16 @@ test_that("source order is preserved and duplicates collapse", {
   expect_equal(mysterymaps_format_credentials("LM, CPM"), "LM, CPM")
   expect_equal(mysterymaps_format_credentials("CPM, LM"), "CPM, LM")
   expect_equal(mysterymaps_format_credentials("CNM, C.N.M."), "CNM")
+})
+
+test_that("SABOTEUR: max_n <= 0 or NA errors instead of silently dropping a real credential", {
+  # utils::head(x, n) with a NEGATIVE n means "all but the last |n| elements",
+  # not "none" -- max_n = -1 silently dropped a provider's one real
+  # credential entirely (returned "" rather than erroring or keeping it), and
+  # max_n = 0 or NA did the same.
+  expect_error(mysterymaps_format_credentials("CNM", max_n = 0), "max_n")
+  expect_error(mysterymaps_format_credentials("CNM", max_n = -1), "max_n")
+  expect_error(mysterymaps_format_credentials("CNM", max_n = NA), "max_n")
 })
 
 test_that("max_n bounds the popup line, and keep is overridable", {
