@@ -355,6 +355,25 @@ mysterymaps_census_geocode_chunk <- function(addresses, benchmark) {
                              fill = TRUE, stringsAsFactors = FALSE)
   parsed <- parsed[order(as.integer(parsed$id)), , drop = FALSE]
 
+  # The batch endpoint is documented to return exactly one row per submitted
+  # id (even a non-match comes back as a "No_Match" row with empty
+  # coordinates); a malformed address breaking the API's CSV parsing can
+  # still drop a row entirely. Without this check, mysterymaps_census_geocode()'s
+  # `lat[idx] <- chunk$lat` recycles a short result vector across the
+  # remaining positions -- silently handing every LATER address in the chunk
+  # the coordinates of an EARLIER one, rather than leaving the dropped
+  # address's own coordinates NA.
+  if (nrow(parsed) != length(addresses)) {
+    missing_ids <- setdiff(seq_along(addresses), as.integer(parsed$id))
+    stop(sprintf(paste0(
+      "Census geocoder returned %d row(s) for %d submitted address(es); ",
+      "missing id%s: %s. Assigning results positionally from here would ",
+      "silently give later addresses the coordinates of earlier ones."),
+      nrow(parsed), length(addresses),
+      if (length(missing_ids) == 1L) "" else "s",
+      paste(utils::head(missing_ids, 10L), collapse = ", ")), call. = FALSE)
+  }
+
   lonlat <- strsplit(parsed$coordinates, ",")
   lon <- vapply(lonlat, function(x) if (length(x) == 2) as.numeric(x[[1]]) else NA_real_, numeric(1))
   lat <- vapply(lonlat, function(x) if (length(x) == 2) as.numeric(x[[2]]) else NA_real_, numeric(1))

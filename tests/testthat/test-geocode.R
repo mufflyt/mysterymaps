@@ -102,6 +102,26 @@ test_that("unmatched census rows yield NA coordinates without erroring", {
   expect_true(is.na(out$latitude[out$address == "nowhere"]))
 })
 
+test_that("SABOTEUR: a census response with a dropped row errors instead of misaligning later addresses", {
+  # The batch endpoint is documented to return one row per submitted id (even
+  # a non-match comes back as "No_Match"). If a row is dropped entirely --
+  # simulated here by a response body missing id 2 of 3 -- the row-count
+  # guard must catch it; without it, lat[idx] <- chunk$lat recycles the short
+  # result vector, silently giving address 3 address 1's coordinates.
+  dir <- withr::local_tempdir()
+  body <- paste(
+    '1,"1 A St",Match,Exact,"1 A St","-100,41",12345,L',
+    '3,"3 C Blvd",Match,Exact,"3 C Blvd","-102,43",12345,L',
+    sep = "\n")
+  mock_census(body = body)
+  local_mocked_bindings(Sys.sleep = function(...) invisible(NULL), .package = "base")
+
+  expect_error(
+    suppressMessages(mysterymaps_geocode(
+      write_addresses(dir, addresses = c("1 A St", "2 B Ave", "3 C Blvd")))),
+    "missing id")
+})
+
 test_that("a non-200 census response triggers the retry-then-fail path", {
   dir <- withr::local_tempdir()
   mock_census(status = 500L, body = "")

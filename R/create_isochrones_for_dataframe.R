@@ -45,7 +45,7 @@ mysterymaps_isochrones_for_df <- function(
   if (!requireNamespace("easyr", quietly = TRUE)) {
     stop("Package 'easyr' is required for mysterymaps_isochrones_for_df()", call. = FALSE)
   }
-  if (is.na(api_key) || !nzchar(api_key)) stop("routing API key is required via argument or HERE_API_KEY env var.", call. = FALSE)
+  mm_require_api_key(api_key)
 
   hereR::set_key(api_key)
   if (is.data.frame(input_file)) {

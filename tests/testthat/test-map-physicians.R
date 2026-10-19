@@ -80,6 +80,23 @@ test_that("jitter_range = 0 leaves the coordinates where they were", {
   expect_equal(sort(unlist(markers[[2]])), sort(pd$long))
 })
 
+test_that("SABOTEUR: jitter moves points in both directions, not only northeast", {
+  # runif(n()) draws from [0, 1]; adding it without centring on zero shifts
+  # every point northeast by up to jitter_range -- a systematic directional
+  # bias rather than a scatter around the true location.
+  mm_setup_dot_map()
+  out <- withr::local_tempdir()
+  set.seed(1)
+  pd <- physicians(200)
+  m <- suppressWarnings(suppressMessages(
+    mysterymaps_map_physicians(pd, jitter_range = 0.05, seed = 1, output_dir = out)))
+  markers <- mm_call_args(m, "addCircleMarkers")
+  jittered_lat <- unlist(markers[[1]])
+  jittered_long <- unlist(markers[[2]])
+  expect_true(any(jittered_lat < pd$lat))
+  expect_true(any(jittered_long < pd$long))
+})
+
 test_that("the legend labels every ACOG district, not just those with points", {
   # The factor levels come from the district table rather than the data, so a
   # district with no providers still appears -- which is the finding.

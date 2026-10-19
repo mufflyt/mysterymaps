@@ -59,11 +59,28 @@ mysterymaps_create_isochrones <- function(location,
   }
 }
 
-# Internal worker function (unmemoized)
-.isochrone_worker <- function(location, range, posix_time, api_key) {
-  if (is.na(api_key) || !nzchar(api_key)) {
+#' Validate a routing API key is present
+#'
+#' Shared by [mysterymaps_create_isochrones()]'s worker and
+#' [mysterymaps_isochrones_for_df()], because `is.na(api_key)` alone errors
+#' with the unrelated "missing value where TRUE/FALSE needed" when
+#' `api_key = NULL` (`is.na(NULL)` is `logical(0)`, and `logical(0) || ...`
+#' is not a valid condition) rather than naming the real problem.
+#'
+#' @param api_key The caller's `api_key` argument.
+#' @return `invisible(NULL)`; called for its error.
+#' @keywords internal
+#' @noRd
+mm_require_api_key <- function(api_key) {
+  if (is.null(api_key) || length(api_key) != 1L || is.na(api_key) || !nzchar(api_key)) {
     stop("routing API key is required via argument or HERE_API_KEY env var.", call. = FALSE)
   }
+  invisible(NULL)
+}
+
+# Internal worker function (unmemoized)
+.isochrone_worker <- function(location, range, posix_time, api_key) {
+  mm_require_api_key(api_key)
 
   hereR::set_freemium(ans = FALSE)
   hereR::set_key(api_key)

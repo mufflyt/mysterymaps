@@ -36,6 +36,19 @@ test_that("a map with no markers warns and is returned unchanged", {
   expect_false("addSearchFeatures" %in% mm_calls(out))
 })
 
+test_that("SABOTEUR: an explicit empty group vector warns instead of adding an inert control", {
+  # character(0) is not NULL, so it bypasses the auto-detect branch above --
+  # without this check, a search box with nothing to target was silently
+  # added: present on the map, permanently inert, with no warning that it
+  # searches zero groups.
+  skip_if_not_installed("leaflet")
+  skip_if_not_installed("leaflet.extras")
+  expect_warning(
+    out <- mysterymaps_name_search(leaflet::leaflet(), group = character(0)),
+    "zero length")
+  expect_false("addSearchFeatures" %in% mm_calls(out))
+})
+
 test_that("an explicit group is used without inspecting the map", {
   skip_if_not_installed("leaflet")
   skip_if_not_installed("leaflet.extras")

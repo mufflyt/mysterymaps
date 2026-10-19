@@ -43,6 +43,17 @@ test_that("error mode aborts instead of excluding", {
     "state outlines")
 })
 
+test_that("SABOTEUR: a duplicate mask name errors instead of silently dropping one entry", {
+  # masks[[st]] and masks[setdiff(names(masks), bad)] both index by name, and
+  # `[[`/`[` on a duplicate name resolve to the FIRST match -- so a second
+  # mask sharing a state's name was silently dropped from the output, measured
+  # or not.
+  expect_error(
+    mysterymaps_guard_water_masks(list(MO = sq(0.01), CA = sq(2), MO = sq(4)),
+                                  c(MO = 1000, CA = 500)),
+    "duplicate")
+})
+
 test_that("a state with no census water figure is not judged", {
   # Absent denominator means unknown, not guilty.
   out <- suppressWarnings(suppressMessages(

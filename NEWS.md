@@ -1,5 +1,49 @@
 # mysterymaps (development version)
 
+## Bug fixes: 6 more silent-corruption and cryptic-error bugs found by adversarial testing
+
+A further round of at least 10 deliberately malformed and boundary-case
+inputs, this time against `mysterymaps_map_physicians()`,
+`mysterymaps_geocode()`, `mysterymaps_create_isochrones()`,
+`mysterymaps_isochrones_for_df()`, `mysterymaps_plot_isochrones()`,
+`mysterymaps_guard_water_masks()` and `mysterymaps_name_search()`:
+
+* **`mysterymaps_map_physicians()`'s coordinate jitter only ever added a
+  positive offset**, so every physician's dot was silently shifted northeast
+  by up to `jitter_range` instead of scattering around its true location.
+  `runif(n(), -1, 1)` now centres the offset on zero.
+* **The row count returned by the Census Bureau batch geocoder was not
+  checked against the submitted addresses.** If the API ever dropped a row
+  (e.g. a malformed address breaking its CSV parsing), `lat[idx] <-
+  chunk$lat` recycled the short result vector --
+  silently giving every LATER address in that batch the coordinates of an
+  EARLIER one, rather than leaving the dropped address's own coordinates
+  `NA`. Now the row count is checked before assignment and the mismatch
+  errors by id.
+* **`mysterymaps_create_isochrones()` and `mysterymaps_isochrones_for_df()`:
+  `api_key = NULL`** crashed with the unrelated "missing value where
+  TRUE/FALSE needed" (`is.na(NULL)` is `logical(0)`), naming neither the
+  argument nor `NULL` as the cause. Both now share one `mm_require_api_key()`
+  check with the existing actionable message.
+* **`mysterymaps_plot_isochrones()`: a `drive_times` value with no matching
+  `isochrones$drive_time` rows** produced a 0-row filter, whose
+  `sf::st_union()` is an empty `GEOMETRYCOLLECTION` rather than an empty
+  polygon -- `leaflet::addPolygons()` then failed several steps later with
+  "Don't know how to get polygon data from object of class ... sfg". Now
+  validated upfront, naming the unmatched value(s).
+* **`mysterymaps_guard_water_masks()`: a duplicate state name in `masks`**
+  silently dropped one of the two same-named masks from the result entirely
+  -- `masks[[st]]` and `masks[setdiff(names(masks), bad)]` both resolve a
+  duplicate name to its first match. Now rejected upfront.
+* **`mysterymaps_name_search()`: an explicit `group = character(0)`**
+  bypassed the existing "no marker groups found" auto-detect guard (it is not
+  `NULL`) and silently attached a search control with nothing to search. Now
+  warns and returns the map unchanged, matching the auto-detect path's
+  existing behaviour.
+
+Also probed and confirmed already-safe: a zero-address input file to
+`mysterymaps_geocode()` (returns a clean 0-row result, no error).
+
 ## Bug fixes: 7 further silent-corruption and cryptic-error bugs found by adversarial testing
 
 A further round of at least 10 deliberately malformed and boundary-case

@@ -59,6 +59,14 @@ mysterymaps_name_search <- function(map, group = NULL,
               "pass `group` explicitly. No control added.", call. = FALSE)
       return(map)
     }
+  } else if (!length(group)) {
+    # An explicit character(0) bypasses the auto-detect branch above (it is
+    # not NULL), so without this check a search box with nothing to target
+    # was silently added: present on the map, permanently inert, with no
+    # warning that it searches zero groups.
+    warning("mysterymaps_name_search: `group` has zero length. No control added.",
+            call. = FALSE)
+    return(map)
   }
 
   leaflet.extras::addSearchFeatures(
