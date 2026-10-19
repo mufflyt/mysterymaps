@@ -16,7 +16,11 @@ mysterymaps_geographic_map(
   low_states_warn = 5L,
   na_color = "grey80",
   include_alaska_hawaii = FALSE,
-  labels = scales::percent_format(accuracy = 1)
+  labels = scales::percent_format(accuracy = 1),
+  zero_aware = FALSE,
+  k = 6L,
+  digits = NULL,
+  zero_color = "#e0e0e0"
 )
 }
 \arguments{
@@ -61,7 +65,33 @@ what this function was built for. A column that is already a rate \emph{per}
 something (midwives per 1,000 births, cases per 100,000) is not a
 proportion, and the percent formatter renders it as nonsense: 10.79
 becomes "1 000\%". Pass a formatter that matches the column instead, e.g.
-\code{function(x) sprintf("\%.0f", x)}.}
+\code{function(x) sprintf("\%.0f", x)}. Ignored when \code{zero_aware = TRUE}.}
+
+\item{zero_aware}{\code{logical(1)}. Default \code{FALSE}, which keeps this
+function's long-standing continuous \code{scale_fill_viridis_c()} behaviour
+byte-for-byte -- \code{mysterymaps_geographic_map()} has a confirmed real
+downstream caller (\code{mufflyt/midwifery}'s
+\code{manuscript/midwife_persistence.qmd}, replayed by this package's
+downstream-consumer nightly CI), so the default cannot change out from
+under it. Pass \code{TRUE} to classify \code{rate} with
+\code{\link[=mysterymaps_jenks_zero_scale]{mysterymaps_jenks_zero_scale()}} instead: a state whose aggregated rate
+is a measured \code{0} gets \code{zero_color} rather than the same dark end of the
+gradient as a merely low rate -- the same fix already applied to
+\code{\link[=mysterymaps_rate_choropleth_map]{mysterymaps_rate_choropleth_map()}} and
+\code{\link[=mysterymaps_catchment_redundancy_map]{mysterymaps_catchment_redundancy_map()}}. \code{labels} is ignored in this
+mode; use \code{digits} instead.}
+
+\item{k}{\code{integer(1)}: target number of Jenks classes for the positive
+rates when \code{zero_aware = TRUE}. Default \code{6}.}
+
+\item{digits}{\code{integer(1)} or \code{NULL}: decimal places in the legend's rate
+labels when \code{zero_aware = TRUE}. Default \code{NULL} (whole-number labels
+when the values are whole numbers, else significant-digit formatting --
+see \code{\link[=mysterymaps_jenks_zero_scale]{mysterymaps_jenks_zero_scale()}}).}
+
+\item{zero_color}{Fill colour for a measured-zero rate when
+\code{zero_aware = TRUE}. Default matches \code{\link[=mysterymaps_jenks_zero_scale]{mysterymaps_jenks_zero_scale()}}'s
+own.}
 }
 \value{
 A \code{ggplot} object of class \code{c("gg", "ggplot")}, returned invisibly.
@@ -120,6 +150,19 @@ mysterymaps_geographic_map(
   outcome_col = "rate",
   palette     = "plasma",
   direction   = -1L,
+  fill_label  = "Acceptance\nrate"
+)
+
+# --- zero_aware = TRUE: a measured-zero state gets its own colour ----------
+zero_df <- data.frame(
+  state = c("CO", "CA", "TX", "NY"),
+  rate  = c(0, 0.72, 0.48, 0.63)
+)
+mysterymaps_geographic_map(
+  zero_df,
+  outcome_col = "rate",
+  zero_aware  = TRUE,
+  digits      = 2,
   fill_label  = "Acceptance\nrate"
 )
 }

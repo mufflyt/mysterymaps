@@ -51,6 +51,17 @@ span 2013 to 2026 and says only "2026" is asserting a currency it does not
 have, and the year in the title is always the freshest input, never the
 oldest.
 }
+\examples{
+\dontshow{if (interactive() && requireNamespace("leaflet", quietly = TRUE)) withAutoprint(\{ # examplesIf}
+m <- leaflet::leaflet() |> leaflet::addTiles()
+mysterymaps_notes_panel(
+  m, title = "About This Map (2023)",
+  sections = list("Shading" = "Providers per 1,000 births, by county."),
+  vintages = data.frame(source = c("NPPES", "NCHS Births"),
+                        vintage = c("2023", "2021-2023")),
+  as_of = "2023")
+\dontshow{\}) # examplesIf}
+}
 \seealso{
 Other county-access-template:
 \code{\link[=mysterymaps_county_access_map]{mysterymaps_county_access_map()}},

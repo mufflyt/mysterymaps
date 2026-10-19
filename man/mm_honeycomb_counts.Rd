@@ -63,6 +63,8 @@ The southernmost point of the fifty states is Ka Lae, Hawaii, at 18.9N;
 \seealso{
 Other geospatial:
 \code{\link[=mm_area_in]{mm_area_in()}},
+\code{\link[=mysterymaps_hex_bin_counts]{mysterymaps_hex_bin_counts()}},
+\code{\link[=mysterymaps_hex_bin_rate]{mysterymaps_hex_bin_rate()}},
 \code{\link[=validate_sf_inputs]{validate_sf_inputs()}}
 }
 \concept{geospatial}

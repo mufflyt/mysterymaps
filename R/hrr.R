@@ -68,19 +68,54 @@ mysterymaps_hrr <- function(remove_HI_AK = TRUE) {
 #' @param dpi Integer.  Raster resolution in DPI for the saved figure.  Default `600`.
 #' @param width Numeric.  Figure width in inches.  Default `7`.
 #' @param height Numeric.  Figure height in inches.  Default `5`.
+#' @param min_count Integer.  Cells holding fewer than this many providers are
+#'   coloured as suppressed (`na_color`) rather than drawn with their true
+#'   count.  Default `2L`, the long-standing behaviour: a cell with exactly
+#'   one provider is small-cell-suppressed rather than potentially
+#'   identifying.  A cell with *zero* providers is a different, measured
+#'   finding and is never suppressed by this argument -- see Details.
+#' @param k Integer.  Target number of Jenks classes for the positive
+#'   (at-or-above-`min_count`) cell counts, passed to
+#'   [mysterymaps_jenks_zero_scale()].  Default `6`.
+#' @param zero_color,na_color Colours for a cell with a measured zero count
+#'   and a small-cell-suppressed cell, respectively.  Defaults match
+#'   [mysterymaps_jenks_zero_scale()]'s own.
 #'
 #' @return Invisibly returns a `grob` object (from
 #'   `gridExtra::arrangeGrob`) containing the arranged multi-panel map.
 #'   Side effects: writes two files to `output_dir` -
 #'   `<trait_map>_<honey_map>_honey.tiff` and
 #'   `<trait_map>_<honey_map>_honey.png`.
+#'
+#' @details
+#' Earlier versions of this function called [mm_honeycomb_counts()], which
+#' drops every cell below `min_count` -- including genuine zero-count cells
+#' -- so a region with no providers at all had no hexagon drawn rather than
+#' one visibly shaded as zero. That is the same "zero is a category, not an
+#' absence" problem this package's other choropleth builders have been fixed
+#' for one at a time; this function was the one [mm_honeycomb_counts()] and
+#' [mysterymaps_hex_bin_counts()] were originally extracted from, and had not
+#' itself been updated to use either.
+#'
+#' This function now calls the internal full-grid counter (every cell in
+#' `usa`, zero-count ones included) and classifies the result with
+#' [mysterymaps_jenks_zero_scale()] instead of a continuous
+#' `scale_fill_viridis_c()`: a true zero gets `zero_color` and its own
+#' legend entry, a cell below `min_count` is suppressed to `na_color` with a
+#' "Suppressed" legend entry (a measurement that exists but is not
+#' separately reportable, not an unmeasured cell -- the two are different
+#' claims, the same distinction [mysterymaps_hex_bin_rate()] makes for a
+#' zero denominator), and cells at or above `min_count` are Jenks-classified.
+#' The same scale -- computed once, before the contiguous/Alaska/Hawaii/
+#' Puerto Rico split -- colours every panel, so the legend shown on the main
+#' map is valid for the insets too.
+#'
 #' @seealso [mysterymaps_hrr()] to obtain the HRR `sf` object;
 #'   [mysterymaps_map_base()], [mysterymaps_map_block_group()]
 #' @family mapping
 #' @importFrom dplyr mutate group_by summarize filter n
 #' @importFrom magrittr %>%
 #' @importFrom stringr str_detect
-#' @importFrom scales pretty_breaks label_number squish
 #' @export
 #' @examplesIf interactive()
 #' mysterymaps_hrr_maps(physician_sf)
@@ -91,7 +126,11 @@ mysterymaps_hrr_maps <- function(
     output_dir = NULL,
     dpi = 600,
     width = 7,
-    height = 5
+    height = 5,
+    min_count = 2L,
+    k = 6,
+    zero_color = "#e0e0e0",
+    na_color = "#ffffff"
 ) {
   if (!requireNamespace("sf", quietly = TRUE)) {
     stop("Package 'sf' is required", call. = FALSE)
@@ -115,6 +154,9 @@ mysterymaps_hrr_maps <- function(
   if (!requireNamespace("ggplot2", quietly = TRUE)) {
     stop("Package 'ggplot2' is required for mysterymaps_hrr_maps(). Install with: install.packages('ggplot2')", call. = FALSE)
   }
+  mm_validate_zero_aware_args(TRUE, k, digits = NULL, zero_color)
+  checkmate::assert_int(min_count, lower = 0L)
+  checkmate::assert_string(na_color)
   # Spherical geometry makes the 0.3-degree honeycomb intersection intractably
   # slow, so it goes off for the duration -- and comes back on afterwards.
   # Leaving it off silently changes the result of every sf operation the caller
@@ -131,16 +173,32 @@ mysterymaps_hrr_maps <- function(
   # Generate the HRR map (retain AK, HI, and PR for insets)
   hrr_map <- mysterymaps_hrr(remove_HI_AK = FALSE)
 
-  # Intersect honeycomb grid with physician data to get physician counts
+  # Intersect honeycomb grid with physician data to get physician counts --
+  # the full grid, zero-count cells included, so a region with no providers
+  # gets a visibly zero-shaded hexagon rather than no hexagon at all.
   message("Intersecting honeycomb grid with physician data...")
-  honeycomb_grid_with_physicians <- mm_honeycomb_counts(usa, physician_sf)
+  honeycomb_grid_with_physicians <- mm_honeycomb_counts_full_grid(
+    usa, physician_sf, value_col = "physician_count",
+    cellsize = 0.3, southern_limit = 15)
 
-  fill_limits <- range(honeycomb_grid_with_physicians$physician_count, na.rm = TRUE)
-  if (any(is.infinite(fill_limits))) {
-    fill_limits <- c(0, 1)
-  }
+  # A cell holding fewer than min_count providers is suppressed -- a
+  # measurement that exists but is not separately reportable -- which is a
+  # different claim from the true, measured zero a cell with NO providers
+  # gets. Suppression therefore produces NA (mysterymaps_jenks_zero_scale()'s
+  # "unmeasured" class), never folds into the zero class itself.
+  honeycomb_grid_with_physicians$physician_count <- mm_suppress_small_cells(
+    honeycomb_grid_with_physicians$physician_count, min_count)
 
-  pretty_breaks <- scales::pretty_breaks(n = 6)(fill_limits)
+  # One scale for every panel, computed before the contiguous/AK/HI/PR split,
+  # so the legend shown on the main map is valid for the insets too.
+  sc <- mysterymaps_jenks_zero_scale(
+    honeycomb_grid_with_physicians$physician_count, k = k,
+    zero_col = zero_color, na_col = na_color,
+    na_label = sprintf("Suppressed (<%d provider%s)", min_count,
+                       if (min_count == 1L) "" else "s"),
+    palette = function(kk) viridisLite::viridis(kk, option = "viridis"))
+  honeycomb_grid_with_physicians$.mm_fill_color <- sc$color(
+    honeycomb_grid_with_physicians$physician_count)
 
   # Split data for contiguous US and insets
   message("Preparing contiguous and inset geographies...")
@@ -179,17 +237,15 @@ mysterymaps_hrr_maps <- function(
       ggplot2::geom_sf(data = hrr_data, fill = "#f5f5f5", color = "#4a4a4a", linewidth = 0.2) +
       ggplot2::geom_sf(
         data = honey_data,
-        ggplot2::aes(fill = physician_count),
+        ggplot2::aes(fill = .data$.mm_fill_color),
         color = NA,
         alpha = 0.95
       ) +
-      ggplot2::scale_fill_viridis_c(
-        option = "viridis",
-        limits = fill_limits,
-        oob = scales::squish,
-        breaks = pretty_breaks,
-        labels = scales::label_number(accuracy = 1),
-        name = "Physician count"
+      ggplot2::scale_fill_identity(
+        name = "Physician count",
+        guide = if (show_legend) "legend" else "none",
+        breaks = sc$leg_cols,
+        labels = sc$leg_labs
       ) +
       ggplot2::labs(title = region_title) +
       ggplot2::theme_minimal(base_size = base_size) +
@@ -237,6 +293,30 @@ mysterymaps_hrr_maps <- function(
   ggplot2::ggsave(paste0(output_stub, ".png"), plot = combined_map, width = width, height = height, dpi = dpi, units = "in")
 
   invisible(combined_map)
+}
+
+#' Suppress honeycomb cells below a provider-count threshold
+#'
+#' Split out of [mysterymaps_hrr_maps()] for the same reason
+#' [mm_honeycomb_counts()] was: that function returns a `gtable`, so a
+#' suppression threshold that silently swallowed the wrong cells -- the true
+#' zeros it must NOT touch, say -- would be invisible to any assertion about
+#' the function's output.
+#'
+#' @param counts `numeric`: a `physician_count`-style column, zero-inclusive
+#'   (from `mm_honeycomb_counts_full_grid()`).
+#' @param min_count `integer(1)`: counts strictly between `0` and this become
+#'   `NA` (suppressed). `0` itself and counts `>= min_count` pass through
+#'   unchanged -- a true zero is a different, measured claim from a
+#'   suppressed small cell and must never be relabelled into it.
+#' @return `counts`, with small-but-nonzero values replaced by `NA`.
+#' @family geospatial
+#' @keywords internal
+#' @noRd
+mm_suppress_small_cells <- function(counts, min_count) {
+  below_threshold <- counts > 0 & counts < min_count
+  counts[below_threshold] <- NA_real_
+  counts
 }
 
 #' Count providers per honeycomb cell over a study-area polygon
@@ -313,4 +393,130 @@ mm_honeycomb_counts <- function(usa, physician_sf, cellsize = 0.3,
 
   sf::st_join(grid, counts) %>%
     dplyr::filter(!is.na(.data$physician_count))
+}
+
+#' Hex-bin point counts over any study-area boundary, keeping zero cells
+#'
+#' @description
+#' The `include_zero_cells = TRUE` path of [mysterymaps_hex_bin_counts()]:
+#' identical grid construction to [mm_honeycomb_counts()] (same s2 handling,
+#' same `southern_limit` clip), but every cell is returned -- a
+#' `dplyr::left_join()` plus `dplyr::coalesce(0L)` in place of the inner
+#' count-and-filter -- so "zero points landed here" and "this cell was
+#' suppressed" are never the same output. Internal; use
+#' [mysterymaps_hex_bin_counts()].
+#' @keywords internal
+#' @noRd
+mm_honeycomb_counts_full_grid <- function(boundary_sf, points_sf, value_col = "count",
+                                          cellsize = 0.3, southern_limit = -90) {
+  old_s2 <- sf::sf_use_s2()
+  on.exit(suppressMessages(sf::sf_use_s2(old_s2)), add = TRUE)
+  suppressMessages(sf::sf_use_s2(FALSE))
+
+  boundary_4326 <- sf::st_transform(boundary_sf, 4326)
+
+  grid <- sf::st_make_grid(boundary_4326, c(cellsize, cellsize), what = "polygons",
+                           square = FALSE) %>%
+    sf::st_sf() %>%
+    dplyr::mutate(grid_id = dplyr::row_number()) %>%
+    sf::st_intersection(boundary_4326)
+
+  in_scope <- sf::st_sfc(sf::st_polygon(list(cbind(
+    c(-180, 180, 180, -180, -180),
+    c(southern_limit, southern_limit, 90, 90, southern_limit)))), crs = 4326)
+  grid <- grid[lengths(sf::st_intersects(grid, in_scope)) > 0L, , drop = FALSE]
+
+  counts <- sf::st_intersection(grid, sf::st_transform(points_sf, 4326)) %>%
+    dplyr::group_by(.data$grid_id) %>%
+    dplyr::summarize(.mm_count = dplyr::n(), .groups = "drop")
+
+  # A SPATIAL join (st_join), exactly as mm_honeycomb_counts() uses, not an
+  # attribute join on grid_id: st_intersection(grid, boundary) upstream can
+  # slice one hex into several polygon fragments along an irregular
+  # coastline, all carrying the SAME grid_id, so an attribute join fans out
+  # across every fragment that shares an id instead of matching the one
+  # fragment counts' geometry actually overlaps.
+  out <- sf::st_join(grid[, "grid_id"], counts[, ".mm_count"]) %>%
+    dplyr::mutate(.mm_count = dplyr::coalesce(.data$.mm_count, 0L))
+  names(out)[names(out) == ".mm_count"] <- value_col
+  out
+}
+
+#' Hex-bin point counts over any study-area boundary
+#'
+#' Builds a hexagonal grid over `boundary_sf`, counts how many `points_sf`
+#' fall in each cell, and returns the cells that cleared `min_count` -- the
+#' GEOLYTIX-style "bin points into hexagons, shade by count" map, generalized
+#' from the HRR/physician case in [mysterymaps_hrr_maps()] to any boundary and
+#' any point dataset. It is a thin, renaming wrapper around
+#' [mm_honeycomb_counts()], which carries the tested fixes (coastline slivers
+#' under s2, the westernmost-cells defect, CRS transforms); this function adds
+#' no new hex-counting logic of its own.
+#'
+#' @param boundary_sf `sf`: polygon(s) defining the study area the grid is
+#'   built over and clipped to.
+#' @param points_sf `sf`: point data to count per hex cell. Transformed to
+#'   `boundary_sf`'s CRS automatically if it arrives in another one.
+#' @param value_col `character(1)`: name of the output count column. Default
+#'   `"count"`.
+#' @param cellsize `numeric(1)`: hexagon size in the units of `boundary_sf`'s
+#'   CRS (degrees, if left in EPSG:4326). Default `0.3`.
+#' @param min_count `integer(1)`: cells holding fewer than this many points
+#'   are dropped rather than returned -- small-cell suppression, not a
+#'   rendering detail. Default `1L` (no suppression). Ignored when
+#'   `include_zero_cells = TRUE` (see below).
+#' @param southern_limit `numeric(1)`: cells entirely south of this latitude
+#'   are dropped. [mm_honeycomb_counts()] defaults this to `15` to cut
+#'   outlying US territory out of HRR maps; that is wrong for a boundary that
+#'   is not the continental US (it would silently delete most of the Southern
+#'   Hemisphere), so this wrapper defaults to `-90`, i.e. no clipping.
+#' @param include_zero_cells `logical(1)`: return every hex cell in
+#'   `boundary_sf`, including ones no point fell in, with `value_col = 0`
+#'   there, instead of silently omitting them. Default `FALSE`, matching
+#'   [mm_honeycomb_counts()]'s original point-counting behaviour. A reader
+#'   cannot tell "zero, measured" from "not drawn" on a map with gaps in the
+#'   grid -- the distinction [mysterymaps_jenks_zero_scale()] and
+#'   [mysterymaps_hex_bin_rate()] both exist to preserve. `min_count` does
+#'   not apply in this mode: suppressing small counts and asserting that a
+#'   cell is a true zero are different, incompatible claims about the same
+#'   cell.
+#' @return An `sf` of hex cells carrying a `value_col` count column. With the
+#'   default `include_zero_cells = FALSE`, cells with fewer than `min_count`
+#'   points are not returned at all; with `include_zero_cells = TRUE`, every
+#'   cell in `boundary_sf` is returned, zero-count ones included.
+#' @seealso [mysterymaps_hrr_maps()], which wraps [mm_honeycomb_counts()] for
+#'   the HRR/physician use case with AK/HI/PR insets baked in;
+#'   [mysterymaps_hex_bin_rate()], which always returns the full grid because
+#'   a rate needs to distinguish zero from missing.
+#' @family geospatial
+#' @export
+#' @examplesIf interactive()
+#' mysterymaps_hex_bin_counts(boundary_sf, points_sf, value_col = "flood_risk")
+#' mysterymaps_hex_bin_counts(boundary_sf, points_sf, include_zero_cells = TRUE)
+mysterymaps_hex_bin_counts <- function(boundary_sf, points_sf,
+                                        value_col = "count",
+                                        cellsize = 0.3,
+                                        min_count = 1L,
+                                        southern_limit = -90,
+                                        include_zero_cells = FALSE) {
+  checkmate::assert_class(boundary_sf, "sf")
+  checkmate::assert_class(points_sf, "sf")
+  checkmate::assert_string(value_col)
+  checkmate::assert_number(cellsize, lower = 0, finite = TRUE)
+  checkmate::assert_int(min_count, lower = 1L)
+  checkmate::assert_number(southern_limit, lower = -90, upper = 90)
+  checkmate::assert_flag(include_zero_cells)
+
+  if (include_zero_cells) {
+    return(mm_honeycomb_counts_full_grid(boundary_sf, points_sf,
+                                         value_col = value_col,
+                                         cellsize = cellsize,
+                                         southern_limit = southern_limit))
+  }
+
+  out <- mm_honeycomb_counts(boundary_sf, points_sf, cellsize = cellsize,
+                             min_count = min_count,
+                             southern_limit = southern_limit)
+  names(out)[names(out) == "physician_count"] <- value_col
+  out
 }

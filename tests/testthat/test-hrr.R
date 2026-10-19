@@ -331,3 +331,220 @@ test_that("the count owns its s2 setting and gives it back", {
   expect_equal(results[[1]], results[[2]])
   expect_true(all(vapply(results, function(r) r[["restored"]] == 1, logical(1))))
 })
+
+# --------------------------------------------------------------------------
+# mysterymaps_hex_bin_counts: the exported, boundary-agnostic wrapper
+# --------------------------------------------------------------------------
+
+test_that("the output column is named value_col, not physician_count", {
+  skip_if_not_installed("sf")
+  area <- hex_area(lon = c(-105, -100), lat = c(38, 42))
+  pts <- hex_points(-102.5, 40)
+
+  out <- suppressWarnings(suppressMessages(
+    mysterymaps_hex_bin_counts(area, pts, value_col = "flood_risk",
+                               cellsize = 0.5)))
+
+  expect_true("flood_risk" %in% names(out))
+  expect_false("physician_count" %in% names(out))
+  expect_equal(out$flood_risk, 1L)
+})
+
+test_that("min_count defaults to 1, unlike mm_honeycomb_counts's 2", {
+  # mm_honeycomb_counts suppresses lone points by default because HRR maps
+  # draw physician density; a generic hazard/accessibility map has no reason
+  # to inherit that assumption, so a single point must survive here.
+  skip_if_not_installed("sf")
+  area <- hex_area(lon = c(-105, -100), lat = c(38, 42))
+  lone <- hex_points(-102.5, 40.0)
+
+  out <- suppressWarnings(suppressMessages(
+    mysterymaps_hex_bin_counts(area, lone, cellsize = 0.5)))
+  expect_equal(nrow(out), 1L)
+  expect_equal(out$count, 1L)
+})
+
+test_that("include_zero_cells returns the full grid, zero cells included", {
+  # The default path never produces a zero-count row at all (a cell with no
+  # points never enters the inner-join side), so a reader cannot tell "zero,
+  # measured" from "not drawn". include_zero_cells = TRUE must return every
+  # cell in the boundary, with an explicit 0 where nothing landed.
+  skip_if_not_installed("sf")
+  area <- hex_area(lon = c(-105, -100), lat = c(38, 42))
+  lone <- hex_points(-102.5, 40.0)
+
+  without_zeros <- suppressWarnings(suppressMessages(
+    mysterymaps_hex_bin_counts(area, lone, cellsize = 0.5)))
+  with_zeros <- suppressWarnings(suppressMessages(
+    mysterymaps_hex_bin_counts(area, lone, cellsize = 0.5, include_zero_cells = TRUE)))
+
+  expect_gt(nrow(with_zeros), nrow(without_zeros))
+  expect_true(any(with_zeros$count == 0L))
+  expect_equal(sum(with_zeros$count), 1L)
+  expect_false(anyNA(with_zeros$count))
+})
+
+test_that("include_zero_cells ignores min_count rather than silently honouring it", {
+  # Suppressing small counts and asserting a cell is a true zero are
+  # different, incompatible claims; min_count must not quietly drop a
+  # below-threshold cell to zero (or out of the grid) in this mode.
+  skip_if_not_installed("sf")
+  area <- hex_area(lon = c(-105, -100), lat = c(38, 42))
+  pts <- hex_points(c(-102.5, -102.5), c(40, 40))
+
+  out <- suppressWarnings(suppressMessages(
+    mysterymaps_hex_bin_counts(area, pts, cellsize = 0.5, min_count = 5L,
+                               include_zero_cells = TRUE)))
+  expect_equal(sum(out$count), 2L)
+})
+
+test_that("southern_limit defaults to -90, unlike mm_honeycomb_counts's US-specific 15", {
+  # A boundary south of 15N (e.g. most of South America, Africa, Australia)
+  # must not be silently emptied by a default built for HRR/US maps.
+  skip_if_not_installed("sf")
+  area <- hex_area(lon = c(-70, -65), lat = c(-35, -30))  # Buenos Aires-ish
+  pts <- hex_points(c(-67.5, -67.5), c(-32.5, -32.5))
+
+  out <- suppressWarnings(suppressMessages(
+    mysterymaps_hex_bin_counts(area, pts, cellsize = 0.5)))
+  expect_equal(nrow(out), 1L)
+})
+
+test_that("cellsize and min_count still pass through to the honeycomb count", {
+  skip_if_not_installed("sf")
+  area <- hex_area(lon = c(-105, -100), lat = c(38, 42))
+  pts <- hex_points(c(-102.5, -102.5, -102.5), c(40, 40, 40))
+
+  suppressed <- suppressWarnings(suppressMessages(
+    mysterymaps_hex_bin_counts(area, pts, cellsize = 0.5, min_count = 4L)))
+  kept <- suppressWarnings(suppressMessages(
+    mysterymaps_hex_bin_counts(area, pts, cellsize = 0.5, min_count = 3L)))
+
+  expect_equal(nrow(suppressed), 0L)
+  expect_equal(nrow(kept), 1L)
+  expect_equal(kept$count, 3L)
+})
+
+test_that("arguments are validated before any sf work happens", {
+  expect_error(mysterymaps_hex_bin_counts(data.frame(x = 1), hex_points(1, 1)),
+               class = "simpleError")
+  area <- hex_area(lon = c(-105, -100), lat = c(38, 42))
+  expect_error(mysterymaps_hex_bin_counts(area, data.frame(x = 1)),
+               class = "simpleError")
+  expect_error(mysterymaps_hex_bin_counts(area, hex_points(1, 1), value_col = 1),
+               class = "simpleError")
+})
+
+test_that("REGRESSION: include_zero_cells matches via spatial join, not grid_id", {
+  # grid_id is assigned BEFORE st_intersection(grid, boundary) runs, and that
+  # intersection can slice one hex into several disjoint polygon fragments
+  # along an irregular boundary -- every fragment inherits the SAME grid_id.
+  # An attribute join (left_join(by = "grid_id")) fans out across every
+  # fragment sharing an id; only a spatial join (st_join(), matching each
+  # fragment to the specific counts geometry that overlaps IT) gets this
+  # right. Caught by running the real CONUS boundary: 757 nonzero cells with
+  # a naive attribute join, versus 609 -- the drop-zero path's true count --
+  # once fixed. This inspects the source for the regression directly, since
+  # a synthetic boundary that reliably fragments a hex cell at a chosen
+  # cellsize is fragile to construct and the real-boundary numbers above are
+  # the actual evidence the fix is correct.
+  body_text <- paste(deparse(body(mm_honeycomb_counts_full_grid)), collapse = "\n")
+  expect_true(grepl("st_join", body_text, fixed = TRUE))
+  expect_false(grepl("left_join", body_text, fixed = TRUE))
+})
+
+# --------------------------------------------------------------------------
+# mm_suppress_small_cells: the suppression step mysterymaps_hrr_maps() now
+# applies to the full-grid count. Split out directly testable for the same
+# reason mm_honeycomb_counts() was (see its own doc comment): the caller
+# returns a gtable, so a suppression bug would be invisible to any assertion
+# about mysterymaps_hrr_maps()'s output.
+# --------------------------------------------------------------------------
+
+test_that("a true zero passes through unsuppressed", {
+  expect_equal(mm_suppress_small_cells(c(0, 0, 0), min_count = 2L), c(0, 0, 0))
+})
+
+test_that("a count below min_count becomes NA, not zero and not itself", {
+  expect_equal(mm_suppress_small_cells(c(1), min_count = 2L), NA_real_)
+})
+
+test_that("a count at or above min_count passes through unchanged", {
+  expect_equal(mm_suppress_small_cells(c(2, 5, 100), min_count = 2L), c(2, 5, 100))
+})
+
+test_that("min_count = 1 suppresses nothing (every nonzero count already clears it)", {
+  expect_equal(mm_suppress_small_cells(c(0, 1, 2, 5), min_count = 1L), c(0, 1, 2, 5))
+})
+
+test_that("REGRESSION: zero and suppressed are never the same value after this step", {
+  # The defect this guards: folding 1-provider cells into 0 would make a
+  # true "no providers at all" indistinguishable from "we are hiding a small
+  # number" -- opposite failure modes, both wrong.
+  out <- mm_suppress_small_cells(c(0, 1, 2), min_count = 2L)
+  expect_equal(out[1], 0)
+  expect_true(is.na(out[2]))
+  expect_false(isTRUE(out[1] == out[2]))
+})
+
+# --------------------------------------------------------------------------
+# mysterymaps_hrr_maps: zero-aware colouring (REGRESSION for the original
+# bug -- mm_honeycomb_counts() dropped every cell below min_count, including
+# true zeros, so a region with no providers drew no hexagon at all)
+# --------------------------------------------------------------------------
+
+test_that("REGRESSION: a true zero and a suppressed cell get different colours", {
+  skip_if_not_installed("sf")
+  area <- hex_area(lon = c(-105, -100), lat = c(38, 42))
+  # One lone provider (will be suppressed at the default min_count = 2);
+  # nothing anywhere else in the study area (true, measured zero).
+  lone <- hex_points(-102.5, 40.0)
+
+  full <- suppressWarnings(suppressMessages(
+    mm_honeycomb_counts_full_grid(area, lone, value_col = "physician_count", cellsize = 0.5)))
+  full$physician_count <- mm_suppress_small_cells(full$physician_count, min_count = 2L)
+
+  sc <- mysterymaps_jenks_zero_scale(
+    full$physician_count, k = 6, zero_col = "#e0e0e0", na_col = "#ffffff",
+    na_label = "Suppressed (<2 providers)",
+    palette = function(kk) viridisLite::viridis(kk, option = "viridis"))
+  colors <- sc$color(full$physician_count)
+
+  expect_true(any(colors == "#e0e0e0"))   # true zeros present
+  expect_true(any(colors == "#ffffff"))   # the suppressed lone-provider cell
+  expect_true(any(grepl("Suppressed", sc$leg_labs)))
+})
+
+test_that("the figure still builds with every cell suppressed or zero (no positive class at all)", {
+  skip_if_not_installed("sf")
+  skip_if_not_installed("ggplot2")
+  skip_if_not_installed("ggspatial")
+  skip_if_not_installed("gridExtra")
+  skip_if_not_installed("rnaturalearth")
+
+  stub_usa()
+  local_stub_hrr_shapefile()
+
+  grob <- suppressWarnings(suppressMessages(
+    mysterymaps_hrr_maps(mm_points(1, lon = -108, lat = 35),
+                         output_dir = withr::local_tempdir(), dpi = 72, width = 4, height = 3)))
+  expect_s3_class(grob, "gtable")
+})
+
+test_that("min_count, k, zero_color and na_color are validated", {
+  skip_if_not_installed("sf")
+  skip_if_not_installed("ggplot2")
+  skip_if_not_installed("ggspatial")
+  skip_if_not_installed("gridExtra")
+  skip_if_not_installed("rnaturalearth")
+
+  stub_usa()
+  local_stub_hrr_shapefile()
+  pts <- mm_points(1, lon = -108, lat = 35)
+  out <- withr::local_tempdir()
+
+  expect_error(mysterymaps_hrr_maps(pts, output_dir = out, min_count = -1L))
+  expect_error(mysterymaps_hrr_maps(pts, output_dir = out, k = 0L))
+  expect_error(mysterymaps_hrr_maps(pts, output_dir = out, zero_color = 1))
+  expect_error(mysterymaps_hrr_maps(pts, output_dir = out, na_color = 1))
+})

@@ -28,6 +28,14 @@ Legends must carry class \code{mm-lg} plus \verb{mm-lg-<key>};
 handler is defensive: a base group with no registered legend simply leaves
 the legends hidden rather than erroring.
 }
+\examples{
+\dontshow{if (interactive() && requireNamespace("leaflet", quietly = TRUE)) withAutoprint(\{ # examplesIf}
+m <- leaflet::leaflet() |> leaflet::addTiles() |>
+  leaflet::addLegend(colors = "#08519c", labels = "Supply", group = "Supply") |>
+  mysterymaps_register_base_legend("Supply")
+mysterymaps_base_legend_switcher(m, default = "Supply")
+\dontshow{\}) # examplesIf}
+}
 \seealso{
 Other coverage-surfaces:
 \code{\link[=mysterymaps_add_coverage_surfaces]{mysterymaps_add_coverage_surfaces()}},
