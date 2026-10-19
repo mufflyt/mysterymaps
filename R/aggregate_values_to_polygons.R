@@ -44,6 +44,19 @@ mysterymaps_aggregate_values_to_polygons <- function(source_poly, source_values,
   checkmate::assert_subset("id", names(source_poly))
   checkmate::assert_subset("id", names(target_poly))
   checkmate::assert_subset(c("id", value_col), names(source_values))
+  # A duplicate id in source_poly becomes two independent interior points,
+  # each pulling the SAME value via match() -- the value is then summed
+  # twice into the target. Measured: county id 1 duplicated turned a 15 total
+  # into 25. The @param doc already implies one row per id; this enforces it.
+  dupe <- unique(source_poly$id[duplicated(source_poly$id)])
+  if (length(dupe)) {
+    stop("mysterymaps_aggregate_values_to_polygons(): `source_poly$id` has duplicate ",
+         "value(s): ", paste(utils::head(dupe, 10L), collapse = ", "),
+         if (length(dupe) > 10L) sprintf(" (and %d more)", length(dupe) - 10L) else "",
+         ". `id` must be unique -- a duplicate id is counted as two independent source ",
+         "polygons, each contributing the same value, so the target's sum is inflated.",
+         call. = FALSE)
+  }
 
   old_s2 <- sf::sf_use_s2()
   on.exit(suppressMessages(sf::sf_use_s2(old_s2)), add = TRUE)
