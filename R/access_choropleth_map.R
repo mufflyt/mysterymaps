@@ -85,6 +85,15 @@ mysterymaps_access_choropleth_map <- function(geo, providers, highlight_lookup,
          paste(miss, collapse = ", "), call. = FALSE)
   }
   mm_assert_unique_provider_ids(providers, "mysterymaps_access_choropleth_map")
+  # leaflet expects WGS84 lon/lat and will plot whatever numbers a non-4326
+  # CRS hands it with no correction -- a provider in, say, Web Mercator
+  # meters (the sf layer this warns about, not errors on) renders at
+  # coordinates like (4865942, -11020630): nowhere near the real location,
+  # with only an sf-level warning, not a mysterymaps one, saying so.
+  # mysterymaps_count_points_in_polygons() already transforms its `points`
+  # argument for the same reason; this matches that convention.
+  geo <- sf::st_transform(geo, 4326)
+  providers <- sf::st_transform(providers, 4326)
   lab <- utils::modifyList(list(time = "Drive time to closest", supply = "Supply per capita",
                                 desert = "No access", providers = "Providers"), labels)
   txt <- utils::modifyList(list(time_legend = "Drive time to<br>closest provider",

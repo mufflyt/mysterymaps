@@ -135,6 +135,14 @@ mysterymaps_access_choropleth_map_multi <- function(geos, providers, highlight_l
   req <- c("mm_id", "mm_label", "mm_popup", "mm_fill_time", "mm_fill_supply", "mm_no_access")
   mm_assert_unique_geo_ids(geos, "mysterymaps_access_choropleth_map_multi")
   mm_assert_unique_provider_ids(providers, "mysterymaps_access_choropleth_map_multi")
+  # leaflet expects WGS84 lon/lat (see mysterymaps_access_choropleth_map()'s
+  # own comment on this); reproject defensively rather than trust every
+  # geography and the provider layer already arrived in 4326.
+  providers <- sf::st_transform(providers, 4326)
+  geos <- lapply(geos, function(g) {
+    g$sf <- sf::st_transform(g$sf, 4326)
+    g
+  })
 
   old_s2 <- sf::sf_use_s2(); sf::sf_use_s2(FALSE); on.exit(sf::sf_use_s2(old_s2), add = TRUE)
   tok <- function(x) gsub("[^A-Za-z0-9]", "", x)

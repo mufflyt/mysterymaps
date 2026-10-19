@@ -1,5 +1,20 @@
 # mysterymaps (development version)
 
+## Bug fix: `mysterymaps_access_choropleth_map()`/`..._multi()` now reproject to WGS84
+
+Neither function reprojected `geo`/`geos`/`providers` to WGS84 before handing
+coordinates to leaflet, which always expects lon/lat degrees. A provider in
+a projected CRS (e.g. Web Mercator metres -- a common real-world case, not
+an exotic one) rendered at raw, nonsensical coordinates like
+`(4865942, -11020630)`, nowhere near the real location, with only an
+sf-level warning ("sf layer is not long-lat data") and never a mysterymaps
+error -- easy to miss in a batch pipeline that doesn't surface warnings.
+`mysterymaps_count_points_in_polygons()` already reprojects its `points`
+argument for the same reason; both access-choropleth functions now match
+that convention. Found via another round of adversarial testing; 3 new
+regression tests pin the fix on both variants plus confirm already-WGS84
+inputs are unaffected.
+
 ## Breaking: basemaps move from CARTO to Esri
 
 CARTO basemaps began rendering an "API KEY REQUIRED" watermark across every
@@ -17,6 +32,7 @@ nothing errored.
   `showGroup()`/`hideGroup()` by that name must update.
 * `Stadia.StamenTonerLite` ("Toner Lite") is unchanged but is the same class
   of risk: Stadia serves keyless tiles on localhost only.
+
 ## Bug fixes: 7 silent-corruption and cryptic-error bugs found by adversarial testing
 
 Deliberately malformed and boundary-case inputs fed to the five leaflet map

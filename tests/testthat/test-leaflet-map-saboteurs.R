@@ -36,6 +36,15 @@
 #     polygon layer errors in leaflet's bbox expansion"); the singular
 #     function never got the same fix. Found while writing a fixture for
 #     finding 4 above and discovering it broke for an unrelated reason.
+#  8. Neither access-choropleth function reprojected `geo`/`geos`/`providers`
+#     to WGS84 before handing coordinates to leaflet, which always expects
+#     lon/lat degrees. A provider in a projected CRS (e.g. Web Mercator
+#     metres) rendered at raw, nonsensical coordinates like
+#     (4865942, -11020630) -- nowhere near the real location -- with only
+#     an sf-level warning ("sf layer is not long-lat data"), never an error
+#     and never a mysterymaps-level message. mysterymaps_count_points_in_-
+#     polygons() already reprojects its `points` argument for the same
+#     reason; both functions now match that convention.
 #
 # This file is deliberately NOT about re-testing already-covered behavior
 # (see test-leaflet-map-invariants.R and each function's own test file) --
@@ -278,4 +287,56 @@ testthat::test_that("the access-desert overlay still renders when at least one d
   layers_call <- Filter(function(cl) cl$method == "addLayersControl", m$x$calls)[[1]]
   testthat::expect_true("No access" %in% layers_call$args[[2]])
   testthat::expect_true(any(vapply(m$x$calls, function(cl) cl$method == "hideGroup", logical(1))))
+})
+
+# =============================================================================
+# 8. A provider (or geography) in a non-WGS84 CRS must be reprojected, not
+#    plotted at raw, nonsensical coordinates.
+# =============================================================================
+testthat::test_that("SABOTEUR: a provider in a projected CRS is reprojected to real lat/lon, not plotted at raw meters", {
+  skip_unless_spatial()
+  geo <- .sab_geo("A")
+  provider_wgs84 <- sf::st_as_sf(data.frame(mm_id = "P1", mm_label = "P1", mm_popup = "P1", lon = -99, lat = 40),
+                                 coords = c("lon", "lat"), crs = 4326)
+  provider_3857 <- sf::st_transform(provider_wgs84, 3857)
+
+  m <- suppressWarnings(mysterymaps_access_choropleth_map(
+    geo, provider_3857, highlight_lookup = list(A = "P1"),
+    supply_pal = leaflet::colorNumeric("Blues", c(0, 1)), supply_values = c(0, 1),
+    band_colors = "#2166ac", band_labels = "<=30 min", title_html = "<b>t</b>"))
+  cm <- Filter(function(cl) cl$method == "addCircleMarkers" &&
+                isTRUE(cl$args[[5]] == "Providers"), m$x$calls)[[1]]
+  testthat::expect_equal(cm$args[[1]], 40, tolerance = 0.01)
+  testthat::expect_equal(cm$args[[2]], -99, tolerance = 0.01)
+})
+
+testthat::test_that("SABOTEUR: the same CRS mismatch is fixed in the multi-geography variant", {
+  skip_unless_spatial()
+  geo <- .sab_geo("A")
+  provider_wgs84 <- sf::st_as_sf(data.frame(mm_id = "P1", mm_label = "P1", mm_popup = "P1", lon = -99, lat = 40),
+                                 coords = c("lon", "lat"), crs = 4326)
+  provider_3857 <- sf::st_transform(provider_wgs84, 3857)
+
+  m <- suppressWarnings(mysterymaps_access_choropleth_map_multi(
+    geos = list(County = list(sf = geo,
+                              supply_pal = leaflet::colorNumeric("Blues", c(0, 1)), supply_values = c(0, 1))),
+    providers = provider_3857, highlight_lookup = list(A = "P1"),
+    band_colors = "#2166ac", band_labels = "<=30 min", title_html = "<b>t</b>"))
+  cm <- Filter(function(cl) cl$method == "addCircleMarkers" &&
+                isTRUE(cl$args[[5]] == "Providers"), m$x$calls)[[1]]
+  testthat::expect_equal(cm$args[[1]], 40, tolerance = 0.01)
+  testthat::expect_equal(cm$args[[2]], -99, tolerance = 0.01)
+})
+
+testthat::test_that("already-WGS84 inputs are unaffected by the defensive reprojection", {
+  skip_unless_spatial()
+  geo <- .sab_geo("A")
+  m <- mysterymaps_access_choropleth_map(
+    geo, .sab_provider(), highlight_lookup = list(A = "P1"),
+    supply_pal = leaflet::colorNumeric("Blues", c(0, 1)), supply_values = c(0, 1),
+    band_colors = "#2166ac", band_labels = "<=30 min", title_html = "<b>t</b>")
+  cm <- Filter(function(cl) cl$method == "addCircleMarkers" &&
+                isTRUE(cl$args[[5]] == "Providers"), m$x$calls)[[1]]
+  testthat::expect_equal(cm$args[[1]], 40, tolerance = 0.01)
+  testthat::expect_equal(cm$args[[2]], -99, tolerance = 0.01)
 })
