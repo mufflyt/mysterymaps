@@ -29,6 +29,14 @@ one: it replaces the data with a count and forces repeated zooming before the
 reader learns anything. Drawing every point on a canvas renderer and gating
 the \emph{labels} keeps the distribution visible at every zoom.
 }
+\examples{
+\dontshow{if (interactive() && requireNamespace("leaflet", quietly = TRUE)) withAutoprint(\{ # examplesIf}
+m <- leaflet::leaflet() |> leaflet::addTiles() |>
+  leaflet::addCircleMarkers(lng = -104.99, lat = 39.74, label = "Denver",
+                           group = "Providers")
+mysterymaps_zoom_gated_labels(m, "Providers", min_zoom = 9, max_labels = 400)
+\dontshow{\}) # examplesIf}
+}
 \seealso{
 Other coverage-surfaces:
 \code{\link[=mysterymaps_add_coverage_surfaces]{mysterymaps_add_coverage_surfaces()}},

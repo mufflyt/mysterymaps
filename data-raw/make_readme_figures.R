@@ -10,7 +10,8 @@
 # anything about North Carolina.
 # =============================================================================
 suppressPackageStartupMessages({
-  library(mysterymaps); library(sf); library(ggplot2); library(leaflet)
+  devtools::load_all(".", quiet = TRUE)  # the commit under test, not an installed version
+  library(sf); library(ggplot2); library(leaflet)
 })
 sf::sf_use_s2(FALSE)
 set.seed(42)
@@ -93,3 +94,111 @@ if (requireNamespace("webshot2", quietly = TRUE)) {
 } else {
   message("webshot2 unavailable; leaflet figure not regenerated")
 }
+
+# --- 3. rate choropleth: numerator/denominator, zero its own class ----------
+p <- mysterymaps_rate_choropleth_map(
+  nc, numerator_var = "providers", denominator_var = "births",
+  numerator_label = "Providers", denominator_label = "Births", per = 1000,
+  title = "Providers per 1,000 Births",
+  subtitle = "Zero gets its own colour class, not the bottom of a gradient")
+ggsave(file.path(FIG, "rate-choropleth.png"), p, width = 8, height = 5, dpi = 150, bg = "white")
+message("wrote ", file.path(FIG, "rate-choropleth.png"))
+
+# --- 4. bivariate choropleth: joint class of two variables -------------------
+nc$need <- round(runif(nrow(nc), 50, 500))
+p <- mysterymaps_bivariate_choropleth_map(
+  nc, x_var = "need", y_var = "rate",
+  x_label = "Need (synthetic)", y_label = "Providers per 1,000 Births",
+  title = "Need Versus Provider Supply, Jointly Classed")
+ggsave(file.path(FIG, "bivariate-choropleth.png"), p, width = 8, height = 5.5, dpi = 150, bg = "white")
+message("wrote ", file.path(FIG, "bivariate-choropleth.png"))
+
+# --- 5. catchment redundancy: how many providers' catchments overlap --------
+set.seed(7)
+provider_pts <- sf::st_sample(sf::st_union(sf::st_geometry(nc)), size = 10, exact = TRUE)
+catchments <- sf::st_sf(physician_id = paste0("p", 1:10),
+                        geometry = sf::st_buffer(provider_pts, 0.9))
+p <- mysterymaps_catchment_redundancy_map(
+  catchments, nc, provider_id_var = "physician_id", k = 4,
+  title = "How Many Providers' Catchments Reach Each County",
+  subtitle = "Count of overlapping 30-minute catchments per grid cell")
+ggsave(file.path(FIG, "catchment-redundancy.png"), p, width = 8, height = 5, dpi = 150, bg = "white")
+message("wrote ", file.path(FIG, "catchment-redundancy.png"))
+
+# --- 6. cartogram: polygons warped by drive time, not true area -------------
+hub_coords <- sf::st_coordinates(sf::st_centroid(sf::st_union(sf::st_geometry(nc))))
+nc$hub_lon <- hub_coords[1, "X"]
+nc$hub_lat <- hub_coords[1, "Y"]
+cent <- sf::st_centroid(sf::st_geometry(nc))
+nc$straight_miles <- as.numeric(sf::st_distance(cent, sf::st_centroid(sf::st_union(sf::st_geometry(nc))))) / 1609.34
+set.seed(8)
+nc$drive_minutes <- pmax(nc$straight_miles * 1.3 + rnorm(nrow(nc), 0, 3), 1)
+p <- mysterymaps_cartogram_map(
+  nc, hub_id_var = "NAME", hub_lon_var = "hub_lon", hub_lat_var = "hub_lat",
+  time_var = "drive_minutes", straight_distance_var = "straight_miles",
+  title = "Counties Warped by Drive Time From One Hub")
+ggsave(file.path(FIG, "cartogram.png"), p, width = 8, height = 5, dpi = 150, bg = "white")
+message("wrote ", file.path(FIG, "cartogram.png"))
+
+# --- 7. flow map: pre-routed paths coloured by travel time ------------------
+set.seed(9)
+hub_pt <- sf::st_centroid(sf::st_union(sf::st_geometry(nc)))
+dest_idx <- c(5, 25, 45, 65, 85)
+dests <- sf::st_centroid(sf::st_geometry(nc[dest_idx, ]))
+routes <- sf::st_sf(
+  trip    = nc$NAME[dest_idx],
+  minutes = round(as.numeric(sf::st_distance(dests, hub_pt)) / 1609.34 * 1.3),
+  geometry = sf::st_sfc(lapply(seq_along(dest_idx), function(i)
+    sf::st_linestring(rbind(sf::st_coordinates(hub_pt), sf::st_coordinates(dests[i])))),
+    crs = 4326))
+basemap_sf <- sf::st_sf(geometry = sf::st_sfc(sf::st_union(sf::st_geometry(nc)), crs = 4326))
+p <- mysterymaps_flow_map(
+  routes, basemap_sf, time_var = "minutes",
+  title = "Drive Time From One Hub to Five Destinations")
+ggsave(file.path(FIG, "flow-map.png"), p, width = 8, height = 5, dpi = 150, bg = "white")
+message("wrote ", file.path(FIG, "flow-map.png"))
+
+# --- 8. pathway small multiples: one facet per group, plus combined ---------
+set.seed(11)
+phys_pts <- sf::st_sample(sf::st_union(sf::st_geometry(nc)), size = 40, exact = TRUE)
+phys <- sf::st_sf(
+  pathway  = sample(c("Family Medicine", "Obstetrics & Gynecology"), 40,
+                    replace = TRUE, prob = c(0.6, 0.4)),
+  geometry = phys_pts)
+p <- mysterymaps_pathway_small_multiples_map(
+  phys, nc, pathway_var = "pathway", include_combined_panel = TRUE,
+  title = "Where Each Pathway Practices")
+ggsave(file.path(FIG, "pathway-small-multiples.png"), p, width = 10, height = 3.5, dpi = 150, bg = "white")
+message("wrote ", file.path(FIG, "pathway-small-multiples.png"))
+
+# --- 9. hex-bin counts and hex-bin rate --------------------------------------
+set.seed(13)
+hex_pts <- sf::st_sample(sf::st_union(sf::st_geometry(nc)), size = 60, exact = TRUE)
+hex_phys <- sf::st_sf(count_var = rep(1, 60), geometry = hex_pts)
+boundary_sf <- sf::st_sf(geometry = sf::st_sfc(sf::st_union(sf::st_geometry(nc)), crs = 4326))
+
+hexes <- mysterymaps_hex_bin_counts(
+  boundary_sf, hex_phys, value_col = "count_var", cellsize = 0.25,
+  include_zero_cells = TRUE)
+p <- ggplot(hexes) +
+  geom_sf(data = boundary_sf, fill = "grey97", colour = "grey80", linewidth = 0.15) +
+  geom_sf(aes(fill = count_var), colour = "white", linewidth = 0.08) +
+  scale_fill_viridis_c(name = "Providers per\nhexagon cell") +
+  labs(title = "Provider Density, Hex-Binned") +
+  theme_void(base_size = 11) +
+  theme(plot.title = element_text(face = "bold", size = 12))
+ggsave(file.path(FIG, "hex-bin-counts.png"), p, width = 8.6, height = 5, dpi = 150, bg = "white")
+message("wrote ", file.path(FIG, "hex-bin-counts.png"))
+
+hexes_rate <- mysterymaps_hex_bin_rate(
+  boundary_sf, hex_phys, nc, denominator_col = "births", cellsize = 0.25,
+  per = 1000, value_col = "rate_var")
+p <- ggplot(hexes_rate) +
+  geom_sf(data = boundary_sf, fill = "grey97", colour = "grey80", linewidth = 0.15) +
+  geom_sf(aes(fill = rate_var), colour = "white", linewidth = 0.08) +
+  scale_fill_viridis_c(name = "Providers per\n1,000 births", na.value = "white") +
+  labs(title = "Provider Rate, Hex-Binned Over Areally-Interpolated Births") +
+  theme_void(base_size = 11) +
+  theme(plot.title = element_text(face = "bold", size = 12))
+ggsave(file.path(FIG, "hex-bin-rate.png"), p, width = 8.6, height = 5, dpi = 150, bg = "white")
+message("wrote ", file.path(FIG, "hex-bin-rate.png"))

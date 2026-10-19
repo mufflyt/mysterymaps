@@ -93,6 +93,16 @@ m <- leaflet::leaflet() |>
 m <- mysterymaps_base_legend_switcher(m, default = "Supply")
 ```
 
+Other leaflet map templates and spatial helpers:
+
+| Function | Produces |
+|---|---|
+| `mysterymaps_access_choropleth_map()` | county- or congressional-district-level closest-provider access map, shaded by drive time or supply as a toggle, with click-to-highlight and name search |
+| `mysterymaps_access_choropleth_map_multi()` | the `_multi` sibling: several geographies at once, plus a control panel (zoom-to-ZIP, worst-access list, URL deep-linking) |
+| `mysterymaps_choropleth_point_map()` | a general multi-layer choropleth + point leaflet map with switchable base layers and per-layer legends |
+| `mysterymaps_count_points_in_polygons()` | point-in-polygon counts, one count per polygon |
+| `mysterymaps_aggregate_values_to_polygons()` | rolls values from one polygon layer up to a different one (e.g. counties to Hospital Referral Regions) |
+
 ---
 
 ## A static map
@@ -122,6 +132,75 @@ Other static (ggplot2) maps:
 | `mysterymaps_geographic_map()` | state choropleth of an outcome rate |
 | `mysterymaps_map_acceptance_rate()` | state or HRR acceptance-rate choropleth |
 | `mysterymaps_hrr_maps()` | Hospital Referral Region maps, by trait |
+| `mysterymaps_rate_choropleth_map()` | numerator/denominator rate choropleth, zero its own colour class via `mysterymaps_jenks_zero_scale()` |
+| `mysterymaps_bivariate_choropleth_map()` | joint class of two variables (e.g. need vs. scarcity), one map; 3x3 by default, any `n_classes` |
+| `mysterymaps_catchment_redundancy_map()` | how many providers' catchments overlap each area, not just whether one does |
+| `mysterymaps_cartogram_map()` | polygons warped by drive time instead of true area |
+| `mysterymaps_flow_map()` | pre-routed paths coloured by travel time, over a basemap |
+| `mysterymaps_pathway_small_multiples_map()` | one facet per pathway/certification group, plus a combined panel |
+| `mysterymaps_accessibility_map()` | one-call `twostep::compute_e2sfca()` map, zero vs. outside-catchment vs. missing kept distinct |
+
+A few of those, rendered on the same synthetic North Carolina data as above
+(`data-raw/make_readme_figures.R`):
+
+<table>
+<tr>
+<td width="50%">
+
+**`mysterymaps_rate_choropleth_map()`**
+![Rate choropleth](man/figures/rate-choropleth.png)
+
+</td>
+<td width="50%">
+
+**`mysterymaps_bivariate_choropleth_map()`**
+![Bivariate choropleth](man/figures/bivariate-choropleth.png)
+
+</td>
+</tr>
+<tr>
+<td width="50%">
+
+**`mysterymaps_catchment_redundancy_map()`**
+![Catchment redundancy map](man/figures/catchment-redundancy.png)
+
+</td>
+<td width="50%">
+
+**`mysterymaps_cartogram_map()`**
+![Drive-time cartogram](man/figures/cartogram.png)
+
+</td>
+</tr>
+<tr>
+<td width="50%">
+
+**`mysterymaps_flow_map()`**
+![Flow map](man/figures/flow-map.png)
+
+</td>
+<td width="50%">
+
+**`mysterymaps_pathway_small_multiples_map()`**
+![Pathway small multiples map](man/figures/pathway-small-multiples.png)
+
+</td>
+</tr>
+<tr>
+<td width="50%">
+
+**`mysterymaps_hex_bin_counts()`**
+![Hex-binned point counts](man/figures/hex-bin-counts.png)
+
+</td>
+<td width="50%">
+
+**`mysterymaps_hex_bin_rate()`**
+![Hex-binned rate over an areally-interpolated denominator](man/figures/hex-bin-rate.png)
+
+</td>
+</tr>
+</table>
 
 ---
 
@@ -198,6 +277,8 @@ vintage list, once, instead of repeating caveats in every popup.
 | `mysterymaps_gate_provider_coverage()` | fail loudly when providers fall outside a surface |
 | `mysterymaps_clear_isochrone_cache()` | drop the cached routing results |
 | `mysterymaps_geocode()` | geocode an address file |
+| `mysterymaps_hex_bin_counts()` | hex-bin point counts over any boundary, not just HRR/physician maps |
+| `mysterymaps_hex_bin_rate()` | hex-bin a rate: point count over an areal-interpolated denominator (e.g. per 100k population), zero/undefined kept distinct |
 
 ---
 

@@ -11,6 +11,7 @@ utils::globalVariables(c(
   "intersect_area", # calculate_intersection_overlap_and_save.R
   "lat",            # map_acceptance_rate.R / map_create_base.R
   "long",           # map_acceptance_rate.R
+  ".mm_fill_color", # map_acceptance_rate.R: ggplot2 aes, zero_aware = TRUE path
   "n",              # dplyr n() used unquoted
   "name",           # map_create_acog_districts_sf.R
   "physician_count",# hrr.R

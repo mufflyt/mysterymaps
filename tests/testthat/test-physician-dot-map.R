@@ -42,6 +42,26 @@ testthat::test_that("the point layer reaches the plot", {
                         info = "no layer carries the physician rows")
 })
 
+testthat::test_that("basemap_fill, basemap_color and basemap_linewidth reach the basemap layer", {
+  skip_unless_spatial()
+  f <- fixture()
+  p <- mysterymaps_physician_dot_map(
+    f$pts, f$poly, basemap_fill = "blue", basemap_color = "red", basemap_linewidth = 0.9)
+  basemap_layer <- p$layers[[1]]
+  testthat::expect_identical(basemap_layer$aes_params$fill, "blue")
+  testthat::expect_identical(basemap_layer$aes_params$colour, "red")
+  testthat::expect_identical(basemap_layer$aes_params$linewidth, 0.9)
+})
+
+testthat::test_that("basemap styling defaults match the function's original hard-coded look", {
+  skip_unless_spatial()
+  f <- fixture()
+  basemap_layer <- mysterymaps_physician_dot_map(f$pts, f$poly)$layers[[1]]
+  testthat::expect_identical(basemap_layer$aes_params$fill, "#f8f9fa")
+  testthat::expect_identical(basemap_layer$aes_params$colour, "gray40")
+  testthat::expect_identical(basemap_layer$aes_params$linewidth, 0.25)
+})
+
 testthat::test_that("the coloured path builds, with and without a palette", {
   # scale_color_manual(values = NULL) raises "Insufficient values in manual
   # scale", which made the original error outright whenever color_var was
@@ -53,6 +73,43 @@ testthat::test_that("the coloured path builds, with and without a palette", {
   testthat::expect_s3_class(
     mysterymaps_physician_dot_map(f$pts, f$poly, color_var = "grp",
                                   palette = c(a = "red", b = "blue")), "ggplot")
+})
+
+testthat::test_that("outline = FALSE builds for every colour-path combination", {
+  skip_unless_spatial()
+  f <- fixture()
+  testthat::expect_s3_class(
+    mysterymaps_physician_dot_map(f$pts, f$poly, outline = FALSE), "ggplot")
+  testthat::expect_s3_class(
+    mysterymaps_physician_dot_map(f$pts, f$poly, outline = FALSE, color_var = "grp"),
+    "ggplot")
+  testthat::expect_s3_class(
+    mysterymaps_physician_dot_map(f$pts, f$poly, outline = FALSE, color_var = "grp",
+                                  palette = c(a = "red", b = "blue")),
+    "ggplot")
+})
+
+testthat::test_that("invalid basemap or physician geometry is repaired rather than erroring", {
+  skip_unless_spatial()
+  f <- fixture()
+  bowtie <- sf::st_polygon(list(cbind(c(-100, -80, -100, -80, -100), c(30, 30, 45, 45, 30))))
+  bad_poly <- sf::st_as_sf(sf::st_sfc(bowtie, crs = 4326))
+  testthat::expect_true(any(!sf::st_is_valid(bad_poly)))
+
+  testthat::expect_s3_class(
+    mysterymaps_physician_dot_map(f$pts, bad_poly), "ggplot")
+})
+
+testthat::test_that("each needed package is named in its own error", {
+  f <- fixture()
+  for (pkg in c("sf", "ggplot2")) {
+    testthat::local_mocked_bindings(
+      requireNamespace = function(package, ...) !identical(package, pkg),
+      .package = "base")
+    testthat::expect_error(
+      mysterymaps_physician_dot_map(f$pts, f$poly),
+      sprintf("needs the '%s' package", pkg))
+  }
 })
 
 testthat::test_that("a zero-row input names the likely cause", {

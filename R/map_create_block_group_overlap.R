@@ -5,9 +5,32 @@
 #' @param bg_data A SpatialPolygonsDataFrame representing block group data.
 #' @param isochrones_data A SpatialPolygonsDataFrame representing isochrone data.
 #' @param output_dir Directory path for exporting the map files. Default is "figures/".
+#' @param k `integer(1)`: target number of Jenks classes for the positive
+#'   (nonzero) overlap values, passed to [mysterymaps_jenks_zero_scale()].
+#'   Default `6`.
+#' @param digits `integer(1)`: decimal places in the legend's overlap labels.
+#'   Default `2` (overlap is a proportion, typically fractional).
+#' @param zero_color,na_color Colours for a block group with zero measured
+#'   overlap and one whose overlap is unmeasurable (a degenerate polygon area
+#'   -- see Details), respectively. Defaults match
+#'   [mysterymaps_jenks_zero_scale()]'s own.
 #'
 #' @return `invisible(NULL)`. Side effects: writes the block group overlap map
 #'   as an HTML file and a PNG image to `output_dir`.
+#'
+#' @details
+#' `bg_data$overlap` carries two different kinds of absence that a plain
+#' continuous `leaflet::colorNumeric()` scale (the original implementation)
+#' could not tell apart. [mysterymaps_calculate_overlap()] coalesces a block
+#' group's intersection area to `0` when it does not intersect any isochrone
+#' at all -- a measured zero, and the coverage gap this map exists to show --
+#' but leaves `overlap` as `NA` when the block group's own area is degenerate
+#' (zero or negative, an invalid polygon). Putting a measured zero at the
+#' lightest end of the same purple gradient as a 2% overlap reads as "barely
+#' covered" rather than "not covered at all". This function now classifies
+#' `overlap` with [mysterymaps_jenks_zero_scale()] instead: a measured zero
+#' gets `zero_color`, a degenerate-area `NA` gets `na_color`, and the
+#' positive values are Jenks-classified.
 #'
 #' @examplesIf interactive()
 #' # Create and export the map with the default output directory
@@ -17,7 +40,9 @@
 #' mysterymaps_map_block_group(block_groups, isochrones_joined_map, "custom_output/")
 #' @family mapping
 #' @export
-mysterymaps_map_block_group <- function(bg_data, isochrones_data, output_dir = "figures/") {
+mysterymaps_map_block_group <- function(bg_data, isochrones_data, output_dir = "figures/",
+                                        k = 6, digits = 2,
+                                        zero_color = "#e0e0e0", na_color = "#ffffff") {
   if (!requireNamespace("sf", quietly = TRUE)) {
     stop("Package 'sf' is required", call. = FALSE)
   }
@@ -53,6 +78,8 @@ mysterymaps_map_block_group <- function(bg_data, isochrones_data, output_dir = "
   if (any(!is.na(bg_data$overlap) & (bg_data$overlap < 0 | bg_data$overlap > 1))) {
     stop("`bg_data$overlap` values must be between 0 and 1.", call. = FALSE)
   }
+  mm_validate_zero_aware_args(TRUE, k, digits, zero_color)
+  checkmate::assert_string(na_color)
 
   validated <- validate_sf_inputs(
     bg_data = bg_data,
@@ -83,7 +110,12 @@ mysterymaps_map_block_group <- function(bg_data, isochrones_data, output_dir = "
   isochrones_ordered[["drive_time"]] <- as.numeric(isochrones_ordered[["drive_time"]])
   isochrones_ordered <- isochrones_ordered[order(match(isochrones_ordered[["drive_time"]], draw_order)), , drop = FALSE]
 
-  pal <- leaflet::colorNumeric("Purples", domain = bg_data$overlap)
+  sc <- mysterymaps_jenks_zero_scale(
+    bg_data$overlap, k = k, digits = digits,
+    zero_col = zero_color, na_col = na_color,
+    na_label = "Unmeasurable (invalid area)",
+    palette = function(kk) viridisLite::viridis(kk, option = "viridis"))
+  bg_data$.mm_fill_color <- sc$color(bg_data$overlap)
 
   # Create the base map
   base_map <- mysterymaps_map_base("<h1>Block Group Overlap Map</h1>")
@@ -92,7 +124,7 @@ mysterymaps_map_block_group <- function(bg_data, isochrones_data, output_dir = "
   map <- base_map %>%
     leaflet::addPolygons(
       data = bg_data,
-      fillColor = ~pal(bg_data$overlap),
+      fillColor = ~.mm_fill_color,
       fillOpacity = 1,
       weight = 0.5,
       smoothFactor = 0.2,
@@ -101,8 +133,8 @@ mysterymaps_map_block_group <- function(bg_data, isochrones_data, output_dir = "
       popup = ~paste("Block Group GEOID name and number:", "\n", bg_data$NAMELSAD, "\n", bg_data$GEOID)
     ) %>%
     leaflet::addLegend(
-      pal = pal,
-      values = bg_data$overlap,
+      colors = sc$leg_cols,
+      labels = sc$leg_labs,
       position = "bottomright",
       title = "Intersection with isochrones",
       opacity = 1

@@ -54,7 +54,29 @@ NULL
 #'   something (midwives per 1,000 births, cases per 100,000) is not a
 #'   proportion, and the percent formatter renders it as nonsense: 10.79
 #'   becomes "1 000%". Pass a formatter that matches the column instead, e.g.
-#'   `function(x) sprintf("%.0f", x)`.
+#'   `function(x) sprintf("%.0f", x)`. Ignored when `zero_aware = TRUE`.
+#' @param zero_aware `logical(1)`. Default `FALSE`, which keeps this
+#'   function's long-standing continuous `scale_fill_viridis_c()` behaviour
+#'   byte-for-byte -- `mysterymaps_geographic_map()` has a confirmed real
+#'   downstream caller (`mufflyt/midwifery`'s
+#'   `manuscript/midwife_persistence.qmd`, replayed by this package's
+#'   downstream-consumer nightly CI), so the default cannot change out from
+#'   under it. Pass `TRUE` to classify `rate` with
+#'   [mysterymaps_jenks_zero_scale()] instead: a state whose aggregated rate
+#'   is a measured `0` gets `zero_color` rather than the same dark end of the
+#'   gradient as a merely low rate -- the same fix already applied to
+#'   [mysterymaps_rate_choropleth_map()] and
+#'   [mysterymaps_catchment_redundancy_map()]. `labels` is ignored in this
+#'   mode; use `digits` instead.
+#' @param k `integer(1)`: target number of Jenks classes for the positive
+#'   rates when `zero_aware = TRUE`. Default `6`.
+#' @param digits `integer(1)` or `NULL`: decimal places in the legend's rate
+#'   labels when `zero_aware = TRUE`. Default `NULL` (whole-number labels
+#'   when the values are whole numbers, else significant-digit formatting --
+#'   see [mysterymaps_jenks_zero_scale()]).
+#' @param zero_color Fill colour for a measured-zero rate when
+#'   `zero_aware = TRUE`. Default matches [mysterymaps_jenks_zero_scale()]'s
+#'   own.
 #'
 #' @return A `ggplot` object of class `c("gg", "ggplot")`, returned invisibly.
 #'   Print or assign the return value to display the map.
@@ -95,6 +117,19 @@ NULL
 #'   direction   = -1L,
 #'   fill_label  = "Acceptance\nrate"
 #' )
+#'
+#' # --- zero_aware = TRUE: a measured-zero state gets its own colour ----------
+#' zero_df <- data.frame(
+#'   state = c("CO", "CA", "TX", "NY"),
+#'   rate  = c(0, 0.72, 0.48, 0.63)
+#' )
+#' mysterymaps_geographic_map(
+#'   zero_df,
+#'   outcome_col = "rate",
+#'   zero_aware  = TRUE,
+#'   digits      = 2,
+#'   fill_label  = "Acceptance\nrate"
+#' )
 #' }
 mysterymaps_geographic_map <- function(data,
                                         state_col             = "state",
@@ -108,7 +143,11 @@ mysterymaps_geographic_map <- function(data,
                                         low_states_warn       = 5L,
                                         na_color              = "grey80",
                                         include_alaska_hawaii = FALSE,
-                                        labels                = scales::percent_format(accuracy = 1)) {
+                                        labels                = scales::percent_format(accuracy = 1),
+                                        zero_aware            = FALSE,
+                                        k                     = 6L,
+                                        digits                = NULL,
+                                        zero_color            = "#e0e0e0") {
 
   # ---- Package guards ---------------------------------------------------------
   if (!requireNamespace("ggplot2", quietly = TRUE)) {
@@ -172,6 +211,11 @@ mysterymaps_geographic_map <- function(data,
   if (!is.function(labels)) {
     stop("`labels` must be a function, e.g. scales::percent_format() or ",
          "function(x) sprintf(\"%.0f\", x).", call. = FALSE)
+  }
+  mm_validate_zero_aware_args(zero_aware, k, digits, zero_color)
+  if (zero_aware && !missing(labels)) {
+    warning("`labels` is ignored when `zero_aware = TRUE`; use `digits` instead.",
+            call. = FALSE)
   }
 
   # ---- Extract working vectors ------------------------------------------------
@@ -267,24 +311,27 @@ mysterymaps_geographic_map <- function(data,
   merged <- merged[order(merged$group, merged$order), ]
 
   # ---- Build ggplot2 object ---------------------------------------------------
-  p <- ggplot2::ggplot(
-      merged,
-      ggplot2::aes(
-        x     = .data$long,
-        y     = .data$lat,
-        group = .data$group,
-        fill  = .data$rate
-      )
-    ) +
+  if (zero_aware) {
+    sc <- mysterymaps_jenks_zero_scale(
+      merged$rate, k = k, digits = digits, zero_col = zero_color, na_col = na_color,
+      palette = function(kk) viridisLite::viridis(kk, option = palette, direction = direction))
+    merged$.mm_fill_color <- sc$color(merged$rate)
+    fill_mapping <- ggplot2::aes(
+      x = .data$long, y = .data$lat, group = .data$group, fill = .data$.mm_fill_color)
+    fill_scale <- ggplot2::scale_fill_identity(
+      name = fill_label, guide = "legend", breaks = sc$leg_cols, labels = sc$leg_labs)
+  } else {
+    fill_mapping <- ggplot2::aes(
+      x = .data$long, y = .data$lat, group = .data$group, fill = .data$rate)
+    fill_scale <- ggplot2::scale_fill_viridis_c(
+      option = palette, direction = direction, na.value = na_color,
+      name = fill_label, labels = labels)
+  }
+
+  p <- ggplot2::ggplot(merged, fill_mapping) +
     ggplot2::geom_polygon(color = "white", linewidth = 0.2) +
     ggplot2::coord_map("albers", lat0 = 39, lat1 = 45) +
-    ggplot2::scale_fill_viridis_c(
-      option    = palette,
-      direction = direction,
-      na.value  = na_color,
-      name      = fill_label,
-      labels    = labels
-    ) +
+    fill_scale +
     ggplot2::labs(
       title    = title,
       subtitle = subtitle

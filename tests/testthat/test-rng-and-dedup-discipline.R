@@ -168,7 +168,7 @@ test_that("deduplication never changes the number of rows returned", {
         c("1 A St", "2 B Ave", "3 C Rd"),       # all distinct
         c("1 A St", "1 A St", "2 B Ave"))) {    # mixed
     path <- write_csv_addr(dir, addr)
-    out <- suppressMessages(mysterymaps_geocode(path, "key"))
+    out <- suppressMessages(mysterymaps_geocode(path, "key", provider = "google"))
     expect_equal(nrow(out), length(addr), info = paste(addr, collapse = "|"))
   }
 })
@@ -185,7 +185,7 @@ test_that("the geocoder is called once per UNIQUE address, not once per row", {
   dir <- withr::local_tempdir()
   path <- write_csv_addr(dir, c("1 A St", "1 A St", "1 A St", "2 B Ave"))
 
-  suppressMessages(mysterymaps_geocode(path, "key"))
+  suppressMessages(mysterymaps_geocode(path, "key", provider = "google"))
   expect_length(seen, 2L)
   expect_setequal(seen, c("1 A St", "2 B Ave"))
 })
@@ -200,9 +200,10 @@ test_that("duplicate injection does not change any provider's coordinate", {
   dir <- withr::local_tempdir()
 
   base <- suppressMessages(mysterymaps_geocode(
-    write_csv_addr(dir, c("1 A St", "2 B Ave")), "key"))
+    write_csv_addr(dir, c("1 A St", "2 B Ave")), "key", provider = "google"))
   dupes <- suppressMessages(mysterymaps_geocode(
-    write_csv_addr(dir, c("1 A St", "2 B Ave", "1 A St", "2 B Ave")), "key"))
+    write_csv_addr(dir, c("1 A St", "2 B Ave", "1 A St", "2 B Ave")), "key",
+    provider = "google"))
 
   expect_equal(nrow(dupes), 4L)
   for (a in c("1 A St", "2 B Ave")) {
@@ -219,7 +220,8 @@ test_that("each row receives the coordinate of its OWN address", {
                                          lon = -unname(coords[x])))
   dir <- withr::local_tempdir()
   addr <- c("3 C Rd", "1 A St", "2 B Ave", "1 A St")
-  out <- suppressMessages(mysterymaps_geocode(write_csv_addr(dir, addr), "key"))
+  out <- suppressMessages(mysterymaps_geocode(write_csv_addr(dir, addr), "key",
+                                              provider = "google"))
 
   expect_equal(out$latitude, unname(coords[addr]))
 })

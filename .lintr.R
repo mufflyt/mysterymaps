@@ -111,7 +111,7 @@ exclusions <- list(
   # the error" in test-geocode.R reaches it and asserts the message, so the
   # code is provably live. Excluded by line so the linter still guards the
   # rest of the file.
-  "R/geocode.R" = list(unreachable_code_linter = 102L),
+  "R/geocode.R" = list(unreachable_code_linter = 131L),
   # object_usage_linter cannot resolve testthat's helpers without attaching the
   # package. Every other linter still applies to the tests.
   "tests/testthat" = list(object_usage_linter = Inf)

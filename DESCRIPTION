@@ -42,6 +42,7 @@ Imports:
     utils
 Suggests:
     beepr,
+    curl,
     easyr,
     ggmap (>= 3.0.0),
     ggplot2,
@@ -50,6 +51,7 @@ Suggests:
     hereR,
     htmltools,
     htmlwidgets,
+    httr2,
     jsonlite,
     knitr,
     rmarkdown,

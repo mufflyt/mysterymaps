@@ -7,6 +7,9 @@
 mysterymaps_physician_dot_map(
   physicians,
   basemap,
+  basemap_fill = "#f8f9fa",
+  basemap_color = "gray40",
+  basemap_linewidth = 0.25,
   title = NULL,
   subtitle = NULL,
   caption = NULL,
@@ -15,13 +18,25 @@ mysterymaps_physician_dot_map(
   point_alpha = 0.75,
   color_var = NULL,
   palette = NULL,
-  crs = 5070
+  crs = 5070,
+  jitter_miles = 1.5,
+  jitter_seed = 42,
+  outline = TRUE,
+  point_outline_color = "black"
 )
 }
 \arguments{
 \item{physicians}{\code{sf} POINT layer, one row per physician.}
 
 \item{basemap}{\code{sf} polygon layer to draw beneath the points.}
+
+\item{basemap_fill, basemap_color}{\code{character(1)}: fill and outline colour
+for the \code{basemap} polygons. Defaults match this function's long-standing
+hard-coded look (\code{"#f8f9fa"}, \code{"gray40"}); exposed because every point
+aesthetic already was and the basemap styling was not.}
+
+\item{basemap_linewidth}{\code{numeric(1)}: outline width for the \code{basemap}
+polygons. Default \code{0.25}.}
 
 \item{title, subtitle, caption}{Character labels. \code{NULL} omits.}
 
@@ -37,6 +52,23 @@ mysterymaps_physician_dot_map(
 
 \item{crs}{Projection for display. Default EPSG:5070, Albers Equal Area,
 appropriate for the contiguous United States.}
+
+\item{jitter_miles}{\code{numeric(1)}: maximum deterministic jitter radius, in
+miles, applied via \code{\link[=mysterymaps_jitter_points]{mysterymaps_jitter_points()}} before plotting. Default
+\code{1.5} (under the 2-mile ceiling), so physicians stacked on the same
+building or block separate visually without a run-to-run-unstable map.
+\code{0} disables jitter.}
+
+\item{jitter_seed}{\code{numeric(1)} or \code{NULL}: seed for \code{jitter_miles}. Default
+\code{42}, so the jitter -- and therefore the published figure -- is
+reproducible. Passed to \code{\link[=mysterymaps_jitter_points]{mysterymaps_jitter_points()}}.}
+
+\item{outline}{\code{logical(1)}: draw points as a filled, outlined shape
+(\code{shape = 21}) rather than a solid dot (\code{shape = 16}). Default \code{TRUE};
+an outline reads more clearly against a busy basemap or a \code{color_var}
+fill that is close in hue to the basemap.}
+
+\item{point_outline_color}{Outline colour used when \code{outline = TRUE}.}
 }
 \value{
 A \code{ggplot} object. The caller saves it; this function writes nothing.
@@ -69,4 +101,15 @@ subspecialty by a label the data does not use (\code{MIGS} where the artifact sa
 \code{MIG}) yields zero rows, and the original stopped with "no physicians found",
 which reads as a real absence rather than a label mismatch. This function
 refuses a zero-row input with a message that says so.
+}
+\examples{
+\dontshow{if (interactive()) withAutoprint(\{ # examplesIf}
+physicians <- sf::st_as_sf(
+  data.frame(lon = -99.5 + 0:2, lat = 40.2 + (0:2) * 0.2),
+  coords = c("lon", "lat"), crs = 4326)
+basemap <- sf::st_sf(geometry = sf::st_sfc(
+  sf::st_polygon(list(cbind(c(-100, -97, -97, -100, -100), c(39, 39, 42, 42, 39)))),
+  crs = 4326))
+mysterymaps_physician_dot_map(physicians, basemap)
+\dontshow{\}) # examplesIf}
 }

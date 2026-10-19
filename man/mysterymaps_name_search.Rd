@@ -49,6 +49,14 @@ Pass \code{group} explicitly to be certain, and to restrict the search.
 Markers must carry a \code{label}; that is the text searched.
 }
 
+\examples{
+\dontshow{if (interactive() && requireNamespace("leaflet.extras", quietly = TRUE)) withAutoprint(\{ # examplesIf}
+m <- leaflet::leaflet() |> leaflet::addTiles() |>
+  leaflet::addCircleMarkers(lng = -104.99, lat = 39.74, label = "Denver Clinic",
+                           group = "Providers")
+mysterymaps_name_search(m, group = "Providers", placeholder = "Search provider name...")
+\dontshow{\}) # examplesIf}
+}
 \seealso{
 Other county-access-template:
 \code{\link[=mysterymaps_county_access_map]{mysterymaps_county_access_map()}},

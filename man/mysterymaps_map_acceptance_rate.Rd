@@ -17,7 +17,11 @@ mysterymaps_map_acceptance_rate(
   save_path = NULL,
   width = 10,
   height = 7,
-  dpi = 300L
+  dpi = 300L,
+  zero_aware = FALSE,
+  k = 6L,
+  digits = 0L,
+  zero_color = "#e0e0e0"
 )
 }
 \arguments{
@@ -61,6 +65,25 @@ Default \code{7}.}
 
 \item{dpi}{Integer. Resolution passed to \code{\link[mysterycall:mysterycall_save_plot]{mysterycall_save_plot()}}.
 Default \code{300L}.}
+
+\item{zero_aware}{Logical scalar. Default \code{FALSE}, which keeps this
+function's existing continuous \code{scale_fill_viridis_c()} behaviour
+unchanged. Pass \code{TRUE} to classify the percentage with
+\code{\link[=mysterymaps_jenks_zero_scale]{mysterymaps_jenks_zero_scale()}} instead, so a state with a measured 0\%
+acceptance rate gets \code{zero_color} rather than the same dark end of the
+gradient as a merely low rate -- the same fix already applied to
+\code{\link[=mysterymaps_rate_choropleth_map]{mysterymaps_rate_choropleth_map()}}. \code{limits} is ignored in this mode.}
+
+\item{k}{Integer scalar. Target number of Jenks classes for the positive
+rates when \code{zero_aware = TRUE}. Default \code{6}.}
+
+\item{digits}{Integer scalar or \code{NULL}. Decimal places in the legend's
+percentage labels when \code{zero_aware = TRUE}. Default \code{0} (whole
+percentage points).}
+
+\item{zero_color}{Character scalar. Fill color for a measured-0\% rate
+when \code{zero_aware = TRUE}. Default matches
+\code{\link[=mysterymaps_jenks_zero_scale]{mysterymaps_jenks_zero_scale()}}'s own.}
 }
 \value{
 A \code{ggplot} object of class \code{c("gg", "ggplot")}, returned invisibly.
@@ -79,6 +102,13 @@ df <- data.frame(
   rate  = c(0.55, 0.72, 0.48, 0.63, 0.81)
 )
 mysterymaps_map_acceptance_rate(df, region_col = "state", rate_col = "rate")
+
+# zero_aware = TRUE: a measured-0\% state gets its own colour, not the dark
+# end of the same gradient as a merely low rate.
+zero_df <- data.frame(state = c("Colorado", "California", "Texas"),
+                      rate = c(0, 0.72, 0.48))
+mysterymaps_map_acceptance_rate(zero_df, region_col = "state", rate_col = "rate",
+                                zero_aware = TRUE)
 \dontshow{\}) # examplesIf}
 }
 \seealso{
@@ -86,15 +116,29 @@ mysterymaps_map_acceptance_rate(df, region_col = "state", rate_col = "rate")
 \code{\link[=mysterymaps_hrr_maps]{mysterymaps_hrr_maps()}} for HRR-level choropleth maps.
 
 Other mapping:
+\code{\link[=mysterymaps_access_choropleth_map]{mysterymaps_access_choropleth_map()}},
+\code{\link[=mysterymaps_access_choropleth_map_multi]{mysterymaps_access_choropleth_map_multi()}},
+\code{\link[=mysterymaps_accessibility_map]{mysterymaps_accessibility_map()}},
+\code{\link[=mysterymaps_aggregate_values_to_polygons]{mysterymaps_aggregate_values_to_polygons()}},
+\code{\link[=mysterymaps_bivariate_choropleth_map]{mysterymaps_bivariate_choropleth_map()}},
+\code{\link[=mysterymaps_cartogram_map]{mysterymaps_cartogram_map()}},
+\code{\link[=mysterymaps_catchment_redundancy_map]{mysterymaps_catchment_redundancy_map()}},
+\code{\link[=mysterymaps_choropleth_point_map]{mysterymaps_choropleth_point_map()}},
 \code{\link[=mysterymaps_clear_isochrone_cache]{mysterymaps_clear_isochrone_cache()}},
+\code{\link[=mysterymaps_count_points_in_polygons]{mysterymaps_count_points_in_polygons()}},
 \code{\link[=mysterymaps_create_isochrones]{mysterymaps_create_isochrones()}},
+\code{\link[=mysterymaps_flow_map]{mysterymaps_flow_map()}},
 \code{\link[=mysterymaps_hrr_maps]{mysterymaps_hrr_maps()}},
 \code{\link[=mysterymaps_isochrones_for_df]{mysterymaps_isochrones_for_df()}},
+\code{\link[=mysterymaps_jitter_points]{mysterymaps_jitter_points()}},
 \code{\link[=mysterymaps_map_acog_districts]{mysterymaps_map_acog_districts()}},
 \code{\link[=mysterymaps_map_base]{mysterymaps_map_base()}},
 \code{\link[=mysterymaps_map_block_group]{mysterymaps_map_block_group()}},
 \code{\link[=mysterymaps_map_leaflet]{mysterymaps_map_leaflet()}},
 \code{\link[=mysterymaps_map_physicians]{mysterymaps_map_physicians()}},
-\code{\link[=mysterymaps_plot_isochrones]{mysterymaps_plot_isochrones()}}
+\code{\link[=mysterymaps_pathway_small_multiples_map]{mysterymaps_pathway_small_multiples_map()}},
+\code{\link[=mysterymaps_plot_isochrones]{mysterymaps_plot_isochrones()}},
+\code{\link[=mysterymaps_rate_choropleth_map]{mysterymaps_rate_choropleth_map()}},
+\code{\link[=mysterymaps_scale_bar]{mysterymaps_scale_bar()}}
 }
 \concept{mapping}
