@@ -105,7 +105,11 @@ quick-list; state round-trips through the URL hash for shareable links.</p>
 optional <code>mm_fill_coverage</code>, <code>mm_hover</code>, <code>mm_hover_supply</code>,
 <code>mm_hover_coverage</code>), <code>supply_pal</code>, <code>supply_values</code>, and optional
 <code>time_legend</code>, <code>supply_legend</code>, <code>coverage_pal</code>, <code>coverage_values</code>,
-<code>coverage_legend</code>, <code>desert</code>. Names become the geography labels shown in
+<code>coverage_legend</code>, <code>desert</code>. <strong><code>mm_id</code> must be unique across every
+geography combined, not just within one</strong> – every polygon's layerId
+shares one leaflet layer registry for the whole map, and this function
+errors rather than silently cross-wiring click-to-highlight if two
+geographies share an id. Names become the geography labels shown in
 the control panel. The first geography is shown by default.</p></dd>
 
 

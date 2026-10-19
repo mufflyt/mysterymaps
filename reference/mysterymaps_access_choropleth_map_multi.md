@@ -50,8 +50,12 @@ mysterymaps_access_choropleth_map_multi(
   plus optional `mm_fill_coverage`, `mm_hover`, `mm_hover_supply`,
   `mm_hover_coverage`), `supply_pal`, `supply_values`, and optional
   `time_legend`, `supply_legend`, `coverage_pal`, `coverage_values`,
-  `coverage_legend`, `desert`. Names become the geography labels shown
-  in the control panel. The first geography is shown by default.
+  `coverage_legend`, `desert`. **`mm_id` must be unique across every
+  geography combined, not just within one** – every polygon's layerId
+  shares one leaflet layer registry for the whole map, and this function
+  errors rather than silently cross-wiring click-to-highlight if two
+  geographies share an id. Names become the geography labels shown in
+  the control panel. The first geography is shown by default.
 
 - providers:
 
