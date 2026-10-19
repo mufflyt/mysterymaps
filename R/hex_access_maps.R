@@ -26,6 +26,66 @@ mysterymaps_hex_access_maps <- function(
   min_coverage = 1
 ) {
   base::message("Hex maps: validating inputs")
+  projected_crs <- .hex_access_validate_inputs(
+    origins, boundary, year_col, origin_col, pop_col, time_col,
+    years, hex_km, min_coverage, crs
+  )
+
+  base::message("Hex maps: filtering requested years")
+  selected <- .hex_access_filter_years(
+    origins, year_col, origin_col, pop_col, time_col, years
+  )
+
+  base::message("Hex maps: constructing equal-area grid")
+  grid_result <- .hex_access_build_grid(
+    boundary, selected, projected_crs, hex_km
+  )
+  region <- grid_result$region
+  hexagons <- grid_result$hexagons
+  selected <- grid_result$selected
+
+  base::message("Hex maps: assigning points to hexagons")
+  joined <- .hex_access_assign_hexagons(
+    selected, hexagons, year_col, origin_col
+  )
+
+  base::message("Hex maps: calculating weighted summaries")
+  summaries <- .hex_access_summarise(
+    joined, year_col, pop_col, time_col, min_coverage
+  )
+  comparisons <- .hex_access_build_comparisons(
+    summaries, hexagons, year_col, years
+  )
+
+  maps <- .hex_access_build_maps(
+    comparisons$current_sf, comparisons$comparison_sf, region, years
+  )
+
+  base::message(
+    "Hex maps complete: ",
+    base::format(base::nrow(hexagons), big.mark = ","),
+    " hexagons; ",
+    base::format(base::nrow(summaries), big.mark = ","),
+    " hexagon-years"
+  )
+  base::list(
+    hexagons = hexagons,
+    summaries = summaries,
+    travel_map = maps$travel_map,
+    exposure_map = maps$exposure_map,
+    change_map = maps$change_map
+  )
+}
+
+# Internal helpers for mysterymaps_hex_access_maps(), split out to keep the
+# exported function's cyclomatic complexity within lintr's cyclocomp_linter
+# threshold. Each mirrors one of the function's original message()-marked
+# phases; none are exported.
+
+.hex_access_validate_inputs <- function(
+  origins, boundary, year_col, origin_col, pop_col, time_col,
+  years, hex_km, min_coverage, crs
+) {
   if (!base::inherits(origins, "sf") ||
       !base::inherits(boundary, "sf")) {
     base::stop("origins and boundary must be sf objects")
@@ -61,8 +121,12 @@ mysterymaps_hex_access_maps <- function(
       )) {
     base::stop("crs must be a projected CRS in meters")
   }
+  projected_crs
+}
 
-  base::message("Hex maps: filtering requested years")
+.hex_access_filter_years <- function(
+  origins, year_col, origin_col, pop_col, time_col, years
+) {
   selected <- origins[
     origins[[year_col]] %in% years,
     ,
@@ -95,8 +159,10 @@ mysterymaps_hex_access_maps <- function(
   if (!base::all(years %in% selected[[year_col]])) {
     base::stop("Both requested years must be present")
   }
+  selected
+}
 
-  base::message("Hex maps: constructing equal-area grid")
+.hex_access_build_grid <- function(boundary, selected, projected_crs, hex_km) {
   region <- sf::st_transform(
     sf::st_make_valid(boundary),
     projected_crs
@@ -121,8 +187,12 @@ mysterymaps_hex_access_maps <- function(
   if (base::nrow(selected) == 0L) {
     base::stop("No origin points within boundary")
   }
+  base::list(region = region, hexagons = hexagons, selected = selected)
+}
 
-  base::message("Hex maps: assigning points to hexagons")
+.hex_access_assign_hexagons <- function(
+  selected, hexagons, year_col, origin_col
+) {
   joined <- sf::st_join(
     selected,
     hexagons["hex_id"],
@@ -147,8 +217,22 @@ mysterymaps_hex_access_maps <- function(
   if (base::anyNA(joined$hex_id)) {
     base::stop("Some origins could not be assigned to a hexagon")
   }
-  base::message("Hex maps: calculating weighted summaries")
-  summaries <- joined |>
+  joined
+}
+
+.hex_access_weighted_minutes <- function(time, pop) {
+  ok <- !base::is.na(time) & pop > 0
+  if (base::any(ok)) {
+    stats::weighted.mean(time[ok], pop[ok])
+  } else {
+    NA_real_
+  }
+}
+
+.hex_access_summarise <- function(
+  joined, year_col, pop_col, time_col, min_coverage
+) {
+  joined |>
     dplyr::group_by(.data$hex_id, .data[[year_col]]) |>
     dplyr::summarise(
       total_population = base::sum(.data[[pop_col]]),
@@ -161,18 +245,9 @@ mysterymaps_hex_access_maps <- function(
             .data[[time_col]] > 60
         ]
       ),
-      weighted_minutes = {
-        ok <- !base::is.na(.data[[time_col]]) &
-          .data[[pop_col]] > 0
-        if (base::any(ok)) {
-          stats::weighted.mean(
-            .data[[time_col]][ok],
-            .data[[pop_col]][ok]
-          )
-        } else {
-          NA_real_
-        }
-      },
+      weighted_minutes = .hex_access_weighted_minutes(
+        .data[[time_col]], .data[[pop_col]]
+      ),
       .groups = "drop"
     ) |>
     dplyr::mutate(
@@ -192,6 +267,9 @@ mysterymaps_hex_access_maps <- function(
         NA_real_
       )
     )
+}
+
+.hex_access_build_comparisons <- function(summaries, hexagons, year_col, years) {
   current <- summaries |>
     dplyr::filter(.data[[year_col]] == years[2]) |>
     dplyr::mutate(
@@ -218,12 +296,13 @@ mysterymaps_hex_access_maps <- function(
   if (base::nrow(comparison) == 0L) {
     base::stop("No shared hexagons across comparison years")
   }
-  current_sf <- dplyr::left_join(
-    hexagons, current, by = "hex_id"
+  base::list(
+    current_sf = dplyr::left_join(hexagons, current, by = "hex_id"),
+    comparison_sf = dplyr::left_join(hexagons, comparison, by = "hex_id")
   )
-  comparison_sf <- dplyr::left_join(
-    hexagons, comparison, by = "hex_id"
-  )
+}
+
+.hex_access_build_maps <- function(current_sf, comparison_sf, region, years) {
   base_map <- function() {
     ggplot2::geom_sf(
       data = sf::st_sf(geometry = region),
@@ -300,16 +379,7 @@ mysterymaps_hex_access_maps <- function(
       )
     ) +
     theme_map()
-  base::message(
-    "Hex maps complete: ",
-    base::format(base::nrow(hexagons), big.mark = ","),
-    " hexagons; ",
-    base::format(base::nrow(summaries), big.mark = ","),
-    " hexagon-years"
-  )
   base::list(
-    hexagons = hexagons,
-    summaries = summaries,
     travel_map = travel_map,
     exposure_map = exposure_map,
     change_map = change_map
