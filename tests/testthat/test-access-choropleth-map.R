@@ -82,6 +82,21 @@ testthat::test_that("a missing required `mm_*` column names itself in the error"
     "mm_fill_time")
 })
 
+testthat::test_that("SABOTEUR: a duplicate geo$mm_id errors instead of silently cross-wiring click-to-highlight", {
+  # mm_id is used verbatim as the time layer's layerId and as the suffix of
+  # the supply layer's ("S_<mm_id>") -- both share leaflet's one layer
+  # registry, so a duplicate makes a layer lookup ambiguous. The
+  # multi-geography sibling already guards this (mm_assert_unique_geo_ids());
+  # this one did not.
+  skip_unless_spatial()
+  testthat::expect_error(
+    mysterymaps_access_choropleth_map(
+      .geo(ids = c("A", "A")), .providers(), highlight_lookup = list(A = "P1"),
+      supply_pal = leaflet::colorNumeric("Blues", c(0, 1)), supply_values = c(0, 1),
+      band_colors = .BC, band_labels = .BL, title_html = "<b>Example</b>"),
+    "mm_id")
+})
+
 # ---- mysterymaps_access_choropleth_map_multi() -----------------------------
 
 .multi_defaults <- function() {

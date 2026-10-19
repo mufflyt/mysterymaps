@@ -94,6 +94,11 @@ mysterymaps_place_title_case <- function(x) {
     # 3RD, 42ND: digits then letters stay as digits + lower letters.
     if (grepl("^[0-9]+(ST|ND|RD|TH)$", w, ignore.case = TRUE))
       return(paste0(gsub("[^0-9]", "", w), tolower(gsub("[0-9]", "", w))))
+    # A dotted initialism (D.C., U.S., U.S.A.) is a run of single letters
+    # each followed by a period. The blanket "lowercase everything after the
+    # first character" below turns "D.C." into "D.c.", mangling exactly the
+    # abbreviation this function exists not to mangle.
+    if (grepl("^([A-Za-z]\\.)+$", w)) return(toupper(w))
     w <- paste0(toupper(substring(w, 1, 1)), tolower(substring(w, 2)))
     # McAllen, MacArthur -- but not "Mac" alone, and not "Mci".
     w <- sub("^(Mc)([a-z])", "\\1\\U\\2", w, perl = TRUE)
@@ -211,6 +216,11 @@ mysterymaps_place_title_case <- function(x) {
 #' @export
 mysterymaps_format_credentials <- function(x, keep = .MM_CRED_KEEP, max_n = 3L) {
   if (!length(x)) return(character(0))
+  # utils::head(can, max_n) below means "all but the last |max_n| elements"
+  # when max_n is negative, not "none" -- max_n = -1 silently dropped a
+  # provider's LAST real credential rather than erroring, and max_n = 0 or NA
+  # produced "" instead of NA for a provider who does have credentials.
+  checkmate::assert_int(max_n, lower = 1L)
   keep_u <- toupper(keep)
 
   vapply(as.character(x), function(s) {

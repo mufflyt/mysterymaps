@@ -101,6 +101,21 @@ test_that("SABOTEUR: an empty colors vector errors instead of a cryptic 'subscri
     "at least one element")
 })
 
+test_that("SABOTEUR: a duplicate surface name errors instead of silently dropping one legend mapping", {
+  # Both polygons draw fine, but the registry attribute keys its legend
+  # lookup by name, and jsonlite::toJSON() silently collapses a duplicate
+  # name to its LAST value when serialising it for the switcher's JS -- one
+  # surface's legend mapping vanishes rather than erroring.
+  skip_if_not_installed("leaflet")
+  expect_error(
+    mysterymaps_add_coverage_surfaces(
+      leaflet::leaflet(),
+      surfaces = list("Within 30 minutes" = mm_surface(),
+                      "Within 30 minutes" = mm_surface(w = 6)),
+      colors = c("#08519c", "#3182bd")),
+    "duplicate")
+})
+
 test_that("registration accumulates rather than replacing", {
   # A choropleth legend registered first must survive the coverage surfaces
   # being added on top of it.
