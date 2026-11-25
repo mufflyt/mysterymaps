@@ -10,7 +10,7 @@ mysterymaps_rate_choropleth_map(
   denominator_var,
   numerator_label,
   denominator_label,
-  per = 100000,
+  per = 10^5,
   title = NULL,
   subtitle = NULL,
   caption = NULL,
