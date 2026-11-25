@@ -231,28 +231,19 @@ mysterymaps_geographic_map <- function(data,
     stop("No non-missing values found in `state_col`.", call. = FALSE)
   }
 
-  # ---- State abbreviation -> lowercase full name lookup -----------------------
-  # Uses built-in state.abb / state.name (50 US states; DC and territories absent).
-  abb_to_lower <- stats::setNames(tolower(state.name), state.abb)
-
-  sample_state <- non_na_states[1L]
-  if (nchar(sample_state) <= 2L) {
-    # Abbreviations: look up lowercase full name; unknown abbreviations map to NA.
-    state_joined <- abb_to_lower[toupper(state_raw)]
-  } else {
-    # Full names: lowercase for joining with map polygon region labels.
-    state_joined <- tolower(state_raw)
-  }
-
-  # ---- Optionally drop Alaska and Hawaii --------------------------------------
+  # ---- Normalise states to lowercase full names -------------------------------
+  # Delegated to the shared SSOT-backed helper: the first-row format heuristic
+  # that used to live here silently dropped whichever rows did not match the
+  # first row's format. The Alaska/Hawaii toggle is applied to the RAW input
+  # first so the deliberate filter does not also trigger the basemap warning.
   if (!include_alaska_hawaii) {
     is_ak_hi <- (toupper(state_raw) %in% c("AK", "HI")) |
-                (!is.na(state_joined) & (state_joined %in% c("alaska", "hawaii")))
-    keep         <- !is_ak_hi
-    state_raw    <- state_raw[keep]
-    outcome_raw  <- outcome_raw[keep]
-    state_joined <- state_joined[keep]
+                (tolower(state_raw) %in% c("alaska", "hawaii"))
+    keep        <- !is_ak_hi | is.na(state_raw)
+    state_raw   <- state_raw[keep]
+    outcome_raw <- outcome_raw[keep]
   }
+  state_joined <- .mm_state_regions_lower(state_raw)
 
   # ---- Detect outcome type and aggregate per state ----------------------------
   non_na_outcome <- outcome_raw[!is.na(outcome_raw)]
