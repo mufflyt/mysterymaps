@@ -3,15 +3,6 @@
 #' @name mysterymaps_map_acceptance_rate
 NULL
 
-#' Build State Abbreviation to Name Lookup
-#'
-#' @return Named character vector where names are 2-letter abbreviations and
-#'   values are full state names.
-#' @keywords internal
-.abb_to_name <- function() {
-  stats::setNames(datasets::state.name, datasets::state.abb)
-}
-
 #' Map appointment acceptance rates by US state (or HRR)
 #'
 #' Draws a choropleth map of appointment acceptance rates using base-R map
@@ -146,15 +137,11 @@ mysterymaps_map_acceptance_rate <- function(data,
   work        <- data[, c(region_col, rate_col), drop = FALSE]
   names(work) <- c("region_raw", "rate_raw")
 
-  # ---- Convert abbreviations to full names if needed -------------------------
-  sample_region <- work$region_raw[!is.na(work$region_raw)][1L]
-  if (is.character(sample_region) && nchar(sample_region) <= 2L) {
-    lookup          <- .abb_to_name()
-    work$region_raw <- lookup[work$region_raw]
-  }
-
-  # Lowercase for joining with map_data
-  work$region_join <- tolower(as.character(work$region_raw))
+  # ---- Normalise regions to lowercase full names ------------------------------
+  # Delegated to the shared SSOT-backed helper: the first-row heuristic that
+  # used to live here silently dropped every row that did not match whatever
+  # format the first row happened to use, and DC never matched at all.
+  work$region_join <- .mm_state_regions_lower(work$region_raw)
   work$rate_pct    <- work$rate_raw * 100
 
   # ---- Fetch state map data --------------------------------------------------
